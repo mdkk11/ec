@@ -2,7 +2,7 @@
 
 小規模ECを題材に、単体テスト、フロントエンド結合テスト、バックエンド結合テスト、E2E、VRTの責任範囲と運用を検証するサンドボックスです。
 
-現在は `docs/DEVELOPMENT_PLAN.md` のPhase 1として、Next.js App Routerと非DBテスト基盤までを実装しています。商品、認証、カート、注文、管理機能は後続Phaseで追加します。
+現在は `docs/DEVELOPMENT_PLAN.md` のPhase 1として、Vite試作のビジュアルを引き継いだNext.jsトップページと非DBテスト基盤までを実装しています。商品、認証、カート、注文、管理機能は後続Phaseで追加します。
 
 ## Requirements
 
@@ -46,7 +46,7 @@ npx playwright install chromium
 
 ## Deterministic fixtures
 
-- テスト画像は `public/images/fixtures` のローカルassetを使用し、外部画像URLへ依存しません。
+- テスト画像は `public/images/fixtures`、トップページ画像は `public/images/home` のローカルassetを使用し、外部画像URLへ依存しません。
 - 固定時刻が必要なテストは `src/test/fixtures/time.ts` のUTC時刻を使用します。
 - 時刻依存のdomain関数は評価時刻を引数で受け取り、関数内で現在時刻を取得しません。
 - fake timerでグローバル時刻を固定したテストは、テスト終了時に必ずreal timerへ戻します。

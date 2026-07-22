@@ -19,6 +19,7 @@
 
   html {
     background: var(--color-canvas);
+    scroll-behavior: smooth;
   }
 
   body {
@@ -36,7 +37,8 @@
   }
 
   button,
-  a {
+  a,
+  input {
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -58,17 +60,107 @@
     margin-inline: auto;
     padding-inline: 1rem;
   }
+
+  .section-space {
+    margin-top: 6rem;
+  }
+
+  .label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    line-height: 1.4;
+  }
+
+  .nav-link {
+    position: relative;
+    padding-block: 0.75rem;
+  }
+
+  .nav-link::after {
+    position: absolute;
+    right: 0;
+    bottom: 0.4rem;
+    left: 0;
+    height: 1px;
+    content: '';
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 180ms ease-out;
+  }
+
+  .nav-link:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+
+  .button-primary,
+  .button-secondary {
+    display: inline-flex;
+    min-height: 3rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding-inline: 1.4rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    transition:
+      background-color 180ms ease-out,
+      color 180ms ease-out;
+  }
+
+  .button-primary {
+    background: var(--color-ink);
+    color: white;
+  }
+
+  .button-primary:hover {
+    background: #34342f;
+  }
+
+  .button-secondary {
+    border: 1px solid var(--color-ink);
+  }
+
+  .button-secondary:hover {
+    background: rgb(255 255 255 / 0.3);
+  }
+
+  .section-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 2rem;
+  }
 }
 
 @media (min-width: 640px) {
   .page-wrap {
     padding-inline: 1.5rem;
   }
+
+  .section-space {
+    margin-top: 8rem;
+  }
 }
 
 @media (min-width: 1024px) {
   .page-wrap {
     padding-inline: 2rem;
+  }
+
+  .section-space {
+    margin-top: 9rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 1.25rem;
   }
 }
 
