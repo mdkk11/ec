@@ -55,7 +55,8 @@ React UI -> API client -> JSON Route Handler -> feature use case -> Drizzle -> P
 - Drizzle queryをReactコンポーネントやdomainの純粋関数へ混ぜない。
 - feature固有コードを早期に共通化しない。3回という回数だけでなく責務が同じと確認してから共通化する。
 - 汎用Repository、DI container、CQRS、event busを導入しない。
-- 時刻依存ロジックは評価時刻を引数で受け取り、domain関数内で現在時刻を直接取得しない。
+- 日付・時刻処理は `src/lib/date-time/temporal.ts` から再exportする `@js-temporal/polyfill` の `Temporal` を使用し、`Date` を新規利用しない。
+- 時刻依存ロジックは `Temporal.Instant` の評価時刻を引数で受け取り、domain関数内で現在時刻を直接取得しない。
 
 ## ビジネスルール変更
 

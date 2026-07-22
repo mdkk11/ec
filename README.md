@@ -47,8 +47,9 @@ npx playwright install chromium
 ## Deterministic fixtures
 
 - テスト画像は `public/images/fixtures`、トップページ画像は `public/images/home` のローカルassetを使用し、外部画像URLへ依存しません。
-- 固定時刻が必要なテストは `src/test/fixtures/time.ts` のUTC時刻を使用します。
-- 時刻依存のdomain関数は評価時刻を引数で受け取り、関数内で現在時刻を取得しません。
+- 日付・時刻処理は `src/lib/date-time/temporal.ts` から提供する `Temporal` polyfillを使用します。
+- 固定時刻が必要なテストは `src/test/fixtures/time.ts` の `Temporal.Instant` を使用します。
+- 時刻依存のdomain関数は `Temporal.Instant` の評価時刻を引数で受け取り、関数内で現在時刻を取得しません。
 - fake timerでグローバル時刻を固定したテストは、テスト終了時に必ずreal timerへ戻します。
 
 ## Documentation

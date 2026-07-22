@@ -91,6 +91,8 @@ tests/
 
 汎用Repositoryインターフェース、DIコンテナ、CQRS、イベントバス、独自フレームワークは導入しない。テストのためだけに本番コードへ抽象層を追加せず、時刻など決定性に必要な依存だけを関数引数として渡す。
 
+日付・時刻処理には `src/lib/date-time/temporal.ts` から再exportする `@js-temporal/polyfill` の `Temporal` を使用する。UTCの瞬間は `Temporal.Instant` で扱い、API・DB境界ではISO 8601 UTC文字列へ変換する。domain関数は現在時刻を内部取得せず、評価時刻を `Temporal.Instant` として受け取る。
+
 ## 5. データモデル
 
 ### `users`
