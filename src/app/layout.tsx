@@ -11,7 +11,8 @@ export const metadata: Metadata = {
     default: 'MockShop',
     template: '%s | MockShop',
   },
-  description: 'テスト境界と失敗原因を追跡しやすくする、小規模ECサンドボックス。',
+  applicationName: 'MockShop',
+  description: '日常に長く残る服と道具を、静かな編集で届けるオンラインストア。',
 }
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {

@@ -3,7 +3,11 @@ import { expect, test } from '@playwright/test'
 test('共通レイアウトをキーボードで利用でき、横方向に崩れない', async ({ page }) => {
   await page.goto('/')
 
-  await expect(page).toHaveTitle('MockShop')
+  await expect(page).toHaveTitle('Made for quieter days. | MockShop')
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+    'content',
+    '季節の輪郭を、軽やかに。新しい日々のための静かな色と、心地よい素材。',
+  )
   await expect(page.getByRole('heading', { level: 1, name: 'Made for quieter days.' })).toBeVisible()
   await expect(page.getByRole('heading', { level: 2, name: 'New essentials' })).toBeVisible()
 
