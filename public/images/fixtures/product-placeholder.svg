@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200" role="img" aria-labelledby="title description">
+  <title id="title">MockShop 商品画像プレースホルダー</title>
+  <desc id="description">淡いグレーの背景にMockShop Fixtureと表示された決定的なテスト画像</desc>
+  <rect width="900" height="1200" fill="#ebeae6"/>
+  <rect x="90" y="90" width="720" height="1020" fill="none" stroke="#706f69" stroke-width="2"/>
+  <text x="450" y="570" fill="#171714" font-family="sans-serif" font-size="40" font-weight="600" text-anchor="middle" letter-spacing="8">MOCKSHOP</text>
+  <text x="450" y="630" fill="#706f69" font-family="sans-serif" font-size="24" text-anchor="middle" letter-spacing="6">FIXTURE</text>
+</svg>
