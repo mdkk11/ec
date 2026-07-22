@@ -25,7 +25,7 @@
 - Playwright
 - Storybook
 - GitHub Actions
-- npm
+- pnpm 11
 
 バージョンは導入時点で互いに互換性のある安定版を固定し、根拠なく追従更新しない。
 

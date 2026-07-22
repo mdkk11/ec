@@ -214,7 +214,7 @@ Storybook上の決定的なfixtureを使い、意図しない見た目の変化�
 
 GitHub Actionsでは次のジョブへ分け、失敗した責任範囲を判別できるようにする。
 
-全ジョブは独立runnerで動く前提とし、checkout、Node.js setup、npm cache、`npm ci` をそれぞれ実行する。PostgreSQL serviceを使うジョブはhealth check完了後にmigrationを実行する。
+全ジョブは独立runnerで動く前提とし、checkout、pnpm setup、Node.js setup、pnpm cache、`pnpm install --frozen-lockfile` をそれぞれ実行する。PostgreSQL serviceを使うジョブはhealth check完了後にmigrationを実行する。
 
 1. `static-and-unit`
    - lint
@@ -242,15 +242,15 @@ GitHub Actionsでは次のジョブへ分け、失敗した責任範囲を判別
 package scriptは導入時に次の契約へ揃える。
 
 ```text
-npm run lint
-npm run typecheck
-npm run test:unit
-npm run test:frontend
-npm run test:backend
-npm run test:e2e
-npm run test:vrt
-npm run build
-npm run build-storybook
+pnpm lint
+pnpm typecheck
+pnpm test:unit
+pnpm test:frontend
+pnpm test:backend
+pnpm test:e2e
+pnpm test:vrt
+pnpm build
+pnpm build-storybook
 ```
 
 各ジョブは `DEVELOPMENT_PLAN.md` の該当フェーズで導入し、導入後は通常PRの必須checkとする。Phase 8完了後は4ジョブすべてを必須にする。基準画像更新を伴うPRでもVRTをskipしない。

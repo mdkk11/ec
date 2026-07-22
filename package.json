@@ -3,12 +3,10 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "packageManager": "pnpm@11.15.1",
   "engines": {
-    "node": ">=24 <25"
-  },
-  "overrides": {
-    "postcss": "8.5.22",
-    "sharp": "0.35.3"
+    "node": ">=24 <25",
+    "pnpm": ">=11 <12"
   },
   "scripts": {
     "dev": "next dev",
@@ -47,7 +45,7 @@
     "msw": "2.15.0",
     "storybook": "10.5.3",
     "tailwindcss": "4.3.3",
-    "typescript": "6.0.3",
+    "typescript": "5.9.3",
     "vite": "7.3.6",
     "vitest": "4.1.10"
   }

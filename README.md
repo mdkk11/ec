@@ -7,15 +7,15 @@
 ## Requirements
 
 - Node.js 24
-- npm
+- pnpm 11
 
-リポジトリの `.node-version` と同じNode.jsを使用してください。Vitestとjsdomの対応範囲外であるNode.js 23では検証しません。
+リポジトリの `.node-version` と同じNode.js、および `package.json` の `packageManager` と同じpnpmを使用してください。Vitestとjsdomの対応範囲外であるNode.js 23では検証しません。
 
 ## Setup
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 アプリは [http://localhost:3000](http://localhost:3000) で起動します。
@@ -23,21 +23,21 @@ npm run dev
 ## Commands
 
 ```bash
-npm run dev
-npm run lint
-npm run typecheck
-npm run test:unit
-npm run test:frontend
-npm run test:e2e
-npm run build
-npm run storybook
-npm run build-storybook
+pnpm dev
+pnpm lint
+pnpm typecheck
+pnpm test:unit
+pnpm test:frontend
+pnpm test:e2e
+pnpm build
+pnpm storybook
+pnpm build-storybook
 ```
 
 初回のPlaywright実行前にChromiumをインストールします。
 
 ```bash
-npx playwright install chromium
+pnpm exec playwright install chromium
 ```
 
 `vite`はNext.jsアプリの実行には使用しません。Vitestと`@storybook/nextjs-vite`が要求するビルダーとしてdevDependencyに限定しています。

@@ -31,7 +31,7 @@ EC機能の網羅性より、テスト境界の明確さ、決定性、失敗原
 - Vitest / Testing Library / MSW
 - Playwright / Storybook
 - GitHub Actions
-- package managerはnpm
+- package managerはpnpm 11
 - UIの操作・状態・エラー、設計文書、テストの利用者向け説明は日本語。トップページでVite試作から引き継ぐブランド名、シーズン名、編集見出しは固有コピーとして英語表記を維持する
 - コード上の識別子とAPIのcodeは英語
 - 金額はJPYの整数。浮動小数点で保存・計算しない
@@ -158,16 +158,16 @@ React UI -> API client -> JSON Route Handler -> feature use case -> Drizzle -> P
 Next.jsと各テスト基盤の導入後は、次のscriptsを維持してください。
 
 ```bash
-npm run dev
-npm run lint
-npm run typecheck
-npm run test:unit
-npm run test:frontend
-npm run test:backend
-npm run test:e2e
-npm run test:vrt
-npm run build
-npm run build-storybook
+pnpm dev
+pnpm lint
+pnpm typecheck
+pnpm test:unit
+pnpm test:frontend
+pnpm test:backend
+pnpm test:e2e
+pnpm test:vrt
+pnpm build
+pnpm build-storybook
 ```
 
 コマンドを追加・改名した場合は、この文書、README、GitHub Actionsを同じPRで更新してください。

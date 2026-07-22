@@ -50,7 +50,7 @@
 
 #### DoD
 
-- `npm run dev` でNext.jsアプリが起動する。
+- `pnpm dev` でNext.jsアプリが起動する。
 - lint、typecheck、単体テスト、フロント結合のsmoke test、build、Storybook buildが成功する。
 - MSWを通したAPIクライアントのsmoke testがある。
 - Storybookに共通Buttonなど最低1つのstoryがあり、ローカルで表示できる。
@@ -202,7 +202,7 @@
 
 #### DoD
 
-- `npm run lint`、`typecheck`、全テスト、アプリbuild、Storybook buildが成功する。
+- `pnpm lint`、`pnpm typecheck`、全テスト、アプリbuild、Storybook buildが成功する。
 - `VRT-001`〜`VRT-008` がChromiumで決定的に成功する。
 - `E2E-001`〜`E2E-006` が定義したブラウザで成功する。
 - CI失敗時に責任レベルと差分・traceを特定できる。

@@ -277,4 +277,4 @@ Vite試作に含まれていた検索、お気に入り、仮カート、メル�
 - 主要画像にaltがある
 - 主要ページのH1は1つ
 - LighthouseのPerformance / Accessibility / Best Practices / SEOで90以上を目標にする
-- `npm run build` が成功する
+- `pnpm build` が成功する
