@@ -25,7 +25,7 @@
 - Playwright
 - Storybook
 - GitHub Actions
-- npm
+- pnpm 11
 
 バージョンは導入時点で互いに互換性のある安定版を固定し、根拠なく追従更新しない。
 
@@ -90,6 +90,8 @@ tests/
 機能固有のコンポーネント、schema、ユースケース、クエリ、テストは `features/<feature>` に寄せる。`lib` や `components` への移動は複数機能での利用が発生してから行う。
 
 汎用Repositoryインターフェース、DIコンテナ、CQRS、イベントバス、独自フレームワークは導入しない。テストのためだけに本番コードへ抽象層を追加せず、時刻など決定性に必要な依存だけを関数引数として渡す。
+
+日付・時刻処理には `src/lib/date-time/temporal.ts` から再exportする `@js-temporal/polyfill` の `Temporal` を使用する。UTCの瞬間は `Temporal.Instant` で扱い、API・DB境界ではISO 8601 UTC文字列へ変換する。domain関数は現在時刻を内部取得せず、評価時刻を `Temporal.Instant` として受け取る。
 
 ## 5. データモデル
 

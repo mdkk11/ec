@@ -31,8 +31,8 @@ EC機能の網羅性より、テスト境界の明確さ、決定性、失敗原
 - Vitest / Testing Library / MSW
 - Playwright / Storybook
 - GitHub Actions
-- package managerはnpm
-- UI文言、設計文書、テストの利用者向け説明は日本語
+- package managerはpnpm 11
+- UIの操作・状態・エラー、設計文書、テストの利用者向け説明は日本語。トップページでVite試作から引き継ぐブランド名、シーズン名、編集見出しは固有コピーとして英語表記を維持する
 - コード上の識別子とAPIのcodeは英語
 - 金額はJPYの整数。浮動小数点で保存・計算しない
 
@@ -55,7 +55,8 @@ React UI -> API client -> JSON Route Handler -> feature use case -> Drizzle -> P
 - Drizzle queryをReactコンポーネントやdomainの純粋関数へ混ぜない。
 - feature固有コードを早期に共通化しない。3回という回数だけでなく責務が同じと確認してから共通化する。
 - 汎用Repository、DI container、CQRS、event busを導入しない。
-- 時刻依存ロジックは評価時刻を引数で受け取り、domain関数内で現在時刻を直接取得しない。
+- 日付・時刻処理は `src/lib/date-time/temporal.ts` から再exportする `@js-temporal/polyfill` の `Temporal` を使用し、`Date` を新規利用しない。
+- 時刻依存ロジックは `Temporal.Instant` の評価時刻を引数で受け取り、domain関数内で現在時刻を直接取得しない。
 
 ## ビジネスルール変更
 
@@ -157,16 +158,16 @@ React UI -> API client -> JSON Route Handler -> feature use case -> Drizzle -> P
 Next.jsと各テスト基盤の導入後は、次のscriptsを維持してください。
 
 ```bash
-npm run dev
-npm run lint
-npm run typecheck
-npm run test:unit
-npm run test:frontend
-npm run test:backend
-npm run test:e2e
-npm run test:vrt
-npm run build
-npm run build-storybook
+pnpm dev
+pnpm lint
+pnpm typecheck
+pnpm test:unit
+pnpm test:frontend
+pnpm test:backend
+pnpm test:e2e
+pnpm test:vrt
+pnpm build
+pnpm build-storybook
 ```
 
 コマンドを追加・改名した場合は、この文書、README、GitHub Actionsを同じPRで更新してください。

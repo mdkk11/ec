@@ -1,29 +1,62 @@
-# MockShop Storefront
+# MockShop EC Test Sandbox
 
-FARFETCHの情報設計を参考にしつつ、独自ブランドとして構成したシンプルなECトップページのサンプルです。
+小規模ECを題材に、単体テスト、フロントエンド結合テスト、バックエンド結合テスト、E2E、VRTの責任範囲と運用を検証するサンドボックスです。
+
+現在は `docs/DEVELOPMENT_PLAN.md` のPhase 1として、Vite試作のビジュアルを引き継いだNext.jsトップページと非DBテスト基盤までを実装しています。商品、認証、カート、注文、管理機能は後続Phaseで追加します。
+
+## Requirements
+
+- Node.js 24
+- pnpm 11
+
+リポジトリの `.node-version` と同じNode.js、および `package.json` の `packageManager` と同じpnpmを使用してください。Vitestとjsdomの対応範囲外であるNode.js 23では検証しません。
 
 ## Setup
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
+
+アプリは [http://localhost:3000](http://localhost:3000) で起動します。
 
 ## Commands
 
 ```bash
-npm run dev
-npm run lint
-npm run build
+pnpm dev
+pnpm lint
+pnpm typecheck
+pnpm test:unit
+pnpm test:frontend
+pnpm test:e2e
+pnpm build
+pnpm storybook
+pnpm build-storybook
 ```
 
-デザイン方針、コンポーネント仕様、レスポンシブ・アクセシビリティ要件は [`DESIGN.md`](./DESIGN.md) を参照してください。
+初回のPlaywright実行前にChromiumをインストールします。
 
-## Current scope
+```bash
+pnpm exec playwright install chromium
+```
 
-- React + TypeScript + Vite
-- Tailwind CSS v4
-- レスポンシブなECトップページ
-- 検索パネル、モバイルメニュー、お気に入り、カート件数、トースト
+`vite`はNext.jsアプリの実行には使用しません。Vitestと`@storybook/nextjs-vite`が要求するビルダーとしてdevDependencyに限定しています。
 
-商品画像はサンプルとしてUnsplashの外部画像を使用しています。本番運用では自社CDNまたは画像最適化基盤へ置き換えてください。
+`postcss`と`sharp`は、Next.jsが参照するバージョンに公開済みの脆弱性があるため、修正版へ一時的にoverrideしています。Next.js側の依存が更新された時点でoverrideを再評価します。
+
+## Deterministic fixtures
+
+- テスト画像は `public/images/fixtures`、トップページ画像は `public/images/home` のローカルassetを使用し、外部画像URLへ依存しません。
+- 日付・時刻処理は `src/lib/date-time/temporal.ts` から提供する `Temporal` polyfillを使用します。
+- 固定時刻が必要なテストは `src/test/fixtures/time.ts` の `Temporal.Instant` を使用します。
+- 時刻依存のdomain関数は `Temporal.Instant` の評価時刻を引数で受け取り、関数内で現在時刻を取得しません。
+- fake timerでグローバル時刻を固定したテストは、テスト終了時に必ずreal timerへ戻します。
+
+## Documentation
+
+- [PRODUCT](./docs/PRODUCT.md): 機能、ビジネスルール、対象外
+- [ARCHITECTURE](./docs/ARCHITECTURE.md): 依存方向、データモデル、JSON API
+- [TEST STRATEGY](./docs/TEST_STRATEGY.md): テストレベルごとの責任
+- [TEST SCENARIOS](./docs/TEST_SCENARIOS.md): シナリオIDと担当レベル
+- [DEVELOPMENT PLAN](./docs/DEVELOPMENT_PLAN.md): 実装順序とDefinition of Done
+- [DESIGN](./DESIGN.md): デザイン、レスポンシブ、アクセシビリティ方針

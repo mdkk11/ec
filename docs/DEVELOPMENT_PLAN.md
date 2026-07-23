@@ -43,19 +43,20 @@
 
 - ViteからNext.js App Routerへ実行基盤を移行する。
 - `DESIGN.md` の色、タイポグラフィ、レスポンシブ、アクセシビリティ方針を引き継ぐ。
-- 既存トップページのコード互換性は維持せず、サンドボックスに必要な共通レイアウトだけを作る。
+- 既存トップページの情報構成、ブランド・編集コピー、ビジュアルを引き継ぎ、共通レイアウトとホーム固有コンポーネントへ分離して作り直す。固有コピーの英語表記は維持するが、操作・状態の文言は日本語とする。コード互換性と、検索・お気に入り・仮カートなど対象外のデモ操作は維持しない。
 - ESLint、TypeScript strict設定、Vitest、Testing Library、MSW、Playwright、Storybookを導入する。
-- ローカルfixture画像と決定的なテスト時刻の基本方針を用意する。
+- ローカルfixture画像と、`Temporal` polyfillを使う決定的なテスト時刻の基本方針を用意する。
 - GitHub Actionsに静的検査・単体・フロント結合の初期ジョブを追加する。
 
 #### DoD
 
-- `npm run dev` でNext.jsアプリが起動する。
+- `pnpm dev` でNext.jsアプリが起動する。
 - lint、typecheck、単体テスト、フロント結合のsmoke test、build、Storybook buildが成功する。
 - MSWを通したAPIクライアントのsmoke testがある。
 - Storybookに共通Buttonなど最低1つのstoryがあり、ローカルで表示できる。
 - Vite固有の実行設定や不要依存が残っていない。
-- 375px、768px、1440pxで共通レイアウトが破綻しない。
+- Vite試作から引き継いだトップページが外部画像URLに依存せず表示される。
+- 375px、768px、1440pxで共通レイアウトとトップページが破綻しない。
 
 ### Phase 2: PostgreSQL・Drizzle・認証基盤
 
@@ -201,7 +202,7 @@
 
 #### DoD
 
-- `npm run lint`、`typecheck`、全テスト、アプリbuild、Storybook buildが成功する。
+- `pnpm lint`、`pnpm typecheck`、全テスト、アプリbuild、Storybook buildが成功する。
 - `VRT-001`〜`VRT-008` がChromiumで決定的に成功する。
 - `E2E-001`〜`E2E-006` が定義したブラウザで成功する。
 - CI失敗時に責任レベルと差分・traceを特定できる。
