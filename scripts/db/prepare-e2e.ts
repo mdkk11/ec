@@ -4,23 +4,25 @@ import {
   requireDatabaseEnvironment,
 } from '../../src/server/db/environment'
 import { migrateDatabase } from '../../src/server/db/migrate'
+import { seedAuthenticationUsers } from '../../src/server/db/seed'
 import { resetTestDatabase } from '../../src/server/db/test-lifecycle'
 
 loadDatabaseEnvironment()
 
-const testDatabaseUrl = requireDatabaseEnvironment('TEST_DATABASE_URL')
+const e2eDatabaseUrl = requireDatabaseEnvironment('E2E_DATABASE_URL')
 const developmentDatabaseUrl = process.env.DATABASE_URL
-const client = createDatabaseClient(testDatabaseUrl)
+const client = createDatabaseClient(e2eDatabaseUrl)
 
 try {
   await resetTestDatabase(client.pool, {
     developmentDatabaseUrl,
-    expectedDatabase: 'mockshop_test',
+    expectedDatabase: 'mockshop_e2e',
     nodeEnv: process.env.NODE_ENV,
-    targetDatabaseUrl: testDatabaseUrl,
+    targetDatabaseUrl: e2eDatabaseUrl,
   })
   await migrateDatabase(client.db)
-  console.info('テストDBを初期化し、migrationを適用しました。')
+  await seedAuthenticationUsers(client.db)
+  console.info('E2E DBを初期化し、migrationとseedを適用しました。')
 } finally {
   await client.close()
 }

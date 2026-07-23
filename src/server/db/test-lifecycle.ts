@@ -1,11 +1,12 @@
 import type { Pool } from 'pg'
 
-import { assertConnectedTestDatabase } from './safety'
+import { assertConnectedDatabase } from './safety'
 
 type TestDatabaseLifecycleOptions = {
   developmentDatabaseUrl?: string
+  expectedDatabase: 'mockshop_test' | 'mockshop_e2e'
   nodeEnv?: string
-  testDatabaseUrl: string
+  targetDatabaseUrl: string
 }
 
 function quoteIdentifier(identifier: string) {
@@ -21,10 +22,10 @@ export async function resetTestDatabase(
   try {
     await client.query('begin')
 
-    await assertConnectedTestDatabase(client, options)
+    await assertConnectedDatabase(client, options)
     await client.query('drop schema if exists drizzle cascade')
 
-    await assertConnectedTestDatabase(client, options)
+    await assertConnectedDatabase(client, options)
     await client.query('drop schema if exists public cascade')
     await client.query('create schema public')
 
@@ -53,7 +54,7 @@ export async function truncateApplicationTables(
 
     if (result.rows.length === 0) return
 
-    await assertConnectedTestDatabase(client, options)
+    await assertConnectedDatabase(client, options)
     const tableNames = result.rows.map(({ tablename }) => `public.${quoteIdentifier(tablename)}`)
     await client.query(`truncate table ${tableNames.join(', ')} restart identity cascade`)
   } finally {
