@@ -2,7 +2,7 @@
 
 小規模ECを題材に、単体テスト、フロントエンド結合テスト、バックエンド結合テスト、E2E、VRTの責任範囲と運用を検証するサンドボックスです。
 
-現在は `docs/DEVELOPMENT_PLAN.md` のPhase 2として、Next.jsトップページ、非DBテスト基盤、PostgreSQL・DrizzleのDB共通基盤までを実装しています。商品、認証、カート、注文、管理機能は後続PRで追加します。
+現在は `docs/DEVELOPMENT_PLAN.md` のPhase 2として、Next.jsトップページ、PostgreSQL・Drizzle基盤、メールアドレスとパスワードによるCookieセッション認証までを実装しています。商品、カート、注文、管理機能は後続PRで追加します。
 
 ## Requirements
 
@@ -17,6 +17,9 @@
 ```bash
 pnpm install
 cp .env.example .env.local
+pnpm db:up
+pnpm db:migrate
+pnpm db:seed
 pnpm dev
 ```
 
@@ -32,6 +35,13 @@ pnpm test:unit
 pnpm test:frontend
 pnpm test:backend
 pnpm test:e2e
+pnpm db:up
+pnpm db:down
+pnpm db:generate
+pnpm db:migrate
+pnpm db:seed
+pnpm db:prepare:test
+pnpm db:prepare:e2e
 pnpm build
 pnpm storybook
 pnpm build-storybook
@@ -49,17 +59,19 @@ pnpm exec playwright install chromium
 
 ## Database
 
-開発DBとバックエンド結合テストDBは別のPostgreSQLコンテナ・接続先を使用します。
+開発DB、バックエンド結合テストDB、E2E DBは別のPostgreSQLコンテナ・接続先を使用します。
 
 ```bash
 pnpm db:up
 pnpm db:migrate
+pnpm db:seed
 ```
 
 | 用途 | 環境変数 | DB | 接続先 |
 | --- | --- | --- | --- |
 | 開発 | `DATABASE_URL` | `mockshop_dev` | `localhost:5432` |
 | Backend結合 | `TEST_DATABASE_URL` | `mockshop_test` | `localhost:5433` |
+| E2E | `E2E_DATABASE_URL` | `mockshop_e2e` | `localhost:5434` |
 
 バックエンド結合テストは、専用テストDBを初期化してmigrationを適用してから実行します。
 
@@ -69,6 +81,24 @@ pnpm test:backend
 ```
 
 `db:prepare:test` は `NODE_ENV=test`、DB名、開発DBとの接続先分離、実際の接続先を検証してからテストDBだけを初期化します。`TEST_DATABASE_URL` がない場合に `DATABASE_URL` へフォールバックしません。
+
+E2EはPlaywrightのglobal setupから専用DBをresetし、migrationと固定seedを適用します。実行中の開発serverを再利用せず、`localhost:3105`でE2E専用serverを起動します。
+
+```bash
+pnpm db:prepare:e2e
+pnpm test:e2e
+```
+
+## Authentication
+
+開発・E2E用の架空アカウントは次の2件です。`db:seed` は同じ固定データを冪等に適用します。
+
+| ロール | メールアドレス | パスワード |
+| --- | --- | --- |
+| 購入者 | `customer@example.test` | `CustomerPass123!` |
+| 管理者 | `admin@example.test` | `AdminPass123!` |
+
+パスワードはscrypt hashだけをDBへ保存します。ログイン成功時の生セッショントークンはHttpOnly Cookieだけへ、SHA-256 hashはDBだけへ保存します。
 
 schema変更時はmigrationを生成し、生成されたSQLとmetadataをコミットします。mainへ取り込まれたmigrationは編集しません。
 

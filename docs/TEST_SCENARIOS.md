@@ -60,6 +60,7 @@
 | `DB-004` | 同じcartとproductの行が存在 | 重複するcart itemを直接insert | 複合一意制約で拒否 | Backend結合 |
 | `DB-005` | 参照先のないID | session、cart item、order itemを直接insert | 外部キー制約で拒否 | Backend結合 |
 | `DB-006` | coupon table | 範囲外割引率、負の最低購入額、不正な期間を直接insert | CHECK制約で拒否 | Backend結合 |
+| `DB-007` | users、sessions table | 非正規化・重複email、不正role、不正・重複token hashを直接insert | CHECK、enum、一意制約で拒否 | Backend結合 |
 
 ## 5. 認証・認可
 
@@ -76,7 +77,7 @@
 | `AUTH-009` | 購入者A・Bの注文あり | AがBの注文IDを取得 | 404 `ORDER_NOT_FOUND`、Bの情報を本文へ含めない | Backend結合 | - |
 | `AUTH-010` | 管理者でログイン | カートAPIへアクセス | 403 `FORBIDDEN` | Backend結合 | - |
 | `AUTH-011` | ログインAPIが500 | フォームを送信 | 入力を保持し、再試行可能なエラーを表示 | Front結合 | - |
-| `AUTH-012` | 正しい認証情報を返すMSW handler | ログインフォームを送信 | 購入者向け画面へ遷移し、ログイン状態を表示 | Front結合 | E2E |
+| `AUTH-012` | 正しい認証情報を返すMSW handler | ログインフォームを送信 | トップへ遷移し、headerにログイン状態を表示 | Front結合 | E2E |
 
 ## 6. 商品一覧・詳細
 

@@ -170,7 +170,9 @@ pnpm db:up
 pnpm db:down
 pnpm db:generate
 pnpm db:migrate
+pnpm db:seed
 pnpm db:prepare:test
+pnpm db:prepare:e2e
 pnpm build
 pnpm build-storybook
 ```
@@ -178,8 +180,11 @@ pnpm build-storybook
 コマンドを追加・改名した場合は、この文書、README、GitHub Actionsを同じPRで更新してください。
 
 - `db:migrate` は `DATABASE_URL` へ未適用migrationだけを適用する。
+- `db:seed` は `DATABASE_URL` へ固定の開発用購入者・管理者を冪等に適用する。
 - `db:prepare:test` は `TEST_DATABASE_URL` の専用テストDBだけをguard後に初期化し、migrationを適用する。
+- `db:prepare:e2e` は `E2E_DATABASE_URL` の専用E2E DBだけをguard後に初期化し、migrationと固定seedを適用する。
 - `test:backend` は準備済みのテストDBに対して実行し、DB準備を暗黙に行わない。
+- `test:e2e` はPlaywright global setupでE2E DBを再準備し、開発serverや開発DBを再利用しない。
 
 ## PR前の確認
 

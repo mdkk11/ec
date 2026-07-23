@@ -115,7 +115,9 @@ tests/
 | `expires_at` | 有効期限 |
 | `created_at` | 作成日時 |
 
-ログイン時に32 byte以上の暗号学的乱数をbase64url形式の生トークンとして発行する。Cookie `mockshop_session` には生トークン、DBにはSHA-256ハッシュだけを保存し、検索時も受信トークンをハッシュ化して照合する。Cookieは `Path=/`、`HttpOnly`、`SameSite=Lax`、有効期限7日とし、本番相当環境では `Secure` を付与する。ログアウト時はDB行を削除し、同じPath・属性でCookieを失効させる。期限切れセッションの定期削除ジョブは対象外とする。
+メールアドレスは前後空白を除去して小文字へ正規化し、正規化済みの値だけをDBへ保存する。パスワードは16 byte salt、64 byte key、`N=16384`、`r=8`、`p=1` のscrypt hashとして保存し、比較にはconstant-time APIを使用する。未知emailでも固定dummy hashを検証し、認証失敗の応答を統一する。
+
+ログイン時に32 byteの暗号学的乱数をbase64url形式の生トークンとして発行する。Cookie `mockshop_session` には生トークン、DBにはSHA-256ハッシュだけを保存し、検索時も受信トークンをハッシュ化して照合する。Cookieは `Path=/`、`HttpOnly`、`SameSite=Lax`、`Max-Age=604800` とし、`NODE_ENV=production` では `Secure` を付与する。ログアウト時はDB行を削除し、同じPath・属性でCookieを失効させる。期限切れセッションの定期削除ジョブは対象外とする。
 
 ### `products`
 
