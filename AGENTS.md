@@ -166,11 +166,20 @@ pnpm test:frontend
 pnpm test:backend
 pnpm test:e2e
 pnpm test:vrt
+pnpm db:up
+pnpm db:down
+pnpm db:generate
+pnpm db:migrate
+pnpm db:prepare:test
 pnpm build
 pnpm build-storybook
 ```
 
 コマンドを追加・改名した場合は、この文書、README、GitHub Actionsを同じPRで更新してください。
+
+- `db:migrate` は `DATABASE_URL` へ未適用migrationだけを適用する。
+- `db:prepare:test` は `TEST_DATABASE_URL` の専用テストDBだけをguard後に初期化し、migrationを適用する。
+- `test:backend` は準備済みのテストDBに対して実行し、DB準備を暗黙に行わない。
 
 ## PR前の確認
 

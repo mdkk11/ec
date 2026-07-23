@@ -36,3 +36,43 @@ jobs:
         run: pnpm test:unit
       - name: Frontend integration tests
         run: pnpm test:frontend
+
+  backend-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NODE_ENV: test
+      TEST_DATABASE_URL: postgresql://mockshop:mockshop_local@localhost:5432/mockshop_test
+    services:
+      postgres:
+        image: postgres:18.4-alpine
+        env:
+          POSTGRES_DB: mockshop_test
+          POSTGRES_PASSWORD: mockshop_local
+          POSTGRES_USER: mockshop
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U mockshop -d mockshop_test"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.15.1
+          run_install: false
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Prepare backend database
+        run: pnpm db:prepare:test
+      - name: Backend integration tests
+        run: pnpm test:backend

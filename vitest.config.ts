@@ -34,6 +34,18 @@ export default defineConfig({
           setupFiles: ['./src/test/setup-frontend.ts'],
         },
       },
+      {
+        extends: true,
+        test: {
+          name: 'backend',
+          environment: 'node',
+          include: ['tests/backend/**/*.backend.test.ts'],
+          setupFiles: ['./src/test/setup-backend.ts'],
+          fileParallelism: false,
+          maxWorkers: 1,
+          retry: 0,
+        },
+      },
     ],
   },
 })

@@ -2,12 +2,13 @@
 
 小規模ECを題材に、単体テスト、フロントエンド結合テスト、バックエンド結合テスト、E2E、VRTの責任範囲と運用を検証するサンドボックスです。
 
-現在は `docs/DEVELOPMENT_PLAN.md` のPhase 1として、Vite試作のビジュアルを引き継いだNext.jsトップページと非DBテスト基盤までを実装しています。商品、認証、カート、注文、管理機能は後続Phaseで追加します。
+現在は `docs/DEVELOPMENT_PLAN.md` のPhase 2として、Next.jsトップページ、非DBテスト基盤、PostgreSQL・DrizzleのDB共通基盤までを実装しています。商品、認証、カート、注文、管理機能は後続PRで追加します。
 
 ## Requirements
 
 - Node.js 24
 - pnpm 11
+- Docker / Docker Compose
 
 リポジトリの `.node-version` と同じNode.js、および `package.json` の `packageManager` と同じpnpmを使用してください。Vitestとjsdomの対応範囲外であるNode.js 23では検証しません。
 
@@ -15,6 +16,7 @@
 
 ```bash
 pnpm install
+cp .env.example .env.local
 pnpm dev
 ```
 
@@ -28,6 +30,7 @@ pnpm lint
 pnpm typecheck
 pnpm test:unit
 pnpm test:frontend
+pnpm test:backend
 pnpm test:e2e
 pnpm build
 pnpm storybook
@@ -43,6 +46,41 @@ pnpm exec playwright install chromium
 `vite`はNext.jsアプリの実行には使用しません。Vitestと`@storybook/nextjs-vite`が要求するビルダーとしてdevDependencyに限定しています。
 
 `postcss`と`sharp`は、Next.jsが参照するバージョンに公開済みの脆弱性があるため、修正版へ一時的にoverrideしています。Next.js側の依存が更新された時点でoverrideを再評価します。
+
+## Database
+
+開発DBとバックエンド結合テストDBは別のPostgreSQLコンテナ・接続先を使用します。
+
+```bash
+pnpm db:up
+pnpm db:migrate
+```
+
+| 用途 | 環境変数 | DB | 接続先 |
+| --- | --- | --- | --- |
+| 開発 | `DATABASE_URL` | `mockshop_dev` | `localhost:5432` |
+| Backend結合 | `TEST_DATABASE_URL` | `mockshop_test` | `localhost:5433` |
+
+バックエンド結合テストは、専用テストDBを初期化してmigrationを適用してから実行します。
+
+```bash
+pnpm db:prepare:test
+pnpm test:backend
+```
+
+`db:prepare:test` は `NODE_ENV=test`、DB名、開発DBとの接続先分離、実際の接続先を検証してからテストDBだけを初期化します。`TEST_DATABASE_URL` がない場合に `DATABASE_URL` へフォールバックしません。
+
+schema変更時はmigrationを生成し、生成されたSQLとmetadataをコミットします。mainへ取り込まれたmigrationは編集しません。
+
+```bash
+pnpm db:generate
+```
+
+コンテナを停止する場合は次を実行します。開発DBのvolumeは削除しません。
+
+```bash
+pnpm db:down
+```
 
 ## Deterministic fixtures
 

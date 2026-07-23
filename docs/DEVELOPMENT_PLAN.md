@@ -218,8 +218,8 @@ PRはレビュー可能な目的単位とし、実装だけ・テストだけに
 | 01 | 設計文書を追加 | 6文書のみ | リンク・用語・対象外の整合性 |
 | 02 | Next.jsへ移行 | App Router、共通layout、デザインtoken、Vite撤去 | lint、typecheck、build、3 viewport目視 |
 | 03 | テスト基盤を導入 | Vitest、Testing Library、MSW、Storybook、Playwright、非DB CI | unit/front smoke、Storybook build |
-| 04 | DB基盤を導入 | PostgreSQL、Drizzle、migration、seed、Backend結合helper | 空DB migration、DB guard、Backend smoke |
-| 05 | 簡易ログインを追加 | users/sessions、Cookie、ロール、ログインUI/API | `AUTH-001`〜`005`、`008`、`011`、`012`、認証E2E |
+| 04 | DB基盤を導入 | PostgreSQL、Drizzle、migration、Backend結合helper | 空DB migration、DB guard、Backend smoke |
+| 05 | 簡易ログインを追加 | users/sessions、開発・E2E seed、Cookie、ロール、ログインUI/API | `AUTH-001`〜`005`、`008`、`011`、`012`、認証E2E |
 | 06 | 商品閲覧を追加 | products schema/API、一覧・詳細、story、VRT CI | `PRODUCT-*`、`API-001`、`002`、該当VRT |
 | 07 | カートを追加 | carts/items、API、画面、story | `CART-*`、該当VRT |
 | 08 | クーポンを追加 | coupons、計算、適用UI/API、story、E2E CI | `UNIT-COUPON-*`、`COUPON-001`〜`007`、`009`、`010` |
