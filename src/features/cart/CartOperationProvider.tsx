@@ -19,7 +19,9 @@ import type { CartDto } from '@/contracts/cart'
 import { useSession } from '@/features/auth/SessionProvider'
 import {
   addCartItem,
+  applyCartCoupon,
   deleteCartItem,
+  removeCartCoupon,
   updateCartItem,
 } from '@/lib/api-client/cart'
 import { ApiClientError } from '@/lib/api-client/request-json'
@@ -29,7 +31,9 @@ export const cartQueryKey = (customerId: string) =>
 
 export type CartOperation =
   | { kind: 'add'; productId: string; quantity: number }
+  | { code: string; kind: 'apply-coupon' }
   | { itemId: string; kind: 'delete' }
+  | { kind: 'remove-coupon' }
   | { itemId: string; kind: 'update'; quantity: number }
 
 type PendingOperation = {
@@ -65,9 +69,14 @@ function operationFingerprint(operation: CartOperation) {
 }
 
 function operationTarget(operation: CartOperation) {
-  return operation.kind === 'add'
-    ? `product:${operation.productId}`
-    : `item:${operation.itemId}`
+  if (operation.kind === 'add') return `product:${operation.productId}`
+  if (
+    operation.kind === 'apply-coupon' ||
+    operation.kind === 'remove-coupon'
+  ) {
+    return 'coupon'
+  }
+  return `item:${operation.itemId}`
 }
 
 function isQueuedUpdateForSameItem(
@@ -125,7 +134,13 @@ export function CartOperationProvider({
           signal,
         )
       }
-      return deleteCartItem(operation.itemId, signal)
+      if (operation.kind === 'delete') {
+        return deleteCartItem(operation.itemId, signal)
+      }
+      if (operation.kind === 'apply-coupon') {
+        return applyCartCoupon({ code: operation.code }, signal)
+      }
+      return removeCartCoupon(signal)
     },
     retry: false,
   })

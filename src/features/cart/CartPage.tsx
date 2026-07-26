@@ -139,8 +139,14 @@ export function CartPage() {
   return (
     <CartView
       cart={query.data}
+      onApplyCoupon={(code) => {
+        return operations.execute({ code, kind: 'apply-coupon' })
+      }}
       onDelete={(itemId) => {
         void operations.execute({ itemId, kind: 'delete' })
+      }}
+      onRemoveCoupon={() => {
+        return operations.execute({ kind: 'remove-coupon' })
       }}
       onUpdate={(itemId, quantity) => {
         return operations.execute({ itemId, kind: 'update', quantity })

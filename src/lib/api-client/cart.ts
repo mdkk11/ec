@@ -1,4 +1,5 @@
 import {
+  type ApplyCouponRequest,
   type AddCartItemRequest,
   cartResponseSchema,
   type UpdateCartItemRequest,
@@ -52,4 +53,23 @@ export function deleteCartItem(itemId: string, signal?: AbortSignal) {
       signal,
     },
   )
+}
+
+export function applyCartCoupon(
+  input: ApplyCouponRequest,
+  signal?: AbortSignal,
+) {
+  return requestJson('/api/cart/coupon', cartResponseSchema, {
+    body: JSON.stringify(input),
+    headers: jsonHeaders,
+    method: 'PUT',
+    signal,
+  })
+}
+
+export function removeCartCoupon(signal?: AbortSignal) {
+  return requestJson('/api/cart/coupon', cartResponseSchema, {
+    method: 'DELETE',
+    signal,
+  })
 }
