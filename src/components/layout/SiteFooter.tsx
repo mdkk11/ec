@@ -4,9 +4,9 @@ const footerGroups = [
   {
     title: 'SHOP',
     items: [
-      { href: '#new', label: '新着アイテム' },
-      { href: '#edit', label: '季節の編集' },
-      { href: '#journal', label: 'MockShopについて' },
+      { href: '/products', label: '商品一覧' },
+      { href: '/#edit', label: '季節の編集' },
+      { href: '/#journal', label: 'MockShopについて' },
     ],
   },
   {

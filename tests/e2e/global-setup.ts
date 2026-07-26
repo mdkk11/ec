@@ -4,7 +4,10 @@ import {
   requireDatabaseEnvironment,
 } from '@/server/db/environment'
 import { migrateDatabase } from '@/server/db/migrate'
-import { seedAuthenticationUsers } from '@/server/db/seed'
+import {
+  seedAuthenticationUsers,
+  seedCatalogProducts,
+} from '@/server/db/seed'
 import { resetTestDatabase } from '@/server/db/test-lifecycle'
 
 export default async function globalSetup() {
@@ -22,6 +25,7 @@ export default async function globalSetup() {
     })
     await migrateDatabase(client.db)
     await seedAuthenticationUsers(client.db)
+    await seedCatalogProducts(client.db)
   } finally {
     await client.close()
   }

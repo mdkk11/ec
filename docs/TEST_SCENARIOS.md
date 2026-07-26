@@ -52,8 +52,8 @@
 
 | ID | 前提 | 操作 | 期待結果 | 主担当 |
 | --- | --- | --- | --- | --- |
-| `API-001` | 商品APIの必須fieldが欠けたMSW response | 一覧を読み込む | 成功表示へ進まず、共通の再試行可能エラーを表示 | Front結合 |
-| `API-002` | 商品一覧APIがnetwork error | 一覧を読み込み、再試行 | 通信エラーを表示し、再試行成功後に商品を表示 | Front結合 |
+| `API-001` | 公開DTO契約に違反する商品がDBに存在 | 商品一覧・詳細APIを取得 | 200を返さず500 `INTERNAL_ERROR` | Backend結合 |
+| `API-002` | カート取得APIがnetwork error | TanStack Queryの再試行操作を実行 | 通信エラーを表示し、再試行成功後にカートを表示 | Front結合 |
 | `DB-001` | 空のPostgreSQL database | 全migrationを適用 | errorなく最新schemaになる | Backend結合 |
 | `DB-002` | 商品・カート・注文table | 負の価格・在庫、0以下のversionを直接insert/update | CHECK制約で拒否 | Backend結合 |
 | `DB-003` | cart item table | 数量0を直接insert | CHECK制約で拒否 | Backend結合 |
@@ -83,19 +83,19 @@
 
 | ID | 前提 | 操作 | 期待結果 | 主担当 | 補助確認 |
 | --- | --- | --- | --- | --- | --- |
-| `PRODUCT-001` | 公開商品が複数存在 | 商品一覧を取得 | 公開商品だけを表示 | Backend結合 | E2E |
+| `PRODUCT-001` | 公開商品が複数存在 | 商品一覧を取得 | 公開商品だけを `created_at` 降順、同時刻は `id` 昇順で表示 | Backend結合 | E2E |
 | `PRODUCT-002` | 公開商品が0件 | 商品一覧を表示 | 空状態と商品が追加されるまで待つ説明を表示 | Front結合 | VRT |
-| `PRODUCT-003` | 一覧APIが保留中 | 商品一覧を開く | ローディング状態を表示 | Front結合 | VRT |
-| `PRODUCT-004` | 一覧APIが500 | 商品一覧を開く | エラーと再試行操作を表示 | Front結合 | VRT |
-| `PRODUCT-005` | 1回目失敗、2回目成功 | 再試行 | エラーが消え商品を表示 | Front結合 | - |
+| `PRODUCT-003` | 商品一覧のServer Componentが描画中 | 商品一覧を開く | route loading状態を表示 | Front結合 | VRT |
+| `PRODUCT-004` | 商品一覧のserver取得が失敗 | 商品一覧を開く | error boundaryと再試行操作を表示 | Front結合 | VRT |
+| `PRODUCT-005` | 商品一覧のerror boundaryを表示中 | 再試行 | `reset()`でserver segmentの再描画を要求 | Front結合 | - |
 | `PRODUCT-006` | 非公開商品が存在 | 購入者が詳細APIへアクセス | 404 `PRODUCT_NOT_FOUND` | Backend結合 | - |
 | `PRODUCT-007` | 存在しないID | 商品詳細を開く | 404表示と一覧へ戻る導線 | Front結合 | - |
-| `PRODUCT-008` | 在庫0の公開商品 | 商品詳細を表示 | 在庫切れ表示、カート追加不可 | Front結合 | VRT |
+| `PRODUCT-008` | 在庫0の公開商品 | 商品詳細を表示 | 在庫切れであることを表示 | Front結合 | VRT |
 | `PRODUCT-009` | 長い商品名・説明 | 各viewportでstoryを表示 | 文字切れや操作重なりがない | VRT | - |
-| `PRODUCT-010` | 公開商品を返すMSW handler | 商品一覧を表示 | 商品名・価格・在庫状態と詳細導線を表示 | Front結合 | E2E |
-| `PRODUCT-011` | 公開・在庫ありの商品 | 商品詳細を表示 | 商品情報と利用可能なカート追加操作を表示 | Front結合 | E2E |
-| `PRODUCT-012` | 詳細APIが保留中 | 商品詳細を開く | 詳細ローディング状態を表示 | Front結合 | VRT |
-| `PRODUCT-013` | 詳細APIが500 | 商品詳細を開く | 再試行可能なエラーと一覧への導線を表示 | Front結合 | - |
+| `PRODUCT-010` | 公開商品DTOが存在 | 商品一覧を表示 | 商品名・価格・在庫状態と詳細導線を表示 | Front結合 | E2E |
+| `PRODUCT-011` | 公開・在庫ありの商品 | 商品詳細を表示 | 商品情報と在庫ありであることを表示 | Front結合 | E2E |
+| `PRODUCT-012` | 商品詳細のServer Componentが描画中 | 商品詳細を開く | route loading状態を表示 | Front結合 | VRT |
+| `PRODUCT-013` | 商品詳細のserver取得が失敗 | 商品詳細を開く | error boundaryに再試行と一覧への導線を表示 | Front結合 | - |
 
 ## 7. カート
 
@@ -114,6 +114,8 @@
 | `CART-011` | 別customerのcart item ID | 更新または削除 | 404 `CART_ITEM_NOT_FOUND`、他人のカートを変更しない | Backend結合 | - |
 | `CART-012` | 商品が非公開または存在しない | カートへ追加 | 404 `PRODUCT_NOT_FOUND`、カートを変更しない | Backend結合 | Front結合 |
 | `CART-013` | 自分のカートに商品あり | cart itemを削除 | DB行を削除し、cart versionを1増やして再計算結果を返す | Backend結合 | - |
+| `CART-014` | ログイン済み、公開・在庫ありの商品詳細 | カートへ追加 | 商品追加APIを1回送信し、追加後のカート状態を通知 | Front結合 | E2E |
+| `CART-015` | 公開・在庫0の商品詳細 | 商品詳細を表示 | カート追加操作を利用不可にし、追加APIを送信しない | Front結合 | VRT |
 
 ## 8. クーポン
 
@@ -177,6 +179,7 @@
 | `E2E-004` | ロール制御 | 購入者で管理URLへ移動→アクセス拒否 | Chromium / Firefox / WebKit |
 | `E2E-005` | モバイル購入 | モバイルviewportで一覧→詳細→カート→注文 | Mobile Chromium |
 | `E2E-006` | 注文状態管理 | 管理者ログイン→受付注文を処理中へ更新→表示確認 | Chromium / Firefox / WebKit |
+| `E2E-007` | 商品閲覧 | Server Componentの商品一覧→キーボードで詳細→一覧へ戻る | Chromium |
 
 `E2E-002` の途中状態はテスト専用HTTP APIで作らず、テストプロセスから専用fixture更新スクリプトを実行する。ビジネスルールの全境界値やDB同時接続はE2Eへ持ち込まない。
 
@@ -186,7 +189,7 @@
 | --- | --- | --- | --- |
 | `VRT-001` | ProductCard | 通常、在庫切れ、長い名前 | 375 / 1440 |
 | `VRT-002` | ProductList | 通常、空、ローディング、エラー | 375 / 768 / 1440 |
-| `VRT-003` | ProductDetail | 通常、在庫切れ | 375 / 1440 |
+| `VRT-003` | ProductDetail | 通常、在庫切れ、長い商品名・説明 | 375 / 1440 |
 | `VRT-004` | Cart | 通常、空、更新中、在庫競合 | 375 / 1440 |
 | `VRT-005` | CouponForm | 適用前、適用済み、入力エラー、期限切れ | 375 / 1440 |
 | `VRT-006` | OrderHistory | 通常、空、ローディング、エラー | 375 / 1440 |

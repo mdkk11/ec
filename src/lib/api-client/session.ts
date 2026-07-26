@@ -6,10 +6,6 @@ import {
 
 import { requestJson, requestNoContent } from './request-json'
 
-export function getCurrentSession() {
-  return requestJson('/api/session', sessionResponseSchema)
-}
-
 export function login(input: LoginRequest) {
   const normalizedInput = loginRequestSchema.parse(input)
 

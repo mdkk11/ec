@@ -5,7 +5,6 @@ import {
   type ReactNode,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useRef,
   useState,
@@ -13,10 +12,7 @@ import {
 
 import type { UserDto } from '@/contracts/session'
 import { ApiClientError } from '@/lib/api-client/request-json'
-import {
-  getCurrentSession,
-  logout as requestLogout,
-} from '@/lib/api-client/session'
+import { logout as requestLogout } from '@/lib/api-client/session'
 
 export type SessionState =
   | { status: 'anonymous' }
@@ -26,58 +22,25 @@ export type SessionState =
 
 type SessionContextValue = {
   logout: () => Promise<void>
-  refresh: () => Promise<void>
+  refresh: () => void
   setAuthenticated: (user: UserDto) => void
   state: SessionState
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null)
 
-export function SessionProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<SessionState>({ status: 'loading' })
+export function SessionProvider({
+  children,
+  initialState = { status: 'anonymous' },
+}: {
+  children: ReactNode
+  initialState?: SessionState
+}) {
+  const [state, setState] = useState<SessionState>(initialState)
   const requestVersion = useRef(0)
 
-  const refresh = useCallback(async () => {
-    const version = requestVersion.current + 1
-    requestVersion.current = version
-    setState({ status: 'loading' })
-    try {
-      const session = await getCurrentSession()
-      if (requestVersion.current !== version) return
-      setState({ status: 'authenticated', user: session.user })
-    } catch (error) {
-      if (requestVersion.current !== version) return
-      if (error instanceof ApiClientError && error.status === 401) {
-        setState({ status: 'anonymous' })
-        return
-      }
-      setState({ status: 'error' })
-    }
-  }, [])
-
-  useEffect(() => {
-    let active = true
-    const version = requestVersion.current + 1
-    requestVersion.current = version
-
-    void getCurrentSession()
-      .then((session) => {
-        if (active && requestVersion.current === version) {
-          setState({ status: 'authenticated', user: session.user })
-        }
-      })
-      .catch((error: unknown) => {
-        if (!active || requestVersion.current !== version) return
-        if (error instanceof ApiClientError && error.status === 401) {
-          setState({ status: 'anonymous' })
-          return
-        }
-        setState({ status: 'error' })
-      })
-
-    return () => {
-      active = false
-    }
+  const refresh = useCallback(() => {
+    window.location.reload()
   }, [])
 
   const setAuthenticated = useCallback((user: UserDto) => {

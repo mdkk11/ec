@@ -4,7 +4,12 @@ import type { ReactNode } from 'react'
 import { SiteFooter } from '@/components/layout/SiteFooter'
 import { SiteHeader } from '@/components/layout/SiteHeader'
 import { SessionProvider } from '@/features/auth/SessionProvider'
+import { loadInitialSessionState } from '@/features/auth/server/session-page-data'
 
+import '@fontsource-variable/inter'
+import '@fontsource-variable/noto-sans-jp'
+import '@fontsource-variable/cormorant-garamond'
+import '@fontsource-variable/noto-serif-jp'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -16,7 +21,11 @@ export const metadata: Metadata = {
   description: '日常に長く残る服と道具を、静かな編集で届けるオンラインストア。',
 }
 
-export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+export default async function RootLayout({
+  children,
+}: Readonly<{ children: ReactNode }>) {
+  const initialSessionState = await loadInitialSessionState()
+
   return (
     <html lang="ja">
       <body>
@@ -26,7 +35,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         >
           メインコンテンツへ移動
         </a>
-        <SessionProvider>
+        <SessionProvider initialState={initialSessionState}>
           <div className="grid min-h-screen grid-rows-[auto_1fr_auto]">
             <SiteHeader />
             <main id="main-content" tabIndex={-1}>

@@ -27,6 +27,7 @@ EC機能の網羅性より、テスト境界の明確さ、決定性、失敗原
 ## 採用技術と基本方針
 
 - Next.js App Router / React / TypeScript
+- TanStack Query（ブラウザでserver stateの取得・更新が必要な機能だけ）
 - PostgreSQL / Drizzle ORM / Zod
 - Vitest / Testing Library / MSW
 - Playwright / Storybook
@@ -43,14 +44,17 @@ EC機能の網羅性より、テスト境界の明確さ、決定性、失敗原
 依存方向は次を守ってください。
 
 ```text
-React UI -> API client -> JSON Route Handler -> feature use case -> Drizzle -> PostgreSQL
+Server Component -> server-only feature facade -> feature use case -> Drizzle -> PostgreSQL
+Client Component -> TanStack Query -> API client -> JSON Route Handler -> feature use case -> Drizzle -> PostgreSQL
 ```
 
-- UIはDrizzleやserver専用moduleをimportしない。
-- UIからの動的な読取・更新は共通APIクライアントとJSON Route Handlerを通す。
+- 読取専用の初期表示はServer Componentで取得し、自分自身のRoute HandlerをHTTP経由で呼ばない。
+- Server Componentは機能単位のserver-only facadeだけをimportし、DrizzleやDB接続を直接importしない。
+- ブラウザで再取得・更新・競合制御が必要なserver stateはTanStack Queryと共通APIクライアントを使い、JSON Route Handlerを通す。
+- `useEffect`でAPI通信を開始・管理しない。`useEffect`は外部systemとの同期に限定する。
 - Server Actionsを同じ機能の別API境界として追加しない。
 - Route HandlerはZod入力検証、認証・認可、HTTP変換を担当する。
-- API request/response/errorのZod schemaは `src/contracts` に置き、APIクライアント、Route Handler、MSWで共有する。
+- API request/response/errorのZod schemaは `src/contracts` に置き、該当するAPIクライアント、Route Handler、MSWで共有する。
 - ビジネスルールとtransactionは機能単位のユースケースへ置く。
 - Drizzle queryをReactコンポーネントやdomainの純粋関数へ混ぜない。
 - feature固有コードを早期に共通化しない。3回という回数だけでなく責務が同じと確認してから共通化する。
@@ -96,8 +100,9 @@ React UI -> API client -> JSON Route Handler -> feature use case -> Drizzle -> P
 
 ### フロントエンド結合
 
-- 実コンポーネントツリーと共通APIクライアントを使う。
-- HTTPだけをMSWで置換し、APIクライアントをmodule mockしない。
+- Server Component表示は表示コンポーネントとloading/error/not-found境界をDBなしで検証し、実データ取得との結合はE2Eで確認する。
+- Client Componentの通信は実コンポーネントツリー、TanStack Query、共通APIクライアントを使う。
+- Client通信のHTTPだけをMSWで置換し、APIクライアントをmodule mockしない。
 - 正常、空、ローディング、4xx、5xx、ネットワーク失敗、409、必要なrequest raceを扱う。
 - 実装詳細ではなく、role、label、text、focus、aria-liveを検証する。
 
@@ -166,6 +171,7 @@ pnpm test:frontend
 pnpm test:backend
 pnpm test:e2e
 pnpm test:vrt
+pnpm test:vrt:update
 pnpm db:up
 pnpm db:down
 pnpm db:generate

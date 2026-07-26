@@ -142,15 +142,6 @@ describe('ログインフォーム', () => {
 
   it('AUTH-012: 実API clientの成功結果をheaderへ反映してtopへ遷移する', async () => {
     server.use(
-      http.get('/api/session', () =>
-        HttpResponse.json(
-          {
-            code: 'UNAUTHENTICATED',
-            message: 'ログインが必要です。',
-          },
-          { status: 401 },
-        ),
-      ),
       http.post('/api/session', () =>
         HttpResponse.json({ user: authenticatedUser }),
       ),
@@ -158,7 +149,7 @@ describe('ログインフォーム', () => {
 
     const user = userEvent.setup()
     render(
-      <SessionProvider>
+      <SessionProvider initialState={{ status: 'anonymous' }}>
         <SiteHeader />
         <LoginPage />
       </SessionProvider>,
@@ -172,50 +163,20 @@ describe('ログインフォーム', () => {
     expect(router.replace).toHaveBeenCalledWith('/')
   })
 
-  it('古い初期session応答でlogin成功状態を上書きしない', async () => {
-    let releaseInitialSession: (() => void) | undefined
-    const initialSessionGate = new Promise<void>((resolve) => {
-      releaseInitialSession = resolve
-    })
-    server.use(
-      http.get('/api/session', async () => {
-        await initialSessionGate
-        return HttpResponse.json(
-          {
-            code: 'UNAUTHENTICATED',
-            message: 'ログインが必要です。',
-          },
-          { status: 401 },
-        )
-      }),
-      http.post('/api/session', () =>
-        HttpResponse.json({ user: authenticatedUser }),
-      ),
-    )
-
-    const user = userEvent.setup()
+  it('Server Componentから渡された認証状態を初期表示する', () => {
     render(
-      <SessionProvider>
+      <SessionProvider
+        initialState={{ status: 'authenticated', user: authenticatedUser }}
+      >
         <SiteHeader />
-        <LoginPage />
       </SessionProvider>,
     )
 
-    await fillCredentials(user)
-    await user.click(screen.getByRole('button', { name: 'ログイン' }))
-    expect(await screen.findByText(authenticatedUser.email)).toBeVisible()
-
-    releaseInitialSession?.()
-    await waitFor(() =>
-      expect(screen.getByText(authenticatedUser.email)).toBeVisible(),
-    )
+    expect(screen.getByText(authenticatedUser.email)).toBeVisible()
   })
 
   it('logoutの500では認証表示を維持して再試行可能なerrorを表示する', async () => {
     server.use(
-      http.get('/api/session', () =>
-        HttpResponse.json({ user: authenticatedUser }),
-      ),
       http.delete('/api/session', () =>
         HttpResponse.json(
           {
@@ -229,7 +190,9 @@ describe('ログインフォーム', () => {
 
     const user = userEvent.setup()
     render(
-      <SessionProvider>
+      <SessionProvider
+        initialState={{ status: 'authenticated', user: authenticatedUser }}
+      >
         <SiteHeader />
       </SessionProvider>,
     )
