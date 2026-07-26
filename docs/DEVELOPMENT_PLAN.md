@@ -11,7 +11,7 @@
 - 現在のViteコードは `DESIGN.md` とともにデザイン参照として扱い、Next.jsへ段階的に作り直す。
 - 一時的にViteとNext.jsの2アプリを長期間並存させない。Next.js基盤のPRで実行入口を切り替える。
 - 商品は単一SKU、クーポンは定率1件、注文は住所・配送・決済なしという最小モデルを維持する。
-- 各機能はJSON Route Handler、機能単位ユースケース、Drizzle、React UIの順に境界を揃える。
+- 読取専用画面はServer Componentとserver-only facade、ブラウザ操作が必要なserver stateはTanStack QueryとJSON Route Handlerを使い、どちらも機能単位ユースケースとDrizzleへ接続する。
 - ビジネスルールは単体、UI状態はフロントエンド結合、DB整合性はバックエンド結合、代表導線はE2E、見た目はVRTで検証する。
 - あるフェーズのDoDを満たすまでは、その機能へ追加要件を重ねない。
 - 本番デプロイは今回の完了条件に含めない。
@@ -87,7 +87,7 @@
 
 - `products` schema、migration、fixtureを追加する。
 - 公開商品一覧・詳細のJSON APIを実装する。
-- 商品一覧・商品詳細画面を実装する。
+- 商品一覧・商品詳細をServer Componentで実装する。
 - 正常、空、ローディング、エラー、404、在庫切れを実装する。
 - ProductCard、ProductList、ProductDetailのStorybook storyとVRTを追加する。
 - GitHub Actionsに `storybook-vrt` ジョブを追加し、以後のPRで必須checkとする。
@@ -99,8 +99,9 @@
 - 公開商品だけが購入者APIへ返り、非公開商品は詳細APIでも404になる。
 - 価格・在庫のDB制約が実DBで検証される。
 - `PRODUCT-001`〜`PRODUCT-013` の該当テストが成功する。
-- `API-001`、`API-002` でschema不正とnetwork errorを共通エラーへ変換できる。
-- 一覧・詳細の5状態をフロントエンド結合で確認できる。
+- `API-001` で公開APIがschema違反の成功レスポンスを返さないことを確認できる。
+- 一覧・詳細の表示状態とroute境界をフロントエンド結合、Server Componentから実DBまでを商品閲覧E2Eで確認できる。
+- `E2E-007` で商品画面がブラウザから商品APIを呼ばず、Server Componentから実DBを取得する。
 - 対象storyのChromium VRTが375px、768px、1440pxの必要な組み合わせで成功する。
 - `storybook-vrt` ジョブがCIで成功する。
 - キーボードで商品一覧から詳細へ移動でき、画像altと見出し構造が適切である。
@@ -110,6 +111,7 @@
 #### 実装範囲
 
 - `carts`、`cart_items`、`coupons` のschema、migration、fixtureを追加する。
+- Client Componentのserver state管理へTanStack Queryを導入し、API通信を`useEffect`で実装しない。
 - カート取得、追加、数量更新、削除APIを実装する。
 - 商品詳細へ在庫状態に応じたカート追加操作を接続する。
 - クーポン適用・解除と金額計算を実装する。
@@ -205,7 +207,7 @@
 
 - `pnpm lint`、`pnpm typecheck`、全テスト、アプリbuild、Storybook buildが成功する。
 - `VRT-001`〜`VRT-008` がChromiumで決定的に成功する。
-- `E2E-001`〜`E2E-006` が定義したブラウザで成功する。
+- `E2E-001`〜`E2E-007` が定義したブラウザで成功する。
 - CI失敗時に責任レベルと差分・traceを特定できる。
 - 基準画像の意図的な更新方法と、更新してはいけない条件が文書化されている。
 - skip、`.only`、理由のないretry、外部ネットワーク依存がない。
@@ -221,8 +223,8 @@ PRはレビュー可能な目的単位とし、実装だけ・テストだけに
 | 03 | テスト基盤を導入 | Vitest、Testing Library、MSW、Storybook、Playwright、非DB CI | unit/front smoke、Storybook build |
 | 04 | DB基盤を導入 | PostgreSQL、Drizzle、migration、Backend結合helper | 空DB migration、DB guard、Backend smoke |
 | 05 | 簡易ログインを追加 | users/sessions、開発・E2E seed、Cookie、ロール、ログインUI/API | `AUTH-001`〜`005`、`008`、`011`、`012`、認証E2E |
-| 06 | 商品閲覧を追加 | products schema/API、一覧・詳細、story、VRT CI | `PRODUCT-*`、`API-001`、`002`、該当VRT |
-| 07 | カートを追加 | carts/items、API、画面、商品詳細の追加操作、story | `CART-*`、該当VRT |
+| 06 | 商品閲覧を追加 | products schema/API、Server Componentの一覧・詳細、story、VRT CI | `PRODUCT-*`、`API-001`、`E2E-007`、該当VRT |
+| 07 | カートを追加 | TanStack Query、carts/items、API、画面、商品詳細の追加操作、story | `CART-*`、`API-002`、該当VRT |
 | 08 | クーポンを追加 | coupons、計算、適用UI/API、story、E2E CI | `UNIT-COUPON-*`、`COUPON-001`〜`007`、`009`、`010` |
 | 09 | 注文・履歴を追加 | orders/items、注文transaction、競合、履歴 | `ORDER-*`、`COUPON-008`、購入E2E |
 | 10 | 商品・在庫管理を追加 | 管理商品API/UI、version競合 | `ADMIN-001`〜`005`、`012`、`E2E-003`、`004` |

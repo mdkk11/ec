@@ -100,12 +100,15 @@ pnpm test:e2e
 | 管理者 | `admin@example.test` | `AdminPass123!` |
 
 パスワードはscrypt hashだけをDBへ保存します。ログイン成功時の生セッショントークンはHttpOnly Cookieだけへ、SHA-256 hashはDBだけへ保存します。
+初期セッションはRoot LayoutのServer Componentで解決し、ブラウザの`useEffect`からセッションAPIを取得しません。
 
 ## Products
 
 `db:seed` とE2E global setupは、固定UUID・固定日時の架空商品を冪等に作成します。公開商品4件のうち1件は在庫切れで、非公開商品1件は公開APIへ返りません。商品画像はリポジトリ内のローカルassetだけを使用します。
 
 公開商品一覧は `created_at DESC, id ASC` の固定順です。検索、絞り込み、利用者が選択する並び替え、商品詳細からのカート追加はこのPhaseに含みません。
+
+商品一覧・詳細はServer Componentからserver-onlyな商品facadeを通して取得します。Server Componentから自分自身のRoute Handlerをfetchせず、ブラウザでserver stateの取得・更新が必要な機能だけTanStack QueryとJSON APIを使用します。API通信を`useEffect`で実装しません。
 
 ## Visual regression tests
 

@@ -32,30 +32,33 @@
 ## 3. システム境界
 
 ```text
-Browser / React UI
+Server Component
         |
-        | JSON over HTTP
         v
-Next.js Route Handlers
-        |
-        | validated input + authenticated actor
-        v
-Feature use cases / domain rules
-        |
-        | Drizzle query / transaction
-        v
-PostgreSQL
+server-only feature facade ---> Feature use cases / domain rules ---> Drizzle ---> PostgreSQL
+
+Client Component ---> TanStack Query ---> API client ---> JSON Route Handler
+                                                        |
+                                                        v
+                                            Feature use cases / domain rules
+                                                        |
+                                                        v
+                                                    Drizzle ---> PostgreSQL
 ```
 
-- UIは共通APIクライアントを通してJSON Route Handlerを呼び出す。
-- フロントエンド結合テストではHTTP境界をMSWで置き換え、UIより下の実装やDBを起動しない。
+- 読取専用の初期表示はServer Componentからserver-only facadeを通して取得する。
+- Cookieセッションの初期状態もRoot Layoutから認証用server-only facadeを通して解決し、ブラウザ起動後のAPI取得に依存しない。
+- Server Componentから自分自身のRoute Handlerをfetchしない。余分なHTTP往復とbuild時のserver依存を作らず、同じfeature use caseを直接再利用する。
+- ブラウザで再取得・更新・競合制御が必要なserver stateだけ、TanStack Queryと共通APIクライアントからJSON Route Handlerを呼び出す。
+- API通信を`useEffect`で開始・管理しない。
+- Server表示の実データ結合はE2E、Client通信のHTTP境界はMSWを使うフロントエンド結合テストで確認する。
 - Route Handlerは入力検証、認証・認可、ユースケース呼び出し、HTTPレスポンスへの変換を担当する。
 - ユースケースはビジネスルール、トランザクション、競合制御を担当する。
 - Drizzleのschemaと機能単位のクエリがPostgreSQLアクセスを担当する。
 - ReactコンポーネントからDrizzleを直接呼ばない。
 - Route Handlerに金額計算や状態遷移のルールを書かない。
 
-Server Actionsを主要なアプリケーション境界にはしない。MSWで置換可能なHTTP境界を維持するため、画面の読取・更新はJSON Route Handlerへ統一する。Server Componentはレイアウトや静的構造には利用できるが、テスト対象となる動的データの取得経路を別に増やさない。
+Server Actionsを主要なアプリケーション境界にはしない。公開APIとClient Componentの通信はJSON Route Handlerへ統一し、Server Componentの読取はserver-only facadeへ統一する。Client側のserver state管理が必要になるまでTanStack Queryを導入しない。
 
 ## 4. 推奨ディレクトリ構成
 
@@ -69,13 +72,13 @@ src/
     orders/              # 注文完了・履歴
   features/
     auth/
-    products/
+    products/            # 表示、Client状態、server-only facade/use case
     cart/
     coupons/
     orders/
     admin/
   components/            # 機能に依存しない小さなUI
-  contracts/             # ブラウザ・Route Handler・MSWで共有するZod API契約
+  contracts/             # API client・Route Handler・MSWで共有するZod API契約
   lib/
     api-client/          # ブラウザから使うJSON APIクライアント
   server/

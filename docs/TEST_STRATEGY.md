@@ -13,7 +13,7 @@
 | レベル | 主な責任 | 対象例 | DB | HTTP | 主なツール |
 | --- | --- | --- | ---: | --- | --- |
 | 単体 | 1つの関数・schema・表示判断の入出力 | 金額計算、クーポン判定、状態遷移、Zod、reducer | 使用しない | 使用しない | Vitest |
-| フロントエンド結合 | 実コンポーネント群とAPIクライアントの協調 | 画面状態、操作、フォーム、エラー表示、アクセシビリティ | 使用しない | MSWで置換 | Vitest、Testing Library、MSW |
+| フロントエンド結合 | 表示コンポーネント、route境界、Client通信の協調 | 画面状態、操作、フォーム、エラー表示、アクセシビリティ | 使用しない | Client通信だけMSWで置換 | Vitest、Testing Library、MSW |
 | バックエンド結合 | HTTP契約と実DBの整合性 | Route Handler契約、Drizzle/DB制約、トランザクション、競合 | 実PostgreSQL | HTTP契約ケースでRoute Handler | Vitest、PostgreSQL |
 | E2E | ブラウザからDBまでの代表的な利用者導線 | ログイン、購入、履歴、管理操作、ロール分離 | 実PostgreSQL | 実アプリ | Playwright |
 | VRT | 安定したUI状態の視覚差分 | 主要コンポーネント、画面状態、レスポンシブ | 使用しない | Storybook fixture | Storybook、Playwright |
@@ -57,7 +57,7 @@
 
 ### 責任
 
-実際のページまたは機能単位のコンポーネントツリーを描画し、共通APIクライアントから発行されるHTTPリクエストをMSWで受ける。次を検証する。
+Server Component表示では、明示的なpropsを渡した表示コンポーネントとNext.jsのloading/error/not-found境界を描画する。Client Componentで通信が必要な機能では、TanStack Queryと共通APIクライアントを含むコンポーネントツリーを描画し、HTTPリクエストをMSWで受ける。次を検証する。
 
 - 正常データの表示と主要操作
 - データが0件の空状態と次の行動
@@ -71,8 +71,8 @@
 
 ### 境界
 
-- PostgreSQL、Drizzle、Route Handlerを起動しない。
-- APIクライアント自体をmodule mockしない。ブラウザと同じHTTP呼び出しをMSWで置換する。
+- PostgreSQL、Drizzle、Route Handlerを起動しない。Server Componentと実DBの結合はE2Eで確認する。
+- Client通信ではAPIクライアントやTanStack Queryをmodule mockせず、ブラウザと同じHTTP呼び出しをMSWで置換する。
 - 通常のMSW handlerは共有Zod契約と同じレスポンス・エラー形式を返す。APIクライアントの防御を確認する専用シナリオだけ、意図的にschema不正のpayloadを返す。
 - ルーティングが重要なケースではApp Router相当のnavigation adapterを用いるが、Next.js内部実装の詳細は検証しない。
 - スナップショット文字列だけで画面全体を検証しない。利用者が認識・操作する要素をassertする。
