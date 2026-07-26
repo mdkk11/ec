@@ -123,7 +123,7 @@ describe('公開商品API', () => {
     })
   })
 
-  it('DB上の商品が公開DTO契約に違反する場合は500にする', async () => {
+  it('API-001: DB上の商品が公開DTO契約に違反する場合は500にする', async () => {
     const id = await insertProduct({ name: '' })
     const consoleError = vi
       .spyOn(console, 'error')

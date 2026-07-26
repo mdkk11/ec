@@ -41,6 +41,11 @@ export default defineConfig({
       testMatch: 'authentication.spec.ts',
       use: { ...devices['Desktop Chrome'] },
     },
+    {
+      name: 'chromium-products',
+      testMatch: 'product-browsing.spec.ts',
+      use: { ...devices['Desktop Chrome'] },
+    },
   ],
   webServer: {
     command: 'corepack pnpm dev --hostname 127.0.0.1 --port 3105',
