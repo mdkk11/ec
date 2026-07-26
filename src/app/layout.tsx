@@ -5,6 +5,10 @@ import { SiteFooter } from '@/components/layout/SiteFooter'
 import { SiteHeader } from '@/components/layout/SiteHeader'
 import { SessionProvider } from '@/features/auth/SessionProvider'
 
+import '@fontsource-variable/inter'
+import '@fontsource-variable/noto-sans-jp'
+import '@fontsource-variable/cormorant-garamond'
+import '@fontsource-variable/noto-serif-jp'
 import './globals.css'
 
 export const metadata: Metadata = {

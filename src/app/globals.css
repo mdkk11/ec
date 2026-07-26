@@ -8,8 +8,8 @@
   --color-line: #dddcd6;
   --color-accent: #b5472f;
   --color-sage: #bac3b5;
-  --font-sans: 'Inter', 'Noto Sans JP', ui-sans-serif, system-ui, sans-serif;
-  --font-serif: 'Cormorant Garamond', 'Noto Serif JP', ui-serif, serif;
+  --font-sans: 'Inter Variable', 'Noto Sans JP Variable', ui-sans-serif, sans-serif;
+  --font-serif: 'Cormorant Garamond Variable', 'Noto Serif JP Variable', ui-serif, serif;
 }
 
 @layer base {
