@@ -7,12 +7,15 @@ import { requireCustomer } from './authorization'
 import { SESSION_COOKIE_NAME } from './session-cookie'
 import { resolveSessionActor } from './session-service'
 
-export async function requireCustomerRequest(request: NextRequest) {
+export async function requireCustomerRequest(
+  request: NextRequest,
+  now = Temporal.Now.instant(),
+) {
   const token = request.cookies.get(SESSION_COOKIE_NAME)?.value
   const actor = token
     ? await resolveSessionActor(token, {
         db: getRuntimeDatabase().db,
-        now: Temporal.Now.instant(),
+        now,
       })
     : null
 

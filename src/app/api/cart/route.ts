@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
 
     const cart = await getCart({
       db: getRuntimeDatabase().db,
-      now: Temporal.Now.instant().toString(),
+      now: Temporal.Now.instant(),
       userId: authorization.actor.id,
     })
     return cartSuccessResponse(cart)

@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 
     const cart = await addCartItem(parsed.data, {
       db: getRuntimeDatabase().db,
-      now: Temporal.Now.instant().toString(),
+      now: Temporal.Now.instant(),
       userId: authorization.actor.id,
     })
     return cartSuccessResponse(cart, 201)

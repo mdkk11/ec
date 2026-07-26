@@ -1,14 +1,30 @@
 import { createHash } from 'node:crypto'
 
 import type {
+  AppliedCouponDto,
   CartDto,
   CartItemDto,
   CheckoutIssueDto,
 } from '@/contracts/cart'
+import {
+  calculateDiscountAmount,
+  evaluateCoupon,
+} from '@/features/coupons/coupon-calculation'
+import { Temporal } from '@/lib/date-time/temporal'
+
+export type CartCouponRecord = {
+  code: string
+  discountPercent: number
+  minimumSubtotal: number
+  startsAt: string
+  endsAt: string
+  isActive: boolean
+}
 
 export type CartRecord = {
   id: string
   version: number
+  coupon: CartCouponRecord | null
   items: Array<{
     id: string
     productId: string
@@ -48,7 +64,20 @@ function assertSafeInteger(value: number) {
   }
 }
 
-export function calculateCart(record: CartRecord): CartDto {
+function couponDto(coupon: CartCouponRecord): AppliedCouponDto {
+  return {
+    code: coupon.code,
+    discountPercent: coupon.discountPercent,
+    minimumSubtotal: coupon.minimumSubtotal,
+    startsAt: coupon.startsAt,
+    endsAt: coupon.endsAt,
+  }
+}
+
+export function calculateCart(
+  record: CartRecord,
+  evaluatedAt: Temporal.Instant,
+): CartDto {
   const sortedItems = [...record.items].sort((left, right) =>
     left.productId.localeCompare(right.productId),
   )
@@ -73,14 +102,34 @@ export function calculateCart(record: CartRecord): CartDto {
       issues.push({ code: 'STOCK_CONFLICT', itemId: item.id })
     }
   }
-  const discountAmount = 0
-  const total = subtotal
+  let discountAmount = 0
+  if (record.coupon) {
+    const couponIssue = evaluateCoupon(
+      {
+        ...record.coupon,
+        startsAt: Temporal.Instant.from(record.coupon.startsAt),
+        endsAt: Temporal.Instant.from(record.coupon.endsAt),
+      },
+      subtotal,
+      evaluatedAt,
+    )
+    if (couponIssue) {
+      issues.push({ code: couponIssue })
+    } else {
+      discountAmount = calculateDiscountAmount(
+        subtotal,
+        record.coupon.discountPercent,
+      )
+    }
+  }
+  const total = subtotal - discountAmount
 
   const checkoutToken =
     items.length === 0 || issues.length > 0
       ? null
       : createCheckoutToken({
           discountAmount,
+          coupon: record.coupon,
           items: sortedItems,
           subtotal,
           total,
@@ -89,7 +138,7 @@ export function calculateCart(record: CartRecord): CartDto {
 
   return {
     checkoutToken,
-    coupon: null,
+    coupon: record.coupon ? couponDto(record.coupon) : null,
     discountAmount,
     id: record.id,
     issues,
@@ -102,6 +151,7 @@ export function calculateCart(record: CartRecord): CartDto {
 
 export function createCheckoutToken(input: {
   discountAmount: number
+  coupon: CartCouponRecord | null
   items: CartRecord['items']
   subtotal: number
   total: number
@@ -127,7 +177,16 @@ export function createCheckoutToken(input: {
         unitPrice: item.unitPrice,
         isPublished: item.isPublished,
       })),
-    coupon: null,
+    coupon: input.coupon
+      ? {
+          code: input.coupon.code,
+          discountPercent: input.coupon.discountPercent,
+          minimumSubtotal: input.coupon.minimumSubtotal,
+          startsAt: input.coupon.startsAt,
+          endsAt: input.coupon.endsAt,
+          isActive: input.coupon.isActive,
+        }
+      : null,
     subtotal: input.subtotal,
     discountAmount: input.discountAmount,
     total: input.total,

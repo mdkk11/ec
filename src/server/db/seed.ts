@@ -2,7 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { hashPassword } from '@/server/auth/password'
 
-import { products, users } from './schema'
+import { coupons, products, users } from './schema'
 
 export const seedCredentials = {
   admin: {
@@ -12,6 +12,10 @@ export const seedCredentials = {
   customer: {
     email: 'customer@example.test',
     password: 'CustomerPass123!',
+  },
+  couponE2eCustomer: {
+    email: 'coupon-e2e@example.test',
+    password: 'CouponPass123!',
   },
 } as const
 
@@ -143,4 +147,132 @@ export async function seedCatalogProducts(db: NodePgDatabase) {
         target: products.id,
       })
   }
+}
+
+export const seedCouponCodes = {
+  expired: 'EXPIRED10',
+  future: 'FUTURE10',
+  inactive: 'INACTIVE10',
+  minimum: 'MINIMUM20',
+  welcome: 'WELCOME15',
+} as const
+
+const seedCoupons = [
+  {
+    code: seedCouponCodes.welcome,
+    createdAt: '2026-01-01T00:00:00Z',
+    discountPercent: 15,
+    endsAt: '2099-01-01T00:00:00Z',
+    id: '60000000-0000-4000-8000-000000000001',
+    isActive: true,
+    minimumSubtotal: 10_000,
+    startsAt: '2020-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+  },
+  {
+    code: seedCouponCodes.inactive,
+    createdAt: '2026-01-01T00:00:00Z',
+    discountPercent: 10,
+    endsAt: '2099-01-01T00:00:00Z',
+    id: '60000000-0000-4000-8000-000000000002',
+    isActive: false,
+    minimumSubtotal: 0,
+    startsAt: '2020-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+  },
+  {
+    code: seedCouponCodes.future,
+    createdAt: '2026-01-01T00:00:00Z',
+    discountPercent: 10,
+    endsAt: '2100-01-01T00:00:00Z',
+    id: '60000000-0000-4000-8000-000000000003',
+    isActive: true,
+    minimumSubtotal: 0,
+    startsAt: '2099-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+  },
+  {
+    code: seedCouponCodes.expired,
+    createdAt: '2026-01-01T00:00:00Z',
+    discountPercent: 10,
+    endsAt: '2021-01-01T00:00:00Z',
+    id: '60000000-0000-4000-8000-000000000004',
+    isActive: true,
+    minimumSubtotal: 0,
+    startsAt: '2020-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+  },
+  {
+    code: seedCouponCodes.minimum,
+    createdAt: '2026-01-01T00:00:00Z',
+    discountPercent: 20,
+    endsAt: '2099-01-01T00:00:00Z',
+    id: '60000000-0000-4000-8000-000000000005',
+    isActive: true,
+    minimumSubtotal: 100_000,
+    startsAt: '2020-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+  },
+] as const
+
+export async function seedCouponFixtures(db: NodePgDatabase) {
+  for (const coupon of seedCoupons) {
+    await db
+      .insert(coupons)
+      .values(coupon)
+      .onConflictDoUpdate({
+        set: coupon,
+        target: coupons.id,
+      })
+  }
+}
+
+export const e2eCouponProductId =
+  '31000000-0000-4000-8000-000000000001'
+
+export async function seedE2EFixtures(db: NodePgDatabase) {
+  await seedAuthenticationUsers(db)
+  await seedCatalogProducts(db)
+  await seedCouponFixtures(db)
+
+  const passwordHash = await hashPassword(
+    seedCredentials.couponE2eCustomer.password,
+    fixedSalt('mockshop-cpn-e2e'),
+  )
+  await db
+    .insert(users)
+    .values({
+      createdAt: '2026-01-01T00:00:00Z',
+      email: seedCredentials.couponE2eCustomer.email,
+      id: '10000000-0000-4000-8000-000000000002',
+      passwordHash,
+      role: 'customer',
+    })
+    .onConflictDoUpdate({
+      set: {
+        email: seedCredentials.couponE2eCustomer.email,
+        passwordHash,
+        role: 'customer',
+      },
+      target: users.id,
+    })
+  const couponProduct = {
+    createdAt: '2026-02-01T00:00:00Z',
+    description: 'クーポンE2E専用の固定商品です。',
+    id: e2eCouponProductId,
+    imagePath: '/images/fixtures/product-placeholder.svg',
+    isPublished: true,
+    name: 'クーポン確認用 トートバッグ',
+    price: 20_000,
+    stock: 5,
+    updatedAt: '2026-02-01T00:00:00Z',
+    version: 1,
+  } as const
+  await db
+    .insert(products)
+    .values(couponProduct)
+    .onConflictDoUpdate({
+      set: couponProduct,
+      target: products.id,
+    })
 }

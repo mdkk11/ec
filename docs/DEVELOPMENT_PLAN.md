@@ -124,7 +124,7 @@
 
 - カートの数量・重複行・在庫上限がDB/APIで正しく扱われる。
 - クーポンの正規化、開始・終了境界、最低購入額、切り捨てを単体テストで保証する。
-- `CART-001`〜`CART-015`、`COUPON-001`〜`COUPON-007`、`COUPON-009`、`COUPON-010` が成功する。
+- `CART-001`〜`CART-015`、`COUPON-001`〜`COUPON-007`、`COUPON-009`〜`COUPON-011` が成功する。
 - `AUTH-010` と `DB-003`、`DB-004`、`DB-006` が成功する。
 - Front結合テストではMSWだけで正常・空・ローディング・エラー・競合相当を再現できる。
 - カート・クーポンの対象VRTが成功する。
@@ -225,7 +225,7 @@ PRはレビュー可能な目的単位とし、実装だけ・テストだけに
 | 05 | 簡易ログインを追加 | users/sessions、開発・E2E seed、Cookie、ロール、ログインUI/API | `AUTH-001`〜`005`、`008`、`011`、`012`、認証E2E |
 | 06 | 商品閲覧を追加 | products schema/API、Server Componentの一覧・詳細、story、VRT CI | `PRODUCT-*`、`API-001`、`E2E-007`、該当VRT |
 | 07 | カートを追加 | TanStack Query、carts/items、API、画面、商品詳細の追加操作、story | `CART-*`、`API-002`、該当VRT |
-| 08 | クーポンを追加 | coupons、計算、適用UI/API、story、E2E CI | `UNIT-COUPON-*`、`COUPON-001`〜`007`、`009`、`010` |
+| 08 | クーポンを追加 | coupons、計算、適用UI/API、story、E2E CI | `UNIT-COUPON-*`、`COUPON-001`〜`007`、`009`〜`011` |
 | 09 | 注文・履歴を追加 | orders/items、注文transaction、競合、履歴 | `ORDER-*`、`COUPON-008`、購入E2E |
 | 10 | 商品・在庫管理を追加 | 管理商品API/UI、version競合 | `ADMIN-001`〜`005`、`012`、`E2E-003`、`004` |
 | 11 | 注文状態管理を追加 | 管理注文API/UI、取消・在庫復元 | `ADMIN-006`〜`011`、`013`、`E2E-006` |

@@ -99,3 +99,43 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Storybook VRT
         run: pnpm test:vrt
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      E2E_DATABASE_URL: postgresql://mockshop:mockshop_local@localhost:5432/mockshop_e2e
+      NODE_ENV: test
+    services:
+      postgres:
+        image: postgres:18.4-alpine
+        env:
+          POSTGRES_DB: mockshop_e2e
+          POSTGRES_PASSWORD: mockshop_local
+          POSTGRES_USER: mockshop
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U mockshop -d mockshop_e2e"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.15.1
+          run_install: false
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+      - name: E2E
+        run: pnpm test:e2e

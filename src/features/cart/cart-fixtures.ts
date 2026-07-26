@@ -61,3 +61,26 @@ export const stockConflictCartFixture: CartDto = {
   total: 85_800,
   version: 4,
 }
+
+export const appliedCouponFixture: CartDto = {
+  ...cartFixture,
+  checkoutToken: 'b'.repeat(64),
+  coupon: {
+    code: 'WELCOME15',
+    discountPercent: 15,
+    endsAt: '2099-01-01T00:00:00Z',
+    minimumSubtotal: 10_000,
+    startsAt: '2020-01-01T00:00:00Z',
+  },
+  discountAmount: 11_880,
+  total: 67_320,
+  version: 4,
+}
+
+export const expiredCouponFixture: CartDto = {
+  ...appliedCouponFixture,
+  checkoutToken: null,
+  discountAmount: 0,
+  issues: [{ code: 'COUPON_EXPIRED' }],
+  total: appliedCouponFixture.subtotal,
+}

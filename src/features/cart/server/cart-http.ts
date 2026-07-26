@@ -45,6 +45,14 @@ export function cartServiceErrorResponse(error: CartServiceError) {
       quantity: [error.message],
     })
   }
+  if (error.code.startsWith('COUPON_')) {
+    return cartErrorResponse(
+      error.code === 'COUPON_NOT_FOUND' ? 404 : 400,
+      error.code,
+      error.message,
+      { code: [error.message] },
+    )
+  }
   return cartErrorResponse(404, error.code, error.message)
 }
 

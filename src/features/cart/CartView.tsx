@@ -6,6 +6,7 @@ import { useState } from 'react'
 
 import { Button } from '@/components/button/Button'
 import type { CartDto, CartItemDto } from '@/contracts/cart'
+import { CouponForm } from '@/features/coupons/CouponForm'
 import { formatPrice } from '@/features/products/format-price'
 
 import type {
@@ -20,6 +21,8 @@ export type CartViewOperationState = {
 type CartViewProps = {
   cart: CartDto
   onDelete: (itemId: string) => void
+  onApplyCoupon: (code: string) => Promise<unknown> | void
+  onRemoveCoupon: () => Promise<unknown> | void
   onUpdate: (
     itemId: string,
     quantity: number,
@@ -60,7 +63,8 @@ function CartLine({
     Number.isInteger(parsedQuantity) && parsedQuantity >= 1
   const pendingOperations = operationState.pending.filter(
     (operation) =>
-      operation.kind !== 'add' && operation.itemId === item.id,
+      (operation.kind === 'delete' || operation.kind === 'update') &&
+      operation.itemId === item.id,
   )
   const updating = pendingOperations.length > 0
   const sameUpdatePending = pendingOperations.some(
@@ -71,7 +75,8 @@ function CartLine({
   const operationError =
     operationState.errors.find(
       ({ operation }) =>
-        operation.kind !== 'add' && operation.itemId === item.id,
+        (operation.kind === 'delete' || operation.kind === 'update') &&
+        operation.itemId === item.id,
     )?.message ?? null
   const issue = issueMessage(cart, item)
 
@@ -175,7 +180,9 @@ function CartLine({
 
 export function CartView({
   cart,
+  onApplyCoupon,
   onDelete,
+  onRemoveCoupon,
   onUpdate,
   operationState = { errors: [], pending: [] },
 }: CartViewProps) {
@@ -197,6 +204,20 @@ export function CartView({
     )
   }
 
+  const couponIssue = cart.issues.find((issue) =>
+    issue.code.startsWith('COUPON_'),
+  )
+  const couponPending = operationState.pending.find(
+    (operation) =>
+      operation.kind === 'apply-coupon' ||
+      operation.kind === 'remove-coupon',
+  )
+  const couponError = operationState.errors.find(
+    ({ operation }) =>
+      operation.kind === 'apply-coupon' ||
+      operation.kind === 'remove-coupon',
+  )?.message
+
   return (
     <section className="page-wrap py-12 sm:py-16 lg:py-20">
       <p className="label text-accent">SHOPPING CART</p>
@@ -216,11 +237,39 @@ export function CartView({
         </ul>
         <aside className="h-fit border border-line bg-surface p-6 lg:sticky lg:top-8">
           <h2 className="font-serif text-2xl">合計</h2>
+          <CouponForm
+            coupon={cart.coupon}
+            errorMessage={couponError}
+            issueCode={
+              couponIssue &&
+              couponIssue.code !== 'PRODUCT_UNAVAILABLE' &&
+              couponIssue.code !== 'STOCK_CONFLICT'
+                ? couponIssue.code
+                : null
+            }
+            onApply={onApplyCoupon}
+            onRemove={onRemoveCoupon}
+            pending={
+              couponPending?.kind === 'apply-coupon'
+                ? 'apply'
+                : couponPending?.kind === 'remove-coupon'
+                  ? 'remove'
+                  : null
+            }
+          />
           <dl className="mt-6 space-y-4 text-sm">
             <div className="flex justify-between gap-4">
               <dt className="text-muted">商品小計</dt>
               <dd className="tabular-nums">{formatPrice(cart.subtotal)}</dd>
             </div>
+            {cart.coupon ? (
+              <div className="flex justify-between gap-4">
+                <dt className="text-muted">クーポン割引</dt>
+                <dd className="tabular-nums">
+                  −{formatPrice(cart.discountAmount)}
+                </dd>
+              </div>
+            ) : null}
             <div className="flex justify-between gap-4 border-t border-line pt-4 text-base font-semibold">
               <dt>合計</dt>
               <dd className="tabular-nums">{formatPrice(cart.total)}</dd>

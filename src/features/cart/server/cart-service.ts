@@ -3,9 +3,15 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type {
   AddCartItemRequest,
+  NormalizedApplyCouponRequest,
   UpdateCartItemRequest,
 } from '@/contracts/cart'
-import { cartItems, carts, products } from '@/server/db/schema'
+import {
+  evaluateCoupon,
+  normalizeCouponCode,
+} from '@/features/coupons/coupon-calculation'
+import { Temporal } from '@/lib/date-time/temporal'
+import { cartItems, carts, coupons, products } from '@/server/db/schema'
 
 import { calculateCart } from '../cart-calculation'
 
@@ -17,6 +23,11 @@ type CartExecutor = CartDatabase | CartTransaction
 
 export type CartServiceErrorCode =
   | 'CART_ITEM_NOT_FOUND'
+  | 'COUPON_EXPIRED'
+  | 'COUPON_INACTIVE'
+  | 'COUPON_MINIMUM_NOT_MET'
+  | 'COUPON_NOT_FOUND'
+  | 'COUPON_NOT_STARTED'
   | 'PRODUCT_NOT_FOUND'
   | 'QUANTITY_EXCEEDS_STOCK'
 
@@ -32,7 +43,7 @@ export class CartServiceError extends Error {
 
 type CartDependencies = {
   db: CartDatabase
-  now: string
+  now: Temporal.Instant
   userId: string
 }
 
@@ -47,7 +58,11 @@ async function ensureAndLockCart(
     .onConflictDoNothing({ target: carts.userId })
 
   const [cart] = await tx
-    .select({ id: carts.id, version: carts.version })
+    .select({
+      couponId: carts.couponId,
+      id: carts.id,
+      version: carts.version,
+    })
     .from(carts)
     .where(eq(carts.userId, userId))
     .for('update')
@@ -58,7 +73,8 @@ async function ensureAndLockCart(
 
 async function loadCart(
   executor: CartExecutor,
-  cart: { id: string; version: number },
+  cart: { couponId: string | null; id: string; version: number },
+  evaluatedAt: Temporal.Instant,
 ) {
   const rows = await executor
     .select({
@@ -75,7 +91,35 @@ async function loadCart(
     .where(eq(cartItems.cartId, cart.id))
     .orderBy(asc(products.id))
 
-  return calculateCart({ ...cart, items: rows })
+  const [coupon] = cart.couponId
+    ? await executor
+        .select({
+          code: coupons.code,
+          discountPercent: coupons.discountPercent,
+          endsAt: coupons.endsAt,
+          isActive: coupons.isActive,
+          minimumSubtotal: coupons.minimumSubtotal,
+          startsAt: coupons.startsAt,
+        })
+        .from(coupons)
+        .where(eq(coupons.id, cart.couponId))
+        .limit(1)
+    : []
+
+  return calculateCart(
+    {
+      ...cart,
+      coupon: coupon
+        ? {
+            ...coupon,
+            endsAt: Temporal.Instant.from(coupon.endsAt).toString(),
+            startsAt: Temporal.Instant.from(coupon.startsAt).toString(),
+          }
+        : null,
+      items: rows,
+    },
+    evaluatedAt,
+  )
 }
 
 async function incrementCartVersion(
@@ -90,7 +134,11 @@ async function incrementCartVersion(
       version: sql`${carts.version} + 1`,
     })
     .where(eq(carts.id, cartId))
-    .returning({ id: carts.id, version: carts.version })
+    .returning({
+      couponId: carts.couponId,
+      id: carts.id,
+      version: carts.version,
+    })
 
   if (!updated) throw new Error('カートversionを更新できませんでした。')
   return updated
@@ -102,8 +150,8 @@ export async function getCart({
   userId,
 }: CartDependencies) {
   return db.transaction(async (tx) => {
-    const cart = await ensureAndLockCart(tx, userId, now)
-    return loadCart(tx, cart)
+    const cart = await ensureAndLockCart(tx, userId, now.toString())
+    return loadCart(tx, cart, now)
   })
 }
 
@@ -112,7 +160,8 @@ export async function addCartItem(
   { db, now, userId }: CartDependencies,
 ) {
   return db.transaction(async (tx) => {
-    const cart = await ensureAndLockCart(tx, userId, now)
+    const nowIso = now.toString()
+    const cart = await ensureAndLockCart(tx, userId, nowIso)
     const [product] = await tx
       .select({
         id: products.id,
@@ -165,8 +214,8 @@ export async function addCartItem(
       })
     }
 
-    const updatedCart = await incrementCartVersion(tx, cart.id, now)
-    return loadCart(tx, updatedCart)
+    const updatedCart = await incrementCartVersion(tx, cart.id, nowIso)
+    return loadCart(tx, updatedCart, now)
   })
 }
 
@@ -176,7 +225,8 @@ export async function updateCartItem(
   { db, now, userId }: CartDependencies,
 ) {
   return db.transaction(async (tx) => {
-    const cart = await ensureAndLockCart(tx, userId, now)
+    const nowIso = now.toString()
+    const cart = await ensureAndLockCart(tx, userId, nowIso)
     const [item] = await tx
       .select({
         id: cartItems.id,
@@ -207,14 +257,14 @@ export async function updateCartItem(
         '注文可能な数量を超えています。',
       )
     }
-    if (input.quantity === item.quantity) return loadCart(tx, cart)
+    if (input.quantity === item.quantity) return loadCart(tx, cart, now)
 
     await tx
       .update(cartItems)
       .set({ quantity: input.quantity })
       .where(eq(cartItems.id, item.id))
-    const updatedCart = await incrementCartVersion(tx, cart.id, now)
-    return loadCart(tx, updatedCart)
+    const updatedCart = await incrementCartVersion(tx, cart.id, nowIso)
+    return loadCart(tx, updatedCart, now)
   })
 }
 
@@ -223,7 +273,8 @@ export async function deleteCartItem(
   { db, now, userId }: CartDependencies,
 ) {
   return db.transaction(async (tx) => {
-    const cart = await ensureAndLockCart(tx, userId, now)
+    const nowIso = now.toString()
+    const cart = await ensureAndLockCart(tx, userId, nowIso)
     const deleted = await tx
       .delete(cartItems)
       .where(and(eq(cartItems.id, itemId), eq(cartItems.cartId, cart.id)))
@@ -236,7 +287,104 @@ export async function deleteCartItem(
       )
     }
 
-    const updatedCart = await incrementCartVersion(tx, cart.id, now)
-    return loadCart(tx, updatedCart)
+    const updatedCart = await incrementCartVersion(tx, cart.id, nowIso)
+    return loadCart(tx, updatedCart, now)
+  })
+}
+
+function couponErrorMessage(code: Exclude<CartServiceErrorCode, 'CART_ITEM_NOT_FOUND' | 'PRODUCT_NOT_FOUND' | 'QUANTITY_EXCEEDS_STOCK'>) {
+  switch (code) {
+    case 'COUPON_INACTIVE':
+      return 'このクーポンは現在利用できません。'
+    case 'COUPON_NOT_STARTED':
+      return 'このクーポンはまだ利用できません。'
+    case 'COUPON_EXPIRED':
+      return 'このクーポンの利用期間は終了しました。'
+    case 'COUPON_MINIMUM_NOT_MET':
+      return 'クーポンの最低購入額に達していません。'
+    case 'COUPON_NOT_FOUND':
+      return 'クーポンが見つかりませんでした。'
+  }
+}
+
+export async function applyCoupon(
+  input: NormalizedApplyCouponRequest,
+  { db, now, userId }: CartDependencies,
+) {
+  return db.transaction(async (tx) => {
+    const nowIso = now.toString()
+    const normalizedCode = normalizeCouponCode(input.code)
+    const cart = await ensureAndLockCart(tx, userId, nowIso)
+    const currentCart = await loadCart(tx, cart, now)
+    const [coupon] = await tx
+      .select()
+      .from(coupons)
+      .where(eq(coupons.code, normalizedCode))
+      .for('share')
+
+    if (!coupon) {
+      throw new CartServiceError(
+        'COUPON_NOT_FOUND',
+        couponErrorMessage('COUPON_NOT_FOUND'),
+      )
+    }
+
+    const condition = evaluateCoupon(
+      {
+        ...coupon,
+        startsAt: Temporal.Instant.from(coupon.startsAt),
+        endsAt: Temporal.Instant.from(coupon.endsAt),
+      },
+      currentCart.subtotal,
+      now,
+    )
+    if (condition) {
+      throw new CartServiceError(condition, couponErrorMessage(condition))
+    }
+    if (cart.couponId === coupon.id) return currentCart
+
+    const [updatedCart] = await tx
+      .update(carts)
+      .set({
+        couponId: coupon.id,
+        updatedAt: nowIso,
+        version: sql`${carts.version} + 1`,
+      })
+      .where(eq(carts.id, cart.id))
+      .returning({
+        couponId: carts.couponId,
+        id: carts.id,
+        version: carts.version,
+      })
+    if (!updatedCart) throw new Error('クーポンを適用できませんでした。')
+    return loadCart(tx, updatedCart, now)
+  })
+}
+
+export async function removeCoupon({
+  db,
+  now,
+  userId,
+}: CartDependencies) {
+  return db.transaction(async (tx) => {
+    const nowIso = now.toString()
+    const cart = await ensureAndLockCart(tx, userId, nowIso)
+    if (cart.couponId === null) return loadCart(tx, cart, now)
+
+    const [updatedCart] = await tx
+      .update(carts)
+      .set({
+        couponId: null,
+        updatedAt: nowIso,
+        version: sql`${carts.version} + 1`,
+      })
+      .where(eq(carts.id, cart.id))
+      .returning({
+        couponId: carts.couponId,
+        id: carts.id,
+        version: carts.version,
+      })
+    if (!updatedCart) throw new Error('クーポンを解除できませんでした。')
+    return loadCart(tx, updatedCart, now)
   })
 }

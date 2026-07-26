@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
+import { createTestNow } from '@/test/fixtures/time'
+
 import { calculateCart, createCheckoutToken } from './cart-calculation'
 
 const firstItem = {
@@ -15,10 +17,11 @@ const firstItem = {
 describe('カート計算', () => {
   it('UNIT-CART-001: 行小計と商品小計を整数円で計算する', () => {
     const cart = calculateCart({
+      coupon: null,
       id: '40000000-0000-4000-8000-000000000001',
       items: [firstItem],
       version: 2,
-    })
+    }, createTestNow())
 
     expect(cart.items[0]?.lineTotal).toBe(3_600)
     expect(cart.subtotal).toBe(3_600)
@@ -30,6 +33,7 @@ describe('カート計算', () => {
   it('商品ID順へ正規化し、item IDと在庫をtokenへ含めない', () => {
     const input = {
       discountAmount: 0,
+      coupon: null,
       items: [
         {
           ...firstItem,
@@ -57,6 +61,7 @@ describe('カート計算', () => {
 
   it('非公開商品と在庫不足をissueにしtokenを返さない', () => {
     const cart = calculateCart({
+      coupon: null,
       id: '40000000-0000-4000-8000-000000000001',
       items: [
         { ...firstItem, isPublished: false },
@@ -69,7 +74,7 @@ describe('カート計算', () => {
         },
       ],
       version: 3,
-    })
+    }, createTestNow())
 
     expect(cart.issues.map(({ code }) => code)).toEqual([
       'PRODUCT_UNAVAILABLE',
@@ -78,9 +83,43 @@ describe('カート計算', () => {
     expect(cart.checkoutToken).toBeNull()
   })
 
+  it('有効クーポンを計算し、全条件をcheckoutTokenへ含める', () => {
+    const coupon = {
+      code: 'SAVE15',
+      discountPercent: 15,
+      endsAt: '2027-01-01T00:00:00Z',
+      isActive: true,
+      minimumSubtotal: 1_000,
+      startsAt: '2026-01-01T00:00:00Z',
+    }
+    const cart = calculateCart(
+      {
+        coupon,
+        id: '40000000-0000-4000-8000-000000000001',
+        items: [firstItem],
+        version: 2,
+      },
+      createTestNow(),
+    )
+    const changedTerms = createCheckoutToken({
+      coupon: { ...coupon, minimumSubtotal: 2_000 },
+      discountAmount: cart.discountAmount,
+      items: [firstItem],
+      subtotal: cart.subtotal,
+      total: cart.total,
+      version: cart.version,
+    })
+
+    expect(cart.discountAmount).toBe(540)
+    expect(cart.total).toBe(3_060)
+    expect(cart.coupon?.code).toBe('SAVE15')
+    expect(changedTerms).not.toBe(cart.checkoutToken)
+  })
+
   it('安全な整数範囲を超える行小計を拒否する', () => {
     expect(() =>
       calculateCart({
+        coupon: null,
         id: '40000000-0000-4000-8000-000000000001',
         items: [
           {
@@ -90,7 +129,7 @@ describe('カート計算', () => {
           },
         ],
         version: 1,
-      }),
+      }, createTestNow()),
     ).toThrow('安全な整数範囲')
   })
 
@@ -98,6 +137,7 @@ describe('カート計算', () => {
     expect(() =>
       createCheckoutToken({
         discountAmount: 0,
+        coupon: null,
         items: [firstItem],
         subtotal: Number.MAX_SAFE_INTEGER + 1,
         total: Number.MAX_SAFE_INTEGER + 1,

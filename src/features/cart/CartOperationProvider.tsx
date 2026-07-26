@@ -19,7 +19,9 @@ import type { CartDto } from '@/contracts/cart'
 import { useSession } from '@/features/auth/SessionProvider'
 import {
   addCartItem,
+  applyCartCoupon,
   deleteCartItem,
+  removeCartCoupon,
   updateCartItem,
 } from '@/lib/api-client/cart'
 import { ApiClientError } from '@/lib/api-client/request-json'
@@ -29,7 +31,9 @@ export const cartQueryKey = (customerId: string) =>
 
 export type CartOperation =
   | { kind: 'add'; productId: string; quantity: number }
+  | { code: string; kind: 'apply-coupon' }
   | { itemId: string; kind: 'delete' }
+  | { kind: 'remove-coupon' }
   | { itemId: string; kind: 'update'; quantity: number }
 
 type PendingOperation = {
@@ -65,9 +69,14 @@ function operationFingerprint(operation: CartOperation) {
 }
 
 function operationTarget(operation: CartOperation) {
-  return operation.kind === 'add'
-    ? `product:${operation.productId}`
-    : `item:${operation.itemId}`
+  if (operation.kind === 'add') return `product:${operation.productId}`
+  if (
+    operation.kind === 'apply-coupon' ||
+    operation.kind === 'remove-coupon'
+  ) {
+    return 'coupon'
+  }
+  return `item:${operation.itemId}`
 }
 
 function isQueuedUpdateForSameItem(
@@ -125,7 +134,13 @@ export function CartOperationProvider({
           signal,
         )
       }
-      return deleteCartItem(operation.itemId, signal)
+      if (operation.kind === 'delete') {
+        return deleteCartItem(operation.itemId, signal)
+      }
+      if (operation.kind === 'apply-coupon') {
+        return applyCartCoupon({ code: operation.code }, signal)
+      }
+      return removeCartCoupon(signal)
     },
     retry: false,
   })
@@ -198,13 +213,14 @@ export function CartOperationProvider({
           )
           if (!current || cart.version >= current.version) {
             queryClient.setQueryData(cartQueryKey(task.customerId), cart)
+            task.resolve(cart)
           } else {
             await queryClient.refetchQueries({
               queryKey: cartQueryKey(task.customerId),
               type: 'active',
             })
+            task.resolve(null)
           }
-          task.resolve(cart)
         } catch (error) {
           if (
             task.customerId !== currentCustomerRef.current ||
@@ -283,9 +299,15 @@ export function CartOperationProvider({
         }
         nextTaskIdRef.current = task.id
 
-        const replaceIndex = queueRef.current.findIndex((queuedTask) =>
-          isQueuedUpdateForSameItem(queuedTask, operation),
-        )
+        const lastQueueIndex = queueRef.current.length - 1
+        const replaceIndex =
+          lastQueueIndex >= 0 &&
+          isQueuedUpdateForSameItem(
+            queueRef.current[lastQueueIndex]!,
+            operation,
+          )
+            ? lastQueueIndex
+            : -1
         let replacedTask: QueueTask | undefined
         if (replaceIndex >= 0) {
           replacedTask = queueRef.current[replaceIndex]
