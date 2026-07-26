@@ -19,7 +19,9 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 const handlers = {
+  onApplyCoupon: () => undefined,
   onDelete: () => undefined,
+  onRemoveCoupon: () => undefined,
   onUpdate: () => undefined,
 }
 

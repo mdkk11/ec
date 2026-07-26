@@ -19,8 +19,10 @@ import { CartOperationProvider } from './CartOperationProvider'
 import { CartPage } from './CartPage'
 import { ProductCartAction } from './ProductCartAction'
 import {
+  appliedCouponFixture,
   cartFixture,
   emptyCartFixture,
+  expiredCouponFixture,
   stockConflictCartFixture,
 } from './cart-fixtures'
 
@@ -336,6 +338,139 @@ describe('カート画面', () => {
       screen.getByRole('heading', { name: 'カートは購入者専用です' }),
     ).toBeVisible()
     expect(handler).not.toHaveBeenCalled()
+  })
+})
+
+describe('クーポン操作', () => {
+  it('COUPON-001/007: クーポンを適用して割引を表示し、解除できる', async () => {
+    server.use(
+      http.get('/api/cart', () => cartResponse(cartFixture)),
+      http.put('/api/cart/coupon', () =>
+        cartResponse(appliedCouponFixture),
+      ),
+      http.delete('/api/cart/coupon', () =>
+        cartResponse({ ...cartFixture, version: 5 }),
+      ),
+    )
+    const user = userEvent.setup()
+    renderWithProviders(<CartPage />)
+
+    const input = await screen.findByLabelText('クーポンコード')
+    await user.type(input, 'welcome15')
+    await user.click(
+      screen.getByRole('button', { name: 'クーポンを適用' }),
+    )
+
+    expect(await screen.findByText('WELCOME15')).toBeVisible()
+    expect(screen.getByText('−¥11,880')).toBeVisible()
+    expect(screen.getByText('¥67,320')).toBeVisible()
+
+    await user.click(
+      screen.getByRole('button', { name: 'クーポンを解除' }),
+    )
+    expect(await screen.findByLabelText('クーポンコード')).toBeVisible()
+    expect(screen.queryByText('−¥11,880')).not.toBeInTheDocument()
+  })
+
+  it.each([
+    ['COUPON-002', 404, 'COUPON_NOT_FOUND', 'クーポンが見つかりませんでした。'],
+    ['COUPON-003', 400, 'COUPON_INACTIVE', 'このクーポンは現在利用できません。'],
+    ['COUPON-004', 400, 'COUPON_NOT_STARTED', 'このクーポンはまだ利用できません。'],
+    ['COUPON-005', 400, 'COUPON_EXPIRED', 'このクーポンの利用期間は終了しました。'],
+    ['COUPON-006', 400, 'COUPON_MINIMUM_NOT_MET', 'クーポンの最低購入額に達していません。'],
+  ])('%s: 原因別エラーを表示して入力を保持する', async (
+    _scenario,
+    status,
+    code,
+    message,
+  ) => {
+    server.use(
+      http.get('/api/cart', () => cartResponse(cartFixture)),
+      http.put('/api/cart/coupon', () =>
+        HttpResponse.json(
+          {
+            code,
+            fieldErrors: { code: [message] },
+            message,
+          },
+          { status },
+        ),
+      ),
+    )
+    const user = userEvent.setup()
+    renderWithProviders(<CartPage />)
+
+    const input = await screen.findByLabelText('クーポンコード')
+    await user.type(input, 'INVALID')
+    await user.click(
+      screen.getByRole('button', { name: 'クーポンを適用' }),
+    )
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(message)
+    expect(input).toHaveValue('INVALID')
+    expect(screen.getAllByText('¥79,200')).toHaveLength(2)
+  })
+
+  it('適用中の二重送信を防ぎ、数量操作と受付順に実行する', async () => {
+    const requestOrder: string[] = []
+    let releaseQuantity: (() => void) | undefined
+    const quantityGate = new Promise<void>((resolve) => {
+      releaseQuantity = resolve
+    })
+    server.use(
+      http.get('/api/cart', () => cartResponse(cartFixture)),
+      http.patch('/api/cart/items/:itemId', async () => {
+        requestOrder.push('quantity')
+        await quantityGate
+        return cartResponse({ ...cartFixture, version: 4 })
+      }),
+      http.put('/api/cart/coupon', () => {
+        requestOrder.push('coupon')
+        return cartResponse(appliedCouponFixture)
+      }),
+    )
+    const user = userEvent.setup()
+    renderWithProviders(<CartPage />)
+
+    const quantity = await screen.findByLabelText(
+      'リネンブレンド オーバーシャツの数量',
+    )
+    await user.clear(quantity)
+    await user.type(quantity, '3')
+    await user.click(
+      screen.getByRole('button', {
+        name: 'リネンブレンド オーバーシャツの数量を更新',
+      }),
+    )
+    await user.type(screen.getByLabelText('クーポンコード'), 'WELCOME15')
+    await user.dblClick(
+      screen.getByRole('button', { name: 'クーポンを適用' }),
+    )
+
+    expect(requestOrder).toEqual(['quantity'])
+    releaseQuantity?.()
+    await waitFor(() => expect(requestOrder).toEqual(['quantity', 'coupon']))
+    expect(await screen.findByText('WELCOME15')).toBeVisible()
+  })
+
+  it('COUPON-009: 期限切れissueを表示し、解除操作を提供する', async () => {
+    server.use(
+      http.get('/api/cart', () => cartResponse(expiredCouponFixture)),
+      http.delete('/api/cart/coupon', () =>
+        cartResponse({ ...cartFixture, version: 5 }),
+      ),
+    )
+    const user = userEvent.setup()
+    renderWithProviders(<CartPage />)
+
+    expect(
+      await screen.findByText('適用中のクーポンは期限切れです。'),
+    ).toBeVisible()
+    expect(screen.getByText(/問題を解消すると/u)).toBeVisible()
+    await user.click(
+      screen.getByRole('button', { name: 'クーポンを解除' }),
+    )
+    expect(await screen.findByLabelText('クーポンコード')).toBeVisible()
   })
 })
 

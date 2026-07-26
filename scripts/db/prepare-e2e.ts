@@ -4,7 +4,7 @@ import {
   requireDatabaseEnvironment,
 } from '../../src/server/db/environment'
 import { migrateDatabase } from '../../src/server/db/migrate'
-import { seedAuthenticationUsers } from '../../src/server/db/seed'
+import { seedE2EFixtures } from '../../src/server/db/seed'
 import { resetTestDatabase } from '../../src/server/db/test-lifecycle'
 
 loadDatabaseEnvironment()
@@ -21,7 +21,7 @@ try {
     targetDatabaseUrl: e2eDatabaseUrl,
   })
   await migrateDatabase(client.db)
-  await seedAuthenticationUsers(client.db)
+  await seedE2EFixtures(client.db)
   console.info('E2E DBを初期化し、migrationとseedを適用しました。')
 } finally {
   await client.close()

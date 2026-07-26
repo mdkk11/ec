@@ -51,13 +51,19 @@ export default defineConfig({
       testMatch: 'cart.spec.ts',
       use: { ...devices['Desktop Chrome'] },
     },
+    {
+      name: 'chromium-coupon',
+      testMatch: 'coupon.spec.ts',
+      use: { ...devices['Desktop Chrome'] },
+    },
   ],
   webServer: {
-    command: 'corepack pnpm dev --hostname 127.0.0.1 --port 3105',
+    command:
+      'corepack pnpm build && corepack pnpm start --hostname 127.0.0.1 --port 3105',
     env: {
       DATABASE_URL: e2eDatabaseUrl,
       NEXT_DIST_DIR: '.next-e2e',
-      NODE_ENV: 'development',
+      NODE_ENV: 'production',
     },
     url: e2eBaseUrl,
     reuseExistingServer: false,

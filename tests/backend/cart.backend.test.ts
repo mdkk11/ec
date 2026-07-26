@@ -9,6 +9,7 @@ import {
 } from '@/app/api/cart/items/[itemId]/route'
 import { POST as addCartItemRoute } from '@/app/api/cart/items/route'
 import { addCartItem } from '@/features/cart/server/cart-service'
+import { Temporal } from '@/lib/date-time/temporal'
 import { hashSessionToken } from '@/server/auth/session-token'
 import {
   cartItems,
@@ -289,7 +290,7 @@ describe('カートAPI', () => {
 
     const dependencies = {
       db: backendDatabase.db,
-      now: testNow,
+      now: Temporal.Instant.from(testNow),
       userId: customerId,
     }
     await Promise.all([

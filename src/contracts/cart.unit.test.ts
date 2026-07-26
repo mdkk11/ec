@@ -1,12 +1,21 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  applyCouponRequestSchema,
   addCartItemRequestSchema,
   cartResponseSchema,
   updateCartItemRequestSchema,
 } from './cart'
 
 describe('カートAPI契約', () => {
+  it('クーポンコードをtrimして大文字へ正規化する', () => {
+    expect(
+      applyCouponRequestSchema.parse({ code: '  welcome15  ' }),
+    ).toEqual({ code: 'WELCOME15' })
+    expect(
+      applyCouponRequestSchema.safeParse({ code: '   ' }).success,
+    ).toBe(false)
+  })
   it.each([0, -1, 1.5])(
     'UNIT-CART-002: 数量%sを拒否する',
     (quantity) => {
