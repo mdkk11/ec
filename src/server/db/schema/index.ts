@@ -92,6 +92,50 @@ export const products = pgTable(
   ],
 )
 
+export const carts = pgTable(
+  'carts',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    version: integer('version').notNull().default(1),
+    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('carts_user_id_unique').on(table.userId),
+    check('carts_version_positive_check', sql`${table.version} >= 1`),
+  ],
+)
+
+export const cartItems = pgTable(
+  'cart_items',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    cartId: uuid('cart_id')
+      .notNull()
+      .references(() => carts.id, { onDelete: 'cascade' }),
+    productId: uuid('product_id')
+      .notNull()
+      .references(() => products.id),
+    quantity: integer('quantity').notNull(),
+  },
+  (table) => [
+    uniqueIndex('cart_items_cart_product_unique').on(
+      table.cartId,
+      table.productId,
+    ),
+    check('cart_items_quantity_positive_check', sql`${table.quantity} >= 1`),
+  ],
+)
+
 export type User = typeof users.$inferSelect
 export type UserRole = (typeof userRole.enumValues)[number]
 export type Product = typeof products.$inferSelect
+export type Cart = typeof carts.$inferSelect
+export type CartItem = typeof cartItems.$inferSelect

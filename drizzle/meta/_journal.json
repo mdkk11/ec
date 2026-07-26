@@ -22,6 +22,13 @@
       "when": 1785070197848,
       "tag": "0002_gifted_silver_centurion",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1785077329936,
+      "tag": "0003_strange_alice",
+      "breakpoints": true
     }
   ]
 }
