@@ -221,6 +221,8 @@ DBのCHECK制約で `price >= 0`、`stock >= 0`、`version >= 1` を保証する
 | `GET` | `/api/products` | 不要 | 公開商品一覧 |
 | `GET` | `/api/products/:productId` | 不要 | 公開商品詳細 |
 
+公開商品一覧は `created_at DESC, id ASC` の固定順で返す。利用者が指定する並び替えparameterは設けない。
+
 ### カートとクーポン
 
 | Method | Path | 認証 | 概要 |

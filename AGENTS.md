@@ -166,6 +166,7 @@ pnpm test:frontend
 pnpm test:backend
 pnpm test:e2e
 pnpm test:vrt
+pnpm test:vrt:update
 pnpm db:up
 pnpm db:down
 pnpm db:generate

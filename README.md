@@ -2,7 +2,7 @@
 
 小規模ECを題材に、単体テスト、フロントエンド結合テスト、バックエンド結合テスト、E2E、VRTの責任範囲と運用を検証するサンドボックスです。
 
-現在は `docs/DEVELOPMENT_PLAN.md` のPhase 2として、Next.jsトップページ、PostgreSQL・Drizzle基盤、メールアドレスとパスワードによるCookieセッション認証までを実装しています。商品、カート、注文、管理機能は後続PRで追加します。
+現在は `docs/DEVELOPMENT_PLAN.md` のPhase 3として、Next.jsトップページ、PostgreSQL・Drizzle基盤、Cookieセッション認証、公開商品の一覧・詳細閲覧までを実装しています。カート、注文、管理機能は後続PRで追加します。
 
 ## Requirements
 
@@ -35,6 +35,7 @@ pnpm test:unit
 pnpm test:frontend
 pnpm test:backend
 pnpm test:e2e
+pnpm test:vrt
 pnpm db:up
 pnpm db:down
 pnpm db:generate
@@ -99,6 +100,37 @@ pnpm test:e2e
 | 管理者 | `admin@example.test` | `AdminPass123!` |
 
 パスワードはscrypt hashだけをDBへ保存します。ログイン成功時の生セッショントークンはHttpOnly Cookieだけへ、SHA-256 hashはDBだけへ保存します。
+
+## Products
+
+`db:seed` とE2E global setupは、固定UUID・固定日時の架空商品を冪等に作成します。公開商品4件のうち1件は在庫切れで、非公開商品1件は公開APIへ返りません。商品画像はリポジトリ内のローカルassetだけを使用します。
+
+公開商品一覧は `created_at DESC, id ASC` の固定順です。検索、絞り込み、利用者が選択する並び替え、商品詳細からのカート追加はこのPhaseに含みません。
+
+## Visual regression tests
+
+VRTはStorybookの固定fixtureをPlaywright Chromiumで撮影します。基準画像の生成・更新はCIと同じ `mcr.microsoft.com/playwright:v1.61.1-noble` 環境だけで行い、macOSで生成した画像を正本としてコミットしません。
+
+```bash
+pnpm test:vrt
+```
+
+意図したUI変更で基準画像を更新する場合は、次の固定Linux環境で実行します。専用volumeへLinux用依存関係を分離するため、ホストの `node_modules` は変更しません。
+
+```bash
+docker run --rm --ipc=host \
+  -e HOST_UID="$(id -u)" \
+  -e HOST_GID="$(id -g)" \
+  -v "$PWD:/work" \
+  -v mockshop-vrt-node-modules:/work/node_modules \
+  -w /work \
+  mcr.microsoft.com/playwright:v1.61.1-noble \
+  bash -lc 'corepack pnpm install --frozen-lockfile && corepack pnpm test:vrt:update; vrt_status=$?; chown -R "$HOST_UID:$HOST_GID" /work/tests/vrt/__screenshots__ /work/storybook-static /work/test-results 2>/dev/null || true; exit $vrt_status'
+```
+
+生成後は対象storyの変更後画像をレビューします。VRT失敗を消すための一括更新や許容値変更は行いません。
+
+CIの `storybook-vrt` ジョブをmainの必須checkにする設定はリポジトリ管理者が手動で行います。GitHubのbranch protectionでmainを対象にし、`storybook-vrt` をrequired status checkへ追加してください。
 
 schema変更時はmigrationを生成し、生成されたSQLとmetadataをコミットします。mainへ取り込まれたmigrationは編集しません。
 

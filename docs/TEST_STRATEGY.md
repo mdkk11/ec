@@ -176,7 +176,7 @@ Storybook上の決定的なfixtureを使い、意図しない見た目の変化�
 
 - 商品カード: 通常、在庫切れ、長い商品名
 - 商品一覧: 通常、空、ローディング、エラー
-- 商品詳細: 通常、在庫切れ
+- 商品詳細: 通常、在庫切れ、長い商品名・説明
 - カート: 通常、空、更新中、在庫競合
 - クーポン: 適用済み、入力エラー、期限切れ
 - 注文履歴: 通常、空
@@ -186,6 +186,7 @@ Storybook上の決定的なfixtureを使い、意図しない見た目の変化�
 ### 実行条件
 
 - VRTはChromiumだけで実行する。
+- CIと基準画像更新は `mcr.microsoft.com/playwright:v1.61.1-noble` の固定Linux環境で実行する。
 - viewportは必要なstoryに限り375px、768px、1440pxを使用する。
 - フォントとテスト画像をリポジトリ内に固定する。
 - 現在時刻、UUID、乱数、アニメーション、caret、transitionを固定または無効化する。
@@ -195,6 +196,7 @@ Storybook上の決定的なfixtureを使い、意図しない見た目の変化�
 ### 基準画像の更新
 
 - 基準画像はレビュー対象としてリポジトリで管理する。
+- 基準画像はPlaywrightの固定Linux環境で生成し、macOSで生成した画像を正本にしない。
 - UI変更の意図が確認できるPRだけで更新する。
 - VRT失敗を解消する目的だけで一括更新しない。
 - PRには影響したstoryとBefore / After、または変更後画像を添付する。
@@ -227,7 +229,8 @@ GitHub Actionsでは次のジョブへ分け、失敗した責任範囲を判別
    - migration
    - バックエンド結合テスト
 3. `storybook-vrt`
-   - Playwright ChromiumとOS依存packageのinstall
+   - Playwright 1.61.1とChromiumを含む固定Linux container
+   - Node.js 24、pnpm 11、依存packageのinstall
    - Storybook build
    - Storybook起動
    - Chromium VRT
@@ -249,6 +252,7 @@ pnpm test:frontend
 pnpm test:backend
 pnpm test:e2e
 pnpm test:vrt
+pnpm test:vrt:update
 pnpm build
 pnpm build-storybook
 ```

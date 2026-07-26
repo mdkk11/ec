@@ -92,7 +92,7 @@
 - ProductCard、ProductList、ProductDetailのStorybook storyとVRTを追加する。
 - GitHub Actionsに `storybook-vrt` ジョブを追加し、以後のPRで必須checkとする。
 
-このフェーズでは管理者の商品作成・編集UIは実装しない。管理用APIもPhase 6まで作らない。
+このフェーズでは商品閲覧と在庫状態の表示までを実装する。商品詳細からのカート追加操作はPhase 4で接続する。管理者の商品作成・編集UIは実装せず、管理用APIもPhase 6まで作らない。
 
 #### DoD
 
@@ -111,6 +111,7 @@
 
 - `carts`、`cart_items`、`coupons` のschema、migration、fixtureを追加する。
 - カート取得、追加、数量更新、削除APIを実装する。
+- 商品詳細へ在庫状態に応じたカート追加操作を接続する。
 - クーポン適用・解除と金額計算を実装する。
 - カート・注文確認のUIを実装する。注文確定ボタンは次フェーズまで実処理へ接続しない。
 - 正常、空、更新中、API失敗、在庫超過、古いレスポンス、クーポンエラーを実装する。
@@ -121,7 +122,7 @@
 
 - カートの数量・重複行・在庫上限がDB/APIで正しく扱われる。
 - クーポンの正規化、開始・終了境界、最低購入額、切り捨てを単体テストで保証する。
-- `CART-001`〜`CART-013`、`COUPON-001`〜`COUPON-007`、`COUPON-009`、`COUPON-010` が成功する。
+- `CART-001`〜`CART-015`、`COUPON-001`〜`COUPON-007`、`COUPON-009`、`COUPON-010` が成功する。
 - `AUTH-010` と `DB-003`、`DB-004`、`DB-006` が成功する。
 - Front結合テストではMSWだけで正常・空・ローディング・エラー・競合相当を再現できる。
 - カート・クーポンの対象VRTが成功する。
@@ -221,7 +222,7 @@ PRはレビュー可能な目的単位とし、実装だけ・テストだけに
 | 04 | DB基盤を導入 | PostgreSQL、Drizzle、migration、Backend結合helper | 空DB migration、DB guard、Backend smoke |
 | 05 | 簡易ログインを追加 | users/sessions、開発・E2E seed、Cookie、ロール、ログインUI/API | `AUTH-001`〜`005`、`008`、`011`、`012`、認証E2E |
 | 06 | 商品閲覧を追加 | products schema/API、一覧・詳細、story、VRT CI | `PRODUCT-*`、`API-001`、`002`、該当VRT |
-| 07 | カートを追加 | carts/items、API、画面、story | `CART-*`、該当VRT |
+| 07 | カートを追加 | carts/items、API、画面、商品詳細の追加操作、story | `CART-*`、該当VRT |
 | 08 | クーポンを追加 | coupons、計算、適用UI/API、story、E2E CI | `UNIT-COUPON-*`、`COUPON-001`〜`007`、`009`、`010` |
 | 09 | 注文・履歴を追加 | orders/items、注文transaction、競合、履歴 | `ORDER-*`、`COUPON-008`、購入E2E |
 | 10 | 商品・在庫管理を追加 | 管理商品API/UI、version競合 | `ADMIN-001`〜`005`、`012`、`E2E-003`、`004` |
