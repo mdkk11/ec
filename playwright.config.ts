@@ -46,6 +46,11 @@ export default defineConfig({
       testMatch: 'product-browsing.spec.ts',
       use: { ...devices['Desktop Chrome'] },
     },
+    {
+      name: 'chromium-cart',
+      testMatch: 'cart.spec.ts',
+      use: { ...devices['Desktop Chrome'] },
+    },
   ],
   webServer: {
     command: 'corepack pnpm dev --hostname 127.0.0.1 --port 3105',
