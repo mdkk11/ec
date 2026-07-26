@@ -68,6 +68,14 @@ export const updateCartItemRequestSchema = z.object({
   quantity: positiveQuantitySchema,
 })
 
+export const applyCouponRequestSchema = z.object({
+  code: z
+    .string()
+    .trim()
+    .min(1, 'クーポンコードを入力してください。')
+    .transform((code) => code.toUpperCase()),
+})
+
 export const cartItemIdSchema = z.uuid()
 
 export type CartDto = z.infer<typeof cartSchema>
@@ -77,4 +85,8 @@ export type CheckoutIssueDto = z.infer<typeof checkoutIssueSchema>
 export type AddCartItemRequest = z.infer<typeof addCartItemRequestSchema>
 export type UpdateCartItemRequest = z.infer<
   typeof updateCartItemRequestSchema
+>
+export type ApplyCouponRequest = z.input<typeof applyCouponRequestSchema>
+export type NormalizedApplyCouponRequest = z.output<
+  typeof applyCouponRequestSchema
 >

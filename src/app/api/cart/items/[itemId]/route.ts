@@ -81,7 +81,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     const cart = await updateCartItem(parsedItemId.data, parsed.data, {
       db: getRuntimeDatabase().db,
-      now: Temporal.Now.instant().toString(),
+      now: Temporal.Now.instant(),
       userId: authorization.actor.id,
     })
     return cartSuccessResponse(cart)
@@ -114,7 +114,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
 
     const cart = await deleteCartItem(parsedItemId.data, {
       db: getRuntimeDatabase().db,
-      now: Temporal.Now.instant().toString(),
+      now: Temporal.Now.instant(),
       userId: authorization.actor.id,
     })
     return cartSuccessResponse(cart)

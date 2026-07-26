@@ -92,6 +92,42 @@ export const products = pgTable(
   ],
 )
 
+export const coupons = pgTable(
+  'coupons',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    code: text('code').notNull(),
+    discountPercent: integer('discount_percent').notNull(),
+    minimumSubtotal: integer('minimum_subtotal').notNull(),
+    startsAt: timestamp('starts_at', { mode: 'string', withTimezone: true }).notNull(),
+    endsAt: timestamp('ends_at', { mode: 'string', withTimezone: true }).notNull(),
+    isActive: boolean('is_active').notNull(),
+    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('coupons_code_unique').on(table.code),
+    check(
+      'coupons_code_normalized_check',
+      sql`${table.code} = upper(btrim(${table.code}))`,
+    ),
+    check('coupons_code_not_empty_check', sql`char_length(${table.code}) > 0`),
+    check(
+      'coupons_discount_percent_check',
+      sql`${table.discountPercent} between 1 and 100`,
+    ),
+    check(
+      'coupons_minimum_subtotal_non_negative_check',
+      sql`${table.minimumSubtotal} >= 0`,
+    ),
+    check('coupons_period_check', sql`${table.startsAt} < ${table.endsAt}`),
+  ],
+)
+
 export const carts = pgTable(
   'carts',
   {
@@ -99,6 +135,7 @@ export const carts = pgTable(
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
+    couponId: uuid('coupon_id').references(() => coupons.id),
     version: integer('version').notNull().default(1),
     createdAt: timestamp('created_at', { mode: 'string', withTimezone: true })
       .notNull()
@@ -137,5 +174,6 @@ export const cartItems = pgTable(
 export type User = typeof users.$inferSelect
 export type UserRole = (typeof userRole.enumValues)[number]
 export type Product = typeof products.$inferSelect
+export type Coupon = typeof coupons.$inferSelect
 export type Cart = typeof carts.$inferSelect
 export type CartItem = typeof cartItems.$inferSelect
