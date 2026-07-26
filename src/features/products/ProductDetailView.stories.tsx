@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite'
 
+import { Button } from '@/components/button/Button'
+
 import {
   longProductFixture,
   outOfStockProductFixture,
@@ -21,6 +23,9 @@ type Story = StoryObj<typeof meta>
 export const Default: Story = {
   args: {
     product: productFixture,
+    purchaseAction: (
+      <Button className="mt-7 w-full">1点カートに追加</Button>
+    ),
     status: 'success',
   },
 }
@@ -28,6 +33,11 @@ export const Default: Story = {
 export const OutOfStock: Story = {
   args: {
     product: outOfStockProductFixture,
+    purchaseAction: (
+      <Button className="mt-7 w-full" disabled>
+        在庫切れ
+      </Button>
+    ),
     status: 'success',
   },
 }
@@ -35,6 +45,9 @@ export const OutOfStock: Story = {
 export const LongContent: Story = {
   args: {
     product: longProductFixture,
+    purchaseAction: (
+      <Button className="mt-7 w-full">1点カートに追加</Button>
+    ),
     status: 'success',
   },
 }

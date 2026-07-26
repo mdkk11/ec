@@ -3,9 +3,9 @@ import type { ReactNode } from 'react'
 
 import { SiteFooter } from '@/components/layout/SiteFooter'
 import { SiteHeader } from '@/components/layout/SiteHeader'
-import { SessionProvider } from '@/features/auth/SessionProvider'
 import { loadInitialSessionState } from '@/features/auth/server/session-page-data'
 
+import { AppProviders } from './providers'
 import '@fontsource-variable/inter'
 import '@fontsource-variable/noto-sans-jp'
 import '@fontsource-variable/cormorant-garamond'
@@ -35,7 +35,7 @@ export default async function RootLayout({
         >
           メインコンテンツへ移動
         </a>
-        <SessionProvider initialState={initialSessionState}>
+        <AppProviders initialSessionState={initialSessionState}>
           <div className="grid min-h-screen grid-rows-[auto_1fr_auto]">
             <SiteHeader />
             <main id="main-content" tabIndex={-1}>
@@ -43,7 +43,7 @@ export default async function RootLayout({
             </main>
             <SiteFooter />
           </div>
-        </SessionProvider>
+        </AppProviders>
       </body>
     </html>
   )
