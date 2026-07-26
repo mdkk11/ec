@@ -16,8 +16,11 @@ import { Temporal } from '@/lib/date-time/temporal'
 import { requireCustomerRequest } from '@/server/auth/request-actor'
 import { getRuntimeDatabase } from '@/server/db/runtime'
 
-async function authorize(request: NextRequest) {
-  const authorization = await requireCustomerRequest(request)
+async function authorize(
+  request: NextRequest,
+  now: Temporal.Instant,
+) {
+  const authorization = await requireCustomerRequest(request, now)
   if (authorization.ok) return authorization
   return authorization.code === 'UNAUTHENTICATED'
     ? cartErrorResponse(401, authorization.code, 'ログインが必要です。')
@@ -30,7 +33,8 @@ async function authorize(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const authorization = await authorize(request)
+    const now = Temporal.Now.instant()
+    const authorization = await authorize(request, now)
     if (authorization instanceof Response) return authorization
 
     let payload: unknown
@@ -53,7 +57,6 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const now = Temporal.Now.instant()
     const cart = await applyCoupon(parsed.data, {
       db: getRuntimeDatabase().db,
       now,
@@ -75,10 +78,10 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const authorization = await authorize(request)
+    const now = Temporal.Now.instant()
+    const authorization = await authorize(request, now)
     if (authorization instanceof Response) return authorization
 
-    const now = Temporal.Now.instant()
     const cart = await removeCoupon({
       db: getRuntimeDatabase().db,
       now,

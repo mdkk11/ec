@@ -41,6 +41,23 @@ function StatusPage({
   )
 }
 
+function couponErrorMessage(error: ApiClientError) {
+  switch (error.code) {
+    case 'COUPON_NOT_FOUND':
+      return 'クーポンが見つかりませんでした。'
+    case 'COUPON_INACTIVE':
+      return 'このクーポンは現在利用できません。'
+    case 'COUPON_NOT_STARTED':
+      return 'このクーポンはまだ利用できません。'
+    case 'COUPON_EXPIRED':
+      return 'このクーポンの利用期間は終了しました。'
+    case 'COUPON_MINIMUM_NOT_MET':
+      return 'クーポンの最低購入額に達していません。'
+    default:
+      return error.message
+  }
+}
+
 export function CartPage() {
   const {
     refresh,
@@ -128,7 +145,11 @@ export function CartPage() {
   const operationState: CartViewOperationState = {
     errors: operations.state.errors.map(({ error, operation }) => ({
       message:
-        error instanceof Error
+        error instanceof ApiClientError &&
+        (operation.kind === 'apply-coupon' ||
+          operation.kind === 'remove-coupon')
+          ? couponErrorMessage(error)
+          : error instanceof Error
           ? error.message
           : '更新できませんでした。もう一度お試しください。',
       operation,

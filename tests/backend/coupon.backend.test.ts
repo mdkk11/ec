@@ -108,6 +108,20 @@ describe('クーポンAPI', () => {
     expect(body.cart.checkoutToken).toMatch(/^[0-9a-f]{64}$/u)
   })
 
+  it('適用・解除ごとに評価時刻を1回だけ取得する', async () => {
+    await prepareFixtures()
+    const cookie = await createCookie()
+    await addItem(cookie)
+
+    vi.mocked(Temporal.Now.instant).mockClear()
+    await applyCoupon(cookie, seedCouponCodes.welcome)
+    expect(Temporal.Now.instant).toHaveBeenCalledTimes(1)
+
+    vi.mocked(Temporal.Now.instant).mockClear()
+    await removeCoupon(cookie)
+    expect(Temporal.Now.instant).toHaveBeenCalledTimes(1)
+  })
+
   it.each([
     ['COUPON-002', 'MISSING', 404, 'COUPON_NOT_FOUND'],
     ['COUPON-003', seedCouponCodes.inactive, 400, 'COUPON_INACTIVE'],
@@ -222,16 +236,45 @@ describe('クーポンAPI', () => {
     expect(second.checkoutToken).toBe(first.checkoutToken)
   })
 
-  it('空カートを小計0円として通常の最低購入額判定に渡す', async () => {
+  it('空カートへ最低購入額0円のクーポンを通常どおり適用する', async () => {
     await prepareFixtures()
     const cookie = await createCookie()
-
-    const response = await applyCoupon(cookie, seedCouponCodes.welcome)
-
-    expect(response.status).toBe(400)
-    expect(await response.json()).toMatchObject({
-      code: 'COUPON_MINIMUM_NOT_MET',
+    await backendDatabase.db.insert(coupons).values({
+      code: 'EMPTY10',
+      discountPercent: 10,
+      endsAt: '2027-01-01T00:00:00Z',
+      isActive: true,
+      minimumSubtotal: 0,
+      startsAt: '2026-01-01T00:00:00Z',
     })
+
+    const response = await applyCoupon(cookie, 'EMPTY10')
+    const body = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(body.cart).toMatchObject({
+      checkoutToken: null,
+      coupon: { code: 'EMPTY10' },
+      discountAmount: 0,
+      subtotal: 0,
+      total: 0,
+      version: 2,
+    })
+  })
+
+  it('未認証のクーポン適用・解除を401にしてDBを変更しない', async () => {
+    const applyResponse = await applyCoupon('', seedCouponCodes.welcome)
+    const removeResponse = await removeCoupon('')
+
+    expect(applyResponse.status).toBe(401)
+    expect(await applyResponse.json()).toMatchObject({
+      code: 'UNAUTHENTICATED',
+    })
+    expect(removeResponse.status).toBe(401)
+    expect(await removeResponse.json()).toMatchObject({
+      code: 'UNAUTHENTICATED',
+    })
+    await expect(backendDatabase.db.select().from(carts)).resolves.toHaveLength(0)
   })
 
   it('AUTH-010: adminのクーポン適用・解除を403にする', async () => {

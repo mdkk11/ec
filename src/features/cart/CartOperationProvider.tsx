@@ -213,13 +213,14 @@ export function CartOperationProvider({
           )
           if (!current || cart.version >= current.version) {
             queryClient.setQueryData(cartQueryKey(task.customerId), cart)
+            task.resolve(cart)
           } else {
             await queryClient.refetchQueries({
               queryKey: cartQueryKey(task.customerId),
               type: 'active',
             })
+            task.resolve(null)
           }
-          task.resolve(cart)
         } catch (error) {
           if (
             task.customerId !== currentCustomerRef.current ||
@@ -298,9 +299,15 @@ export function CartOperationProvider({
         }
         nextTaskIdRef.current = task.id
 
-        const replaceIndex = queueRef.current.findIndex((queuedTask) =>
-          isQueuedUpdateForSameItem(queuedTask, operation),
-        )
+        const lastQueueIndex = queueRef.current.length - 1
+        const replaceIndex =
+          lastQueueIndex >= 0 &&
+          isQueuedUpdateForSameItem(
+            queueRef.current[lastQueueIndex]!,
+            operation,
+          )
+            ? lastQueueIndex
+            : -1
         let replacedTask: QueueTask | undefined
         if (replaceIndex >= 0) {
           replacedTask = queueRef.current[replaceIndex]
