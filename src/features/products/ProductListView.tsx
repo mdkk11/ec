@@ -67,7 +67,7 @@ export function ProductListView(props: ProductListViewProps) {
             <h2 className="font-serif text-3xl">商品を読み込めませんでした</h2>
             <p className="mt-4 text-sm leading-7 text-muted">
               {props.message ??
-                '通信状況を確認して、もう一度お試しください。'}
+                '商品を取得できませんでした。時間をおいてもう一度お試しください。'}
             </p>
           </div>
           <Button className="mt-7" onClick={props.onRetry}>

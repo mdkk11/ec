@@ -1,8 +1,4 @@
-import {
-  productListResponseSchema,
-  productResponseSchema,
-  type ProductDto,
-} from '@/contracts/product'
+import type { ProductDto } from '@/contracts/product'
 
 export const productFixture: ProductDto = {
   availability: 'in_stock',
@@ -54,13 +50,3 @@ export const productListFixture = [
     price: 12_100,
   },
 ] satisfies ProductDto[]
-
-export function productListResponseFixture(
-  items: ProductDto[] = productListFixture,
-) {
-  return productListResponseSchema.parse({ items })
-}
-
-export function productResponseFixture(product: ProductDto = productFixture) {
-  return productResponseSchema.parse({ product })
-}

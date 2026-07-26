@@ -99,7 +99,7 @@ export function ProductDetailView(props: ProductDetailViewProps) {
             </h1>
             <p className="mt-5 text-sm leading-7 text-muted">
               {props.message ??
-                '通信状況を確認して、もう一度お試しください。'}
+                '商品を取得できませんでした。時間をおいてもう一度お試しください。'}
             </p>
           </div>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
