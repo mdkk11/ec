@@ -2,7 +2,7 @@
 
 小規模ECを題材に、単体テスト、フロントエンド結合テスト、バックエンド結合テスト、E2E、VRTの責任範囲と運用を検証するサンドボックスです。
 
-現在は `docs/DEVELOPMENT_PLAN.md` のPhase 4として、Next.jsトップページ、PostgreSQL・Drizzle基盤、Cookieセッション認証、公開商品の閲覧、購入者カートまでを実装しています。クーポン、注文、管理機能は後続PRで追加します。
+現在は `docs/DEVELOPMENT_PLAN.md` のPhase 4として、Next.jsトップページ、PostgreSQL・Drizzle基盤、Cookieセッション認証、公開商品の閲覧、購入者カート、定率クーポンまでを実装しています。注文と管理機能は後続PRで追加します。
 
 ## Requirements
 
@@ -83,7 +83,7 @@ pnpm test:backend
 
 `db:prepare:test` は `NODE_ENV=test`、DB名、開発DBとの接続先分離、実際の接続先を検証してからテストDBだけを初期化します。`TEST_DATABASE_URL` がない場合に `DATABASE_URL` へフォールバックしません。
 
-E2EはPlaywrightのglobal setupから専用DBをresetし、migrationと固定seedを適用します。実行中の開発serverを再利用せず、`localhost:3105`でE2E専用serverを起動します。
+E2EはPlaywrightのglobal setupから専用DBをresetし、migrationと固定seedを適用します。実行中の開発serverを再利用せず、`NEXT_DIST_DIR=.next-e2e`へbuildしてから`localhost:3105`でE2E専用serverを起動します。
 
 ```bash
 pnpm db:prepare:e2e
@@ -123,6 +123,20 @@ pnpm test:e2e
 
 ブラウザのカート状態はTanStack Queryでcustomer IDごとに分離します。更新中の同一内容は重複送信せず、更新APIを直列実行して保留中の新しい数量は最新希望値へ集約します。
 
+## Coupons
+
+クーポンは購入者のカートへ1件だけ適用できます。コードは前後空白を除去して大文字へ正規化し、割引額は商品小計と定率から整数円へ切り捨てて計算します。適用済みクーポンが失効した場合は自動解除せず、原因を表示して注文確認を無効にします。
+
+開発・E2E seedには次の固定コードを含みます。
+
+| コード | 状態 |
+| --- | --- |
+| `WELCOME15` | 10,000円以上で15%割引 |
+| `INACTIVE10` | 無効 |
+| `FUTURE10` | 利用開始前 |
+| `EXPIRED10` | 期限切れ |
+| `MINIMUM20` | 100,000円以上で20%割引 |
+
 ## Visual regression tests
 
 VRTはStorybookの固定fixtureをPlaywright Chromiumで撮影します。基準画像の生成・更新はCIと同じ `mcr.microsoft.com/playwright:v1.61.1-noble` 環境だけで行い、macOSで生成した画像を正本としてコミットしません。
@@ -146,7 +160,7 @@ docker run --rm --ipc=host \
 
 生成後は対象storyの変更後画像をレビューします。VRT失敗を消すための一括更新や許容値変更は行いません。
 
-CIの `storybook-vrt` ジョブをmainの必須checkにする設定はリポジトリ管理者が手動で行います。GitHubのbranch protectionでmainを対象にし、`storybook-vrt` をrequired status checkへ追加してください。
+CIの `storybook-vrt` と `e2e` ジョブをmainの必須checkにする設定はリポジトリ管理者が手動で行います。GitHubのbranch protectionでmainを対象にし、両方をrequired status checkへ追加してください。
 
 schema変更時はmigrationを生成し、生成されたSQLとmetadataをコミットします。mainへ取り込まれたmigrationは編集しません。
 

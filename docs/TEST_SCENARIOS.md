@@ -131,6 +131,7 @@
 | `COUPON-008` | カートでは有効、注文前に無効化 | 確認済みcheckoutTokenで注文確定 | 409 `CHECKOUT_CHANGED`、注文を保存せず再確認を要求 | Backend結合 | Front結合 |
 | `COUPON-009` | 適用済みクーポンが期限切れ | カートを再取得 | `COUPON_EXPIRED` issue、checkoutTokenなし、原因別表示 | Backend結合 | Front結合 |
 | `COUPON-010` | 有効クーポン適用中 | クーポン解除APIを実行 | coupon_idをnullにし、cart versionを1増やして再計算結果を返す | Backend結合 | - |
+| `COUPON-011` | 有効クーポン適用中 | 同じコードを正規化後に再適用 | 成功扱いで同じカートを返し、coupon_id、version、checkoutTokenを変更しない | Backend結合 | Front結合 |
 
 ## 9. 注文・注文履歴・在庫競合
 
