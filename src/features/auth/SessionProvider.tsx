@@ -23,6 +23,7 @@ export type SessionState =
 type SessionContextValue = {
   logout: () => Promise<void>
   refresh: () => void
+  setAnonymous: () => void
   setAuthenticated: (user: UserDto) => void
   state: SessionState
 }
@@ -48,6 +49,11 @@ export function SessionProvider({
     setState({ status: 'authenticated', user })
   }, [])
 
+  const setAnonymous = useCallback(() => {
+    requestVersion.current += 1
+    setState({ status: 'anonymous' })
+  }, [])
+
   const logout = useCallback(async () => {
     const version = requestVersion.current + 1
     requestVersion.current = version
@@ -66,8 +72,8 @@ export function SessionProvider({
   }, [])
 
   const value = useMemo(
-    () => ({ logout, refresh, setAuthenticated, state }),
-    [logout, refresh, setAuthenticated, state],
+    () => ({ logout, refresh, setAnonymous, setAuthenticated, state }),
+    [logout, refresh, setAnonymous, setAuthenticated, state],
   )
 
   return (

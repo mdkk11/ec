@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
+import type { ReactNode } from 'react'
 
 import { Button } from '@/components/button/Button'
 import type { ProductDto } from '@/contracts/product'
@@ -9,6 +10,7 @@ import { formatPrice } from './format-price'
 export type ProductDetailViewProps =
   | {
       product: ProductDto
+      purchaseAction?: ReactNode
       status: 'success'
     }
   | {
@@ -147,6 +149,7 @@ export function ProductDetailView(props: ProductDetailViewProps) {
           >
             {outOfStock ? '在庫切れ' : '在庫あり'}
           </p>
+          {props.purchaseAction}
           <div className="mt-9 border-t border-line pt-7">
             <h2 className="text-xs font-semibold tracking-[0.1em]">商品説明</h2>
             <p className="mt-4 whitespace-pre-line text-sm leading-8 text-muted">
