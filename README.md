@@ -92,19 +92,21 @@ pnpm test:e2e
 
 ## Authentication
 
-開発・E2E用の架空アカウントは次の2件です。`db:seed` は同じ固定データを冪等に適用します。
+開発用の架空アカウントは次の2件です。`db:seed` は同じ固定データを冪等に適用します。
 
 | ロール | メールアドレス | パスワード |
 | --- | --- | --- |
 | 購入者 | `customer@example.test` | `CustomerPass123!` |
 | 管理者 | `admin@example.test` | `AdminPass123!` |
 
+E2E global setupは上記に加え、クーポンシナリオ専用の購入者 `coupon-e2e@example.test`（パスワード `CouponPass123!`）を投入します。既存のカートE2Eとはcustomerを共有しません。
+
 パスワードはscrypt hashだけをDBへ保存します。ログイン成功時の生セッショントークンはHttpOnly Cookieだけへ、SHA-256 hashはDBだけへ保存します。
 初期セッションはRoot LayoutのServer Componentで解決し、ブラウザの`useEffect`からセッションAPIを取得しません。
 
 ## Products
 
-`db:seed` とE2E global setupは、固定UUID・固定日時の架空商品を冪等に作成します。公開商品4件のうち1件は在庫切れで、非公開商品1件は公開APIへ返りません。商品画像はリポジトリ内のローカルassetだけを使用します。
+`db:seed` は固定UUID・固定日時の架空商品を冪等に作成します。公開商品4件のうち1件は在庫切れで、非公開商品1件は公開APIへ返りません。E2E global setupはさらにクーポンシナリオ専用の公開商品1件を追加します。商品画像はリポジトリ内のローカルassetだけを使用します。
 
 公開商品一覧は `created_at DESC, id ASC` の固定順です。検索、絞り込み、利用者が選択する並び替えは実装しません。購入者でログインすると、在庫がある商品を商品詳細からカートへ追加できます。
 
