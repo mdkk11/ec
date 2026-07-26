@@ -271,17 +271,87 @@ describe('カートAPI', () => {
     await expect(backendDatabase.db.select().from(cartItems)).resolves.toHaveLength(0)
   })
 
+  it('未認証の全カートAPIを401にする', async () => {
+    const responses = [
+      await getCartRoute(request('GET', '', '')),
+      await addItem(''),
+      await updateItem('', productId, 1),
+      await deleteItem('', productId),
+    ]
+
+    for (const response of responses) {
+      expect(response.status).toBe(401)
+      expect(await response.json()).toMatchObject({
+        code: 'UNAUTHENTICATED',
+      })
+    }
+    await expect(backendDatabase.db.select().from(carts)).resolves.toHaveLength(0)
+  })
+
+  it('不正JSONとschema違反を400の入力エラーにする', async () => {
+    await prepareCatalogAndUsers()
+    const cookie = await createCookie()
+    const malformedResponse = await addCartItemRoute(
+      new NextRequest(`${cartUrl}/items`, {
+        body: '{',
+        headers: {
+          Cookie: cookie,
+          'Content-Type': 'application/json',
+        },
+        method: 'POST',
+      }),
+    )
+    const schemaResponse = await addItem(cookie, 0)
+
+    expect(malformedResponse.status).toBe(400)
+    expect(await malformedResponse.json()).toEqual({
+      code: 'VALIDATION_ERROR',
+      message: '入力内容を確認してください。',
+    })
+    expect(schemaResponse.status).toBe(400)
+    expect(await schemaResponse.json()).toEqual({
+      code: 'VALIDATION_ERROR',
+      fieldErrors: {
+        quantity: ['数量は1以上で入力してください。'],
+      },
+      message: '入力内容を確認してください。',
+    })
+    await expect(backendDatabase.db.select().from(carts)).resolves.toHaveLength(0)
+  })
+
+  it('不正なカート明細IDを更新・削除とも400にする', async () => {
+    await prepareCatalogAndUsers()
+    const cookie = await createCookie()
+
+    const updateResponse = await updateItem(cookie, 'invalid-item-id', 1)
+    const deleteResponse = await deleteItem(cookie, 'invalid-item-id')
+
+    expect(updateResponse.status).toBe(400)
+    expect(deleteResponse.status).toBe(400)
+    expect(await updateResponse.json()).toMatchObject({
+      code: 'VALIDATION_ERROR',
+    })
+    expect(await deleteResponse.json()).toMatchObject({
+      code: 'VALIDATION_ERROR',
+    })
+    await expect(backendDatabase.db.select().from(carts)).resolves.toHaveLength(0)
+  })
+
   it('AUTH-010: adminの全カートAPIを403にする', async () => {
     await prepareCatalogAndUsers()
     const cookie = await createCookie(adminId)
 
-    const getResponse = await getCartRoute(request('GET', '', cookie))
-    const addResponse = await addItem(cookie)
+    const responses = [
+      await getCartRoute(request('GET', '', cookie)),
+      await addItem(cookie),
+      await updateItem(cookie, productId, 1),
+      await deleteItem(cookie, productId),
+    ]
 
-    expect(getResponse.status).toBe(403)
-    expect(addResponse.status).toBe(403)
-    expect(await getResponse.json()).toMatchObject({ code: 'FORBIDDEN' })
-    expect(await addResponse.json()).toMatchObject({ code: 'FORBIDDEN' })
+    for (const response of responses) {
+      expect(response.status).toBe(403)
+      expect(await response.json()).toMatchObject({ code: 'FORBIDDEN' })
+    }
     await expect(backendDatabase.db.select().from(carts)).resolves.toHaveLength(0)
   })
 
