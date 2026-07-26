@@ -3,9 +3,9 @@ import { SessionControls } from '@/features/auth/SessionControls'
 import { Logo } from './Logo'
 
 const navigation = [
-  { href: '#new', label: 'NEW IN' },
-  { href: '#edit', label: 'SEASONAL EDIT' },
-  { href: '#journal', label: 'POINT OF VIEW' },
+  { href: '/products', label: '商品一覧' },
+  { href: '/#edit', label: 'SEASONAL EDIT' },
+  { href: '/#journal', label: 'POINT OF VIEW' },
 ] as const
 
 export function SiteHeader() {
