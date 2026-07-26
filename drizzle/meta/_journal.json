@@ -15,6 +15,13 @@
       "when": 1784824591562,
       "tag": "0001_chubby_doctor_spectrum",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785070197848,
+      "tag": "0002_gifted_silver_centurion",
+      "breakpoints": true
     }
   ]
 }

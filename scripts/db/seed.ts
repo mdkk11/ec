@@ -3,7 +3,10 @@ import {
   loadDatabaseEnvironment,
   requireDatabaseEnvironment,
 } from '../../src/server/db/environment'
-import { seedAuthenticationUsers } from '../../src/server/db/seed'
+import {
+  seedAuthenticationUsers,
+  seedCatalogProducts,
+} from '../../src/server/db/seed'
 
 loadDatabaseEnvironment()
 
@@ -11,7 +14,8 @@ const client = createDatabaseClient(requireDatabaseEnvironment('DATABASE_URL'))
 
 try {
   await seedAuthenticationUsers(client.db)
-  console.info('開発DBへ認証用seedを適用しました。')
+  await seedCatalogProducts(client.db)
+  console.info('開発DBへ認証・商品seedを適用しました。')
 } finally {
   await client.close()
 }
