@@ -31,5 +31,21 @@ services:
       timeout: 5s
       retries: 15
 
+  postgres-e2e:
+    image: postgres:18.4-alpine
+    environment:
+      POSTGRES_DB: mockshop_e2e
+      POSTGRES_PASSWORD: mockshop_local
+      POSTGRES_USER: mockshop
+    ports:
+      - "5434:5432"
+    tmpfs:
+      - /var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mockshop -d mockshop_e2e"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
 volumes:
   mockshop-postgres-dev:

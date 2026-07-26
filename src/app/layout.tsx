@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 
 import { SiteFooter } from '@/components/layout/SiteFooter'
 import { SiteHeader } from '@/components/layout/SiteHeader'
+import { SessionProvider } from '@/features/auth/SessionProvider'
 
 import './globals.css'
 
@@ -25,13 +26,15 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         >
           メインコンテンツへ移動
         </a>
-        <div className="grid min-h-screen grid-rows-[auto_1fr_auto]">
-          <SiteHeader />
-          <main id="main-content" tabIndex={-1}>
-            {children}
-          </main>
-          <SiteFooter />
-        </div>
+        <SessionProvider>
+          <div className="grid min-h-screen grid-rows-[auto_1fr_auto]">
+            <SiteHeader />
+            <main id="main-content" tabIndex={-1}>
+              {children}
+            </main>
+            <SiteFooter />
+          </div>
+        </SessionProvider>
       </body>
     </html>
   )

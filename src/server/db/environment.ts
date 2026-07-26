@@ -16,7 +16,7 @@ export function loadDatabaseEnvironment() {
 }
 
 export function requireDatabaseEnvironment(
-  name: 'DATABASE_URL' | 'TEST_DATABASE_URL',
+  name: 'DATABASE_URL' | 'TEST_DATABASE_URL' | 'E2E_DATABASE_URL',
 ): string {
   const value = process.env[name]
   if (!value) {

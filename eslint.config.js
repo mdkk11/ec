@@ -9,6 +9,7 @@ export default defineConfig([
   ...storybook.configs['flat/recommended'],
   globalIgnores([
     '.next/**',
+    '.next-e2e/**',
     'storybook-static/**',
     'playwright-report/**',
     'test-results/**',

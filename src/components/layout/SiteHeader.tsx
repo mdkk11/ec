@@ -1,3 +1,5 @@
+import { SessionControls } from '@/features/auth/SessionControls'
+
 import { Logo } from './Logo'
 
 const navigation = [
@@ -49,9 +51,12 @@ export function SiteHeader() {
           <Logo />
         </div>
 
-        <p className="justify-self-end text-[10px] font-medium tracking-[0.1em] text-muted sm:text-[11px]">
-          JAPAN / JPY
-        </p>
+        <div className="flex items-center justify-self-end gap-3">
+          <p className="hidden text-[10px] font-medium tracking-[0.1em] text-muted xl:block">
+            JAPAN / JPY
+          </p>
+          <SessionControls />
+        </div>
       </div>
     </header>
   )

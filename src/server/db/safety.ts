@@ -1,17 +1,16 @@
 import { Client, type PoolClient } from 'pg'
 
-const EXPECTED_TEST_DATABASE = 'mockshop_test'
-
 type DatabaseTarget = {
   database: string
   host: string
   port: string
 }
 
-type TestDatabaseGuardOptions = {
+type DestructiveDatabaseGuardOptions = {
   developmentDatabaseUrl?: string
+  expectedDatabase: 'mockshop_test' | 'mockshop_e2e'
   nodeEnv?: string
-  testDatabaseUrl: string
+  targetDatabaseUrl: string
 }
 
 function normalizeHost(hostname: string) {
@@ -61,35 +60,36 @@ function targetKey(target: DatabaseTarget) {
   return `${target.host}:${target.port}/${target.database}`
 }
 
-export function assertSafeTestDatabaseUrl({
+export function assertSafeDatabaseUrl({
   developmentDatabaseUrl,
+  expectedDatabase,
   nodeEnv,
-  testDatabaseUrl,
-}: TestDatabaseGuardOptions) {
+  targetDatabaseUrl,
+}: DestructiveDatabaseGuardOptions) {
   if (nodeEnv !== 'test') {
     throw new Error('テストDBの破壊操作はNODE_ENV=testでのみ実行できます。')
   }
 
-  const testTarget = parseDatabaseTarget(testDatabaseUrl)
-  if (testTarget.database !== EXPECTED_TEST_DATABASE) {
-    throw new Error(`テストDB名は ${EXPECTED_TEST_DATABASE} である必要があります。`)
+  const target = parseDatabaseTarget(targetDatabaseUrl)
+  if (target.database !== expectedDatabase) {
+    throw new Error(`テストDB名は ${expectedDatabase} である必要があります。`)
   }
 
   if (developmentDatabaseUrl) {
     const developmentTarget = parseDatabaseTarget(developmentDatabaseUrl)
-    if (targetKey(testTarget) === targetKey(developmentTarget)) {
-      throw new Error('TEST_DATABASE_URLとDATABASE_URLに同じ接続先は指定できません。')
+    if (targetKey(target) === targetKey(developmentTarget)) {
+      throw new Error('破壊対象DBとDATABASE_URLに同じ接続先は指定できません。')
     }
   }
 
-  return testTarget
+  return target
 }
 
-export async function assertConnectedTestDatabase(
+export async function assertConnectedDatabase(
   client: PoolClient,
-  options: TestDatabaseGuardOptions,
+  options: DestructiveDatabaseGuardOptions,
 ) {
-  const expectedTarget = assertSafeTestDatabaseUrl(options)
+  const expectedTarget = assertSafeDatabaseUrl(options)
   const result = await client.query<{ currentDatabase: string }>(
     'select current_database() as "currentDatabase"',
   )
