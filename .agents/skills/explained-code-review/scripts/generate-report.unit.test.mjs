@@ -186,6 +186,23 @@ test('Schema検証済みself-contained HTMLを安全に生成する', () => {
   assert.match(html, /\\u003c\/script\\u003e/u)
 })
 
+test('diff本文のtemplate placeholderを置換対象として再解釈しない', () => {
+  const data = fixture()
+  const placeholderText = '{{STYLE}} {{REPORT_JSON}} {{SCRIPT}}'
+  data.blind.files[0].hunks[0].lines[0].text = placeholderText
+  writeFileSync(data.paths.blind, JSON.stringify(data.blind))
+
+  const result = run(data)
+  const html = readFileSync(result.indexPath, 'utf8')
+  const embedded = html.match(
+    /<script id="report-data" type="application\/json">([\s\S]*?)<\/script>\s*<script>([\s\S]*?)<\/script>\s*<\/body>/u,
+  )
+  assert.ok(embedded)
+  const report = JSON.parse(embedded[1])
+  assert.equal(report.groups[0].hunks[0].lines[0].text, placeholderText)
+  assert.match(embedded[2], /window\.__explainedCodeReviewReady = true/u)
+})
+
 test('未知field、hunk欠落、Stage 1改変を拒否する', () => {
   const data = fixture()
   assert.throws(() => parseBlindInput({ ...data.blind, unknown: true }), /未知field/u)

@@ -712,11 +712,7 @@ function applyTemplate(template, replacements) {
   ) {
     throw new Error('HTML templateのplaceholder契約が不正です。')
   }
-  let output = template
-  for (const [key, value] of Object.entries(replacements)) {
-    output = output.replace(`{{${key}}}`, () => value)
-  }
-  return output
+  return template.replace(/\{\{([A-Z_]+)\}\}/gu, (_token, key) => replacements[key])
 }
 
 function assertSchemaCurrent(skillDirectory) {
