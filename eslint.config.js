@@ -13,6 +13,8 @@ export default defineConfig([
     'storybook-static/**',
     'playwright-report/**',
     'test-results/**',
+    '.review/**',
+    '.agents/**/scripts/report-validator.mjs',
     'next-env.d.ts',
   ]),
 ])
