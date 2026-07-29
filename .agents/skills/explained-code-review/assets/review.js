@@ -255,7 +255,7 @@
   }
 
   function renderHeader() {
-    nodes.title.textContent = `解説つき差分レビュー · ${report.git.branch}`
+    nodes.title.textContent = report.git.branch
     nodes.stats.replaceChildren()
     for (const [term, value] of [
       ['Files', report.stats.files],

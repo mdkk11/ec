@@ -126,6 +126,8 @@ test('file URLで承認・resolve・コメント・keyboard・copy fallbackが�
 }) => {
   await page.goto(url)
   await expect.poll(() => page.evaluate(() => window.__explainedCodeReviewReady)).toBe(true)
+  await expect(page.locator('#review-title')).toHaveText('feature/ui')
+  await expect(page.getByText('解説つき差分レビュー')).toHaveCount(0)
   await expect(page.getByText('未確認 1件', { exact: true })).toBeVisible()
   const featureFilter = page.locator('#change-filter').getByLabel('feature')
   await featureFilter.uncheck()
