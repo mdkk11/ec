@@ -27,7 +27,7 @@ const report = {
   stats: {
     files: 1,
     hunks: 1,
-    additions: 1,
+    additions: 2000,
     deletions: 0,
     committedFiles: 1,
     stagedFiles: 0,
@@ -60,10 +60,10 @@ const report = {
           oldPath: null,
           newPath: 'ui.js',
           status: 'A',
-          additions: 1,
+          additions: 2000,
           deletions: 0,
           binary: false,
-          size: 10,
+          size: 20000,
           changeSources: ['committed'],
         },
       ],
@@ -76,10 +76,13 @@ const report = {
           oldStart: 0,
           oldLines: 0,
           newStart: 1,
-          newLines: 1,
-          lines: [
-            { kind: 'addition', oldLine: null, newLine: 1, text: 'safe()' },
-          ],
+          newLines: 2000,
+          lines: Array.from({ length: 2000 }, (_, index) => ({
+            kind: 'addition',
+            oldLine: null,
+            newLine: index + 1,
+            text: `safe(${index + 1})`,
+          })),
         },
       ],
       findings: [
@@ -92,8 +95,8 @@ const report = {
           locationKind: 'diff',
           lineSide: 'new',
           file: 'ui.js',
-          startLine: 1,
-          endLine: 1,
+          startLine: 1750,
+          endLine: 1750,
           title: '確認対象',
           issue: '問題の説明',
           rationale: '確認理由',
@@ -128,6 +131,16 @@ test('file URLで承認・resolve・コメント・keyboard・copy fallbackが�
   await expect.poll(() => page.evaluate(() => window.__explainedCodeReviewReady)).toBe(true)
   await expect(page.locator('#review-title')).toHaveText('feature/ui')
   await expect(page.getByText('解説つき差分レビュー')).toHaveCount(0)
+  await expect(page.locator('.diff-line')).toHaveCount(0)
+  await page
+    .getByRole('button', { name: 'ui.js:1750-1750', exact: true })
+    .click()
+  await expect(page.locator('.hunk')).toHaveAttribute('open', '')
+  await expect(page.locator('.diff-line')).toHaveCount(400)
+  await expect(page.locator('[data-line-index="1749"]')).toHaveClass(
+    /highlighted/u,
+  )
+  await expect(page.locator('[data-line-index="1749"]')).toBeFocused()
   await expect(page.getByText('未確認 1件', { exact: true })).toBeVisible()
   const featureFilter = page.locator('#change-filter').getByLabel('feature')
   await featureFilter.uncheck()
@@ -185,6 +198,8 @@ for (const width of [375, 768, 1280]) {
     expect(overflows).toBe(false)
     await expect(page.locator('.group-row')).toBeVisible()
     if (width === 375) {
+      await page.locator('.hunk summary').click()
+      await expect(page.locator('.diff-line')).toHaveCount(400)
       const scrollable = await page.locator('.diff-scroll').evaluate((node) => {
         node.scrollLeft = node.scrollWidth
         return node.scrollWidth > node.clientWidth && node.scrollLeft > 0

@@ -13,6 +13,8 @@
     'mixed',
   ]
   const stateVersion = 2
+  const diffPageSize = 400
+  const autoOpenLineLimit = 1200
   const byId = (id) => document.getElementById(id)
   const nodes = {
     report: byId('report-data'),
@@ -169,6 +171,7 @@
 
   let state = readState()
   let renderToken = 0
+  let hunkViews = new Map()
 
   function saveState() {
     try {
@@ -371,24 +374,44 @@
     return number !== null && number >= finding.startLine && number <= finding.endLine
   }
 
-  function renderHunk(hunk, findings, container, token) {
+  function renderHunk(hunk, findings, container, token, autoOpen) {
     const details = element('details', 'hunk')
-    details.open = true
-    const summary = element('summary', '', `${hunk.file}  ${hunk.header}`)
+    const summary = element(
+      'summary',
+      '',
+      `${hunk.file}  ${hunk.header}  (${hunk.lines.length} lines)`,
+    )
     const scroll = element('div', 'diff-scroll')
     const table = element('div', 'diff-lines')
+    const pagination = element('nav', 'diff-pagination')
+    pagination.setAttribute('aria-label', `${hunk.file}のdiffページ`)
+    const previous = element('button', '', '前のdiff行')
+    previous.type = 'button'
+    const pageStatus = element('span')
+    const next = element('button', '', '次のdiff行')
+    next.type = 'button'
+    pagination.append(previous, pageStatus, next)
+    pagination.hidden = hunk.lines.length <= diffPageSize
     scroll.append(table)
-    details.append(summary, scroll)
+    details.append(summary, scroll, pagination)
     container.append(details)
-    let cursor = 0
-    const appendChunk = () => {
-      if (token !== renderToken) return
+    let pageStart = 0
+
+    const renderPage = (requestedStart) => {
+      if (token !== renderToken) return null
+      const maximumStart = Math.max(
+        0,
+        Math.floor((hunk.lines.length - 1) / diffPageSize) * diffPageSize,
+      )
+      pageStart = Math.max(0, Math.min(requestedStart, maximumStart))
+      const pageEnd = Math.min(pageStart + diffPageSize, hunk.lines.length)
       const fragment = document.createDocumentFragment()
-      for (let end = Math.min(cursor + 160, hunk.lines.length); cursor < end; cursor++) {
-        const line = hunk.lines[cursor]
+      for (let index = pageStart; index < pageEnd; index += 1) {
+        const line = hunk.lines[index]
         const row = element('div', 'diff-line')
         row.dataset.kind = line.kind
         row.dataset.hunkId = hunk.id
+        row.dataset.lineIndex = String(index)
         if (
           findings.some((finding) => lineMatchesFinding(line, finding, hunk))
         ) {
@@ -406,15 +429,36 @@
         )
         fragment.append(row)
       }
-      table.append(fragment)
-      if (cursor < hunk.lines.length) schedule(appendChunk)
+      table.replaceChildren(fragment)
+      pageStatus.textContent =
+        hunk.lines.length === 0
+          ? '0 lines'
+          : `${pageStart + 1}–${pageEnd} / ${hunk.lines.length} lines`
+      previous.disabled = pageStart === 0
+      next.disabled = pageEnd >= hunk.lines.length
+      return table
     }
-    schedule(appendChunk)
-  }
 
-  function schedule(callback) {
-    if ('requestIdleCallback' in window) window.requestIdleCallback(callback)
-    else window.setTimeout(callback, 0)
+    previous.addEventListener('click', () => {
+      renderPage(pageStart - diffPageSize)
+    })
+    next.addEventListener('click', () => {
+      renderPage(pageStart + diffPageSize)
+    })
+    details.addEventListener('toggle', () => {
+      if (details.open && table.childElementCount === 0) renderPage(pageStart)
+    })
+    if (autoOpen) {
+      details.open = true
+      renderPage(0)
+    }
+    return {
+      openAt(index) {
+        details.open = true
+        renderPage(Math.floor(index / diffPageSize) * diffPageSize)
+        return table.querySelector(`[data-line-index="${index}"]`)
+      },
+    }
   }
 
   function scrollToFinding(finding, group) {
@@ -424,14 +468,14 @@
         item.lines.some((line) => lineMatchesFinding(line, finding, item)),
     )
     if (!hunk) return
-    const rows = nodes.detail.querySelectorAll(`[data-hunk-id="${CSS.escape(hunk.id)}"]`)
-    const line = [...rows].find((row) => {
-      const values = row.querySelectorAll('.line-number')
-      const index = finding.lineSide === 'old' ? 0 : 1
-      const number = Number(values[index]?.textContent)
-      return number >= finding.startLine && number <= finding.endLine
-    })
+    const lineIndex = hunk.lines.findIndex((line) =>
+      lineMatchesFinding(line, finding, hunk),
+    )
+    if (lineIndex < 0) return
+    const line = hunkViews.get(hunk.id)?.openAt(lineIndex)
     if (!line) return
+    line.tabIndex = -1
+    line.focus({ preventScroll: true })
     line.scrollIntoView({ behavior: 'smooth', block: 'center' })
     line.classList.add('highlighted')
   }
@@ -528,6 +572,7 @@
   function renderDetail(group) {
     renderToken += 1
     const token = renderToken
+    hunkViews = new Map()
     nodes.detail.replaceChildren()
     nodes.detail.tabIndex = -1
     if (!group) {
@@ -563,7 +608,15 @@
     nodes.detail.append(verification)
     const diff = element('section', 'diff-section')
     diff.append(element('h3', '', `Unified diff (${group.hunks.length} hunks)`))
-    for (const hunk of group.hunks) renderHunk(hunk, group.findings, diff, token)
+    const autoOpen =
+      group.hunks.reduce((total, hunk) => total + hunk.lines.length, 0) <=
+      autoOpenLineLimit
+    for (const hunk of group.hunks) {
+      hunkViews.set(
+        hunk.id,
+        renderHunk(hunk, group.findings, diff, token, autoOpen),
+      )
+    }
     nodes.detail.append(diff)
     renderFindings(group, nodes.detail)
     renderComments(group, nodes.detail)
