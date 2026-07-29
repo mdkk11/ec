@@ -753,6 +753,80 @@ function containedChild(root, child) {
   return dirname(resolve(child)) === realpathSync(root)
 }
 
+function readLockOwner(lock) {
+  const ownerPath = join(lock, 'owner.json')
+  if (!existsSync(ownerPath)) return null
+  const stat = lstatSync(ownerPath)
+  if (stat.isSymbolicLink() || !stat.isFile()) return null
+  try {
+    const owner = JSON.parse(readFileSync(ownerPath, 'utf8'))
+    if (
+      owner === null ||
+      typeof owner !== 'object' ||
+      Array.isArray(owner) ||
+      Object.keys(owner).sort().join(',') !== 'createdAt,pid' ||
+      !Number.isInteger(owner.pid) ||
+      owner.pid < 1 ||
+      typeof owner.createdAt !== 'string' ||
+      !Number.isFinite(Date.parse(owner.createdAt))
+    ) {
+      return null
+    }
+    return owner
+  } catch {
+    return null
+  }
+}
+
+function processExists(pid) {
+  try {
+    process.kill(pid, 0)
+    return true
+  } catch (error) {
+    return error?.code !== 'ESRCH'
+  }
+}
+
+function acquireReviewLock(reviewRoot, reviewId) {
+  const lock = join(reviewRoot, `.lock-${reviewId}`)
+  let reclaimed = false
+  while (true) {
+    try {
+      mkdirSync(lock)
+      try {
+        writeFileSync(
+          join(lock, 'owner.json'),
+          `${JSON.stringify({
+            pid: process.pid,
+            createdAt: new Date().toISOString(),
+          })}\n`,
+          { flag: 'wx', mode: 0o600 },
+        )
+      } catch (error) {
+        rmSync(lock, { recursive: true, force: true })
+        throw error
+      }
+      return lock
+    } catch (error) {
+      if (error?.code !== 'EEXIST') throw error
+    }
+
+    ensurePlainDirectory(lock, 'review生成lock')
+    const owner = readLockOwner(lock)
+    if (!owner) {
+      throw new Error(`review生成lockのowner情報が不正です: ${reviewId}`)
+    }
+    if (processExists(owner.pid)) {
+      throw new Error(`同じreview IDの生成が進行中です: ${reviewId}`)
+    }
+    if (reclaimed) {
+      throw new Error(`review生成lockの回収中に競合しました: ${reviewId}`)
+    }
+    rmSync(lock, { recursive: true })
+    reclaimed = true
+  }
+}
+
 function recoverInterrupted(reviewRoot, target, reviewId) {
   const entries = readdirSync(reviewRoot)
   const backups = entries
@@ -824,12 +898,7 @@ function writeAtomically(repository, reviewId, report, html, failAt) {
     throw new Error('review出力先にsymlinkは使用できません。')
   }
 
-  const lock = join(realReviewRoot, `.lock-${reviewId}`)
-  try {
-    mkdirSync(lock)
-  } catch {
-    throw new Error(`同じreview IDの生成が進行中です: ${reviewId}`)
-  }
+  const lock = acquireReviewLock(realReviewRoot, reviewId)
 
   let temporary = null
   let backup = null

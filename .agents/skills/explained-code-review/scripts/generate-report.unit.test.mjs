@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict'
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 import {
   cpSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   readdirSync,
   renameSync,
+  rmSync,
   writeFileSync,
 } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -259,6 +261,49 @@ test('targetなしで有効backupがあれば次回起動時に回復する', ()
   )
   run(data)
   assert.deepEqual(readdirSync(reviewRoot).sort(), ['example-review'])
+})
+
+test('終了済みprocessのlockを回収して中断済みbackupから回復する', () => {
+  const data = fixture()
+  run(data)
+  const reviewRoot = join(data.repository, '.review')
+  renameSync(
+    join(reviewRoot, 'example-review'),
+    join(reviewRoot, '.backup-example-review-interrupted'),
+  )
+  const lock = join(reviewRoot, '.lock-example-review')
+  mkdirSync(lock)
+  const exited = spawnSync(process.execPath, ['-e', ''])
+  writeFileSync(
+    join(lock, 'owner.json'),
+    JSON.stringify({
+      pid: exited.pid,
+      createdAt: new Date().toISOString(),
+    }),
+  )
+
+  run(data)
+
+  assert.deepEqual(readdirSync(reviewRoot).sort(), ['example-review'])
+})
+
+test('実行中processが所有するlockは回収しない', () => {
+  const data = fixture()
+  const reviewRoot = join(data.repository, '.review')
+  mkdirSync(reviewRoot)
+  const lock = join(reviewRoot, '.lock-example-review')
+  mkdirSync(lock)
+  writeFileSync(
+    join(lock, 'owner.json'),
+    JSON.stringify({
+      pid: process.pid,
+      createdAt: new Date().toISOString(),
+    }),
+  )
+
+  assert.throws(() => run(data), /生成が進行中/u)
+  assert.equal(readdirSync(reviewRoot).includes('.lock-example-review'), true)
+  rmSync(lock, { recursive: true })
 })
 
 test('standalone validatorは再生成しても同一で、copy先でnode_modulesなしに動く', () => {
