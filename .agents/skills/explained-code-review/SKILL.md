@@ -44,6 +44,8 @@ node <skill-dir>/scripts/collect-diff.mjs
 
 既定scopeは`workspace`。merge-baseから現在workspaceまでのnet差分に、未追跡の通常fileを加える。selected planと`.review/**`は対象外になる。baseは`origin/HEAD`、`origin/main`、`main`、`origin/master`、`master`の順で解決し、fetchしない。
 
+`--output`を指定する場合は、存在しないpathまたは空の通常directoryを使う。既存内容、symlink、通常directory以外は上書きせず停止する。
+
 標準出力から`blindInputPath`、`planInputPath`、`reviewId`を記録する。
 
 ## 3. Stage 1: Blind review

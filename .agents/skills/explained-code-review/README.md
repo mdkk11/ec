@@ -158,6 +158,8 @@ node <skill-dir>/scripts/collect-diff.mjs \
 
 collectorの標準出力に`blindInputPath`、`planInputPath`、`reviewId`が含まれます。Stage 1とStage 2の分析JSONを用意した後、generatorを実行します。
 
+`--output`には存在しないpathまたは空の通常directoryだけを指定できます。既存fileを含むdirectory、symlink、通常directory以外は上書きせず停止します。
+
 ```bash
 node <skill-dir>/scripts/generate-report.mjs \
   --blind-input <blind-input.json> \

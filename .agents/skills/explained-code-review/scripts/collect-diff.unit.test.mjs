@@ -184,6 +184,53 @@ test('tracked symlinkとsubmoduleをGit headerのmodeから判定する', () => 
   assert.match(submodule.hunks[0].lines[0].text, /Submodule changed/u)
 })
 
+for (const scope of ['workspace', 'commits']) {
+  test(`${scope} scopeはrename前後のselected planをBlind入力から除外する`, () => {
+    const { repository } = repositoryFixture()
+    mkdirSync(join(repository, 'plans'))
+    writeFileSync(join(repository, 'plans', 'old.md'), 'secret renamed plan\n')
+    git(repository, ['add', 'plans/old.md'])
+    git(repository, ['commit', '-m', 'add plan'])
+    const base = git(repository, ['rev-parse', 'HEAD'])
+    git(repository, ['mv', 'plans/old.md', 'plans/new.md'])
+    if (scope === 'commits') {
+      git(repository, ['commit', '-m', 'rename plan'])
+    }
+
+    const result = collectDiff({
+      repository,
+      baseRef: base,
+      planPath: 'plans/new.md',
+      scope,
+      outputDirectory: join(repository, 'inputs'),
+    })
+    const blindText = readFileSync(result.blindInputPath, 'utf8')
+    assert.doesNotMatch(blindText, /secret renamed plan/u)
+    assert.doesNotMatch(blindText, /plans\/old\.md/u)
+    assert.doesNotMatch(blindText, /plans\/new\.md/u)
+  })
+}
+
+test('既存fileを含む明示outputを拒否して内容を保持する', () => {
+  const { repository, base } = repositoryFixture()
+  const outputDirectory = join(repository, 'inputs')
+  mkdirSync(outputDirectory)
+  const existingPath = join(outputDirectory, 'blind-input.json')
+  writeFileSync(existingPath, 'keep this file\n')
+
+  assert.throws(
+    () =>
+      collectDiff({
+        repository,
+        baseRef: base,
+        noPlan: true,
+        outputDirectory,
+      }),
+    /空directory/u,
+  )
+  assert.equal(readFileSync(existingPath, 'utf8'), 'keep this file\n')
+})
+
 test('selected planとruleの競合、およびplan symlinkを拒否する', () => {
   const { repository, base } = repositoryFixture()
   mkdirSync(join(repository, 'plans'))

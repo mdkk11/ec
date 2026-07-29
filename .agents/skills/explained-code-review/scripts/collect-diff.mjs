@@ -6,7 +6,9 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  readdirSync,
   realpathSync,
+  rmSync,
   statSync,
   writeFileSync,
 } from 'node:fs'
@@ -67,11 +69,11 @@ function repositoryPath(repository, absolutePath) {
   return relative(repository, absolutePath).split(sep).join('/')
 }
 
-function isExcludedPath(path, planPath) {
+function isExcludedPath(path, planPaths) {
   return (
     path === '.review' ||
     path.startsWith('.review/') ||
-    (planPath !== null && path === planPath)
+    planPaths.includes(path)
   )
 }
 
@@ -272,17 +274,17 @@ function resolvePlan(repository, statusEntries, branch, options) {
   }
 }
 
-function pathspec(planPath) {
+function pathspec(planPaths) {
   return [
     '--',
     '.',
     ':(top,exclude).review',
     ':(top,exclude).review/**',
-    ...(planPath ? [`:(top,exclude,literal)${planPath}`] : []),
+    ...planPaths.map((path) => `:(top,exclude,literal)${path}`),
   ]
 }
 
-function fullPatch(repository, mergeBase, planPath) {
+function fullPatch(repository, mergeBase, planPaths) {
   return git(
     repository,
     [
@@ -295,13 +297,13 @@ function fullPatch(repository, mergeBase, planPath) {
       '--no-color',
       '--unified=3',
       mergeBase,
-      ...pathspec(planPath),
+      ...pathspec(planPaths),
     ],
     { buffer: true },
   )
 }
 
-function untrackedPaths(repository, planPath) {
+function untrackedPaths(repository, planPaths) {
   return git(
     repository,
     ['ls-files', '--others', '--exclude-standard', '-z'],
@@ -310,7 +312,7 @@ function untrackedPaths(repository, planPath) {
     .toString('utf8')
     .split('\0')
     .filter(Boolean)
-    .filter((path) => !isExcludedPath(path, planPath))
+    .filter((path) => !isExcludedPath(path, planPaths))
     .sort()
 }
 
@@ -342,12 +344,12 @@ function readUntracked(repository, paths, includeContent) {
   return files
 }
 
-function snapshot(repository, mergeBase, planPath, includeContent = false) {
-  const patch = fullPatch(repository, mergeBase, planPath)
+function snapshot(repository, mergeBase, planPaths, includeContent = false) {
+  const patch = fullPatch(repository, mergeBase, planPaths)
   const status = statusSnapshot(repository)
   const untracked = readUntracked(
     repository,
-    untrackedPaths(repository, planPath),
+    untrackedPaths(repository, planPaths),
     includeContent,
   )
   const manifest = Buffer.from(
@@ -390,6 +392,62 @@ function parseNameStatus(buffer) {
     }
   }
   return paths
+}
+
+function resolvePlanPaths(
+  repository,
+  mergeBase,
+  headOid,
+  scope,
+  statusEntries,
+  planPath,
+) {
+  if (planPath === null) return []
+  const paths = new Set([planPath])
+  const target = scope === 'commits' ? [headOid] : []
+  const changes = parseNameStatus(
+    git(
+      repository,
+      [
+        'diff',
+        '--name-status',
+        '-z',
+        '--find-renames',
+        '--find-copies',
+        '--no-ext-diff',
+        '--no-textconv',
+        mergeBase,
+        ...target,
+        ...pathspec([]),
+      ],
+      { buffer: true },
+    ),
+  )
+  const renamePairs = [
+    ...changes
+      .filter((change) => /^[RC]/u.test(change.status))
+      .map((change) => ({
+        path: change.newPath,
+        oldPath: change.oldPath,
+      })),
+    ...statusEntries,
+  ]
+  let changed = true
+  while (changed) {
+    changed = false
+    for (const pair of renamePairs) {
+      if (
+        pair.path &&
+        pair.oldPath &&
+        paths.has(pair.path) &&
+        !paths.has(pair.oldPath)
+      ) {
+        paths.add(pair.oldPath)
+        changed = true
+      }
+    }
+  }
+  return [...paths].sort()
 }
 
 function parseHunks(patch, fileId, file, firstHunkNumber) {
@@ -477,11 +535,11 @@ function metaHunk(id, fileId, file, description) {
   }
 }
 
-function sourceMap(statusEntries, planPath) {
+function sourceMap(statusEntries, planPaths) {
   const map = new Map()
   for (const entry of statusEntries) {
     for (const path of [entry.path, entry.oldPath]) {
-      if (!path || isExcludedPath(path, planPath)) continue
+      if (!path || isExcludedPath(path, planPaths)) continue
       const sources = map.get(path) ?? new Set()
       for (const source of entry.sources) sources.add(source)
       map.set(path, sources)
@@ -541,7 +599,7 @@ function collectTrackedFiles(
   repository,
   mergeBase,
   headOid,
-  planPath,
+  planPaths,
   statusEntries,
   targetOid = null,
 ) {
@@ -559,18 +617,18 @@ function collectTrackedFiles(
         '--no-textconv',
         mergeBase,
         ...target,
-        ...pathspec(planPath),
+        ...pathspec(planPaths),
       ],
       { buffer: true },
     ),
   )
-  const sourcesByPath = sourceMap(statusEntries, planPath)
+  const sourcesByPath = sourceMap(statusEntries, planPaths)
   const files = []
   let hunkNumber = 1
 
   for (const changed of changedPaths) {
     const path = changed.newPath ?? changed.oldPath
-    if (!path || isExcludedPath(path, planPath)) continue
+    if (!path || isExcludedPath(path, planPaths)) continue
     const pathArguments = [
       ...(changed.oldPath ? [changed.oldPath] : []),
       ...(changed.newPath && changed.newPath !== changed.oldPath
@@ -754,7 +812,7 @@ function walkMarkdownFiles(repository, relativeDirectory) {
     .filter(Boolean)
 }
 
-function collectRulePaths(repository, files, explicitRules, planPath) {
+function collectRulePaths(repository, files, explicitRules, planPaths) {
   const candidates = new Set(DEFAULT_RULE_FILES)
   for (const path of walkMarkdownFiles(repository, '.github/PULL_REQUEST_TEMPLATE')) {
     candidates.add(path)
@@ -775,7 +833,7 @@ function collectRulePaths(repository, files, explicitRules, planPath) {
   for (const input of [...candidates, ...explicitRules]) {
     if (!existsSync(isAbsolute(input) ? input : join(repository, input))) continue
     const rule = resolveRegularRepositoryFile(repository, input)
-    if (rule.repositoryPath === planPath) {
+    if (planPaths.includes(rule.repositoryPath)) {
       throw new Error(
         `selected planをBlind ruleとして使用できません: ${rule.repositoryPath}`,
       )
@@ -865,6 +923,46 @@ function assertLimits(initialSnapshot, files) {
   }
 }
 
+function writeInputFiles(outputDirectory, blindInput, planInput) {
+  let createdDirectory = false
+  if (existsSync(outputDirectory)) {
+    const stat = lstatSync(outputDirectory)
+    if (stat.isSymbolicLink() || !stat.isDirectory()) {
+      throw new Error(
+        `outputはsymlinkではないdirectoryである必要があります: ${outputDirectory}`,
+      )
+    }
+    if (readdirSync(outputDirectory).length > 0) {
+      throw new Error(`outputは空directoryである必要があります: ${outputDirectory}`)
+    }
+  } else {
+    mkdirSync(outputDirectory, { recursive: true })
+    createdDirectory = true
+  }
+
+  const blindInputPath = join(outputDirectory, 'blind-input.json')
+  const planInputPath = join(outputDirectory, 'plan-input.json')
+  let blindCreated = false
+  try {
+    writeFileSync(
+      blindInputPath,
+      `${JSON.stringify(blindInput, null, 2)}\n`,
+      { flag: 'wx' },
+    )
+    blindCreated = true
+    writeFileSync(
+      planInputPath,
+      `${JSON.stringify(planInput, null, 2)}\n`,
+      { flag: 'wx' },
+    )
+  } catch (error) {
+    if (blindCreated) rmSync(blindInputPath, { force: true })
+    if (createdDirectory) rmSync(outputDirectory, { recursive: true, force: true })
+    throw error
+  }
+  return { blindInputPath, planInputPath }
+}
+
 export function collectDiff(options = {}) {
   const initialRepository = options.repository ?? process.cwd()
   const repository = realpathSync(
@@ -898,6 +996,14 @@ export function collectDiff(options = {}) {
   if (!['workspace', 'commits'].includes(scope)) {
     throw new Error(`scopeが不正です: ${scope}`)
   }
+  const planPaths = resolvePlanPaths(
+    repository,
+    mergeBase,
+    headOid,
+    scope,
+    firstStatus.entries,
+    planInput.path,
+  )
 
   const repositoryHash = sha256(sanitizedRepositoryIdentity(repository)).slice(0, 16)
   const reviewId = requireReviewId(
@@ -909,12 +1015,12 @@ export function collectDiff(options = {}) {
   let initialSnapshot
   let files
   if (scope === 'workspace') {
-    initialSnapshot = snapshot(repository, mergeBase, planInput.path, true)
+    initialSnapshot = snapshot(repository, mergeBase, planPaths, true)
     const tracked = collectTrackedFiles(
       repository,
       mergeBase,
       headOid,
-      planInput.path,
+      planPaths,
       initialSnapshot.status.entries,
     )
     files = [
@@ -926,7 +1032,7 @@ export function collectDiff(options = {}) {
       ),
     ]
     options.snapshotHook?.()
-    const finalSnapshot = snapshot(repository, mergeBase, planInput.path, false)
+    const finalSnapshot = snapshot(repository, mergeBase, planPaths, false)
     const currentPlanDigest =
       planInput.path === null
         ? null
@@ -958,7 +1064,7 @@ export function collectDiff(options = {}) {
             '--unified=3',
             mergeBase,
             headOid,
-            ...pathspec(planInput.path),
+            ...pathspec(planPaths),
           ],
           { buffer: true },
         ),
@@ -976,7 +1082,7 @@ export function collectDiff(options = {}) {
           '--unified=3',
           mergeBase,
           headOid,
-          ...pathspec(planInput.path),
+          ...pathspec(planPaths),
         ],
         { buffer: true },
       ),
@@ -987,7 +1093,7 @@ export function collectDiff(options = {}) {
       repository,
       mergeBase,
       headOid,
-      planInput.path,
+      planPaths,
       [],
       headOid,
     ).files
@@ -999,7 +1105,7 @@ export function collectDiff(options = {}) {
     repository,
     files,
     options.rulePaths ?? [],
-    planInput.path,
+    planPaths,
   ).map((rule) => ({
     path: rule.repositoryPath,
     content: readFileSync(rule.absolutePath, 'utf8'),
@@ -1018,7 +1124,10 @@ export function collectDiff(options = {}) {
     scope === 'commits'
       ? []
       : initialSnapshot.status.entries.filter(
-          (entry) => !isExcludedPath(entry.path, planInput.path),
+          (entry) =>
+            !isExcludedPath(entry.path, planPaths) &&
+            (entry.oldPath === null ||
+              !isExcludedPath(entry.oldPath, planPaths)),
         )
   const counts = {
     committedFiles: files.filter((file) =>
@@ -1079,11 +1188,11 @@ export function collectDiff(options = {}) {
   const outputDirectory = options.outputDirectory
     ? resolve(options.outputDirectory)
     : mkdtempSync(join(tmpdir(), 'explained-code-review-'))
-  mkdirSync(outputDirectory, { recursive: true })
-  const blindInputPath = join(outputDirectory, 'blind-input.json')
-  const planInputPath = join(outputDirectory, 'plan-input.json')
-  writeFileSync(blindInputPath, `${JSON.stringify(blindInput, null, 2)}\n`)
-  writeFileSync(planInputPath, `${JSON.stringify(planInput, null, 2)}\n`)
+  const { blindInputPath, planInputPath } = writeInputFiles(
+    outputDirectory,
+    blindInput,
+    planInput,
+  )
 
   const ignored = tryGit(repository, [
     'check-ignore',
