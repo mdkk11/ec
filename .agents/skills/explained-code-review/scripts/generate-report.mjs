@@ -606,16 +606,32 @@ function assertStageOnePreserved(stageOne, finalAnalysis) {
     ) {
       throw new Error(`findingのIDとstageが一致しません: ${finding.id}`)
     }
+    if (
+      finding.id.startsWith('S2-') &&
+      finding.planAssessment.status !== 'confirmed'
+    ) {
+      throw new Error(
+        `S2 findingのplanAssessmentはconfirmedである必要があります: ${finding.id}`,
+      )
+    }
   }
 }
 
 function assertPlanReview(planInput, analysis) {
+  const hasStageTwoFinding = analysis.groups.some((group) =>
+    group.findings.some(
+      (finding) => finding.id.startsWith('S2-') || finding.stage === 'plan',
+    ),
+  )
   if (['absent', 'disabled'].includes(planInput.resolution)) {
     if (
       analysis.planReview.status !== 'skipped-no-plan' ||
       analysis.planReview.planPath !== null
     ) {
       throw new Error('planなしの場合はskipped-no-planとnull pathが必要です。')
+    }
+    if (hasStageTwoFinding) {
+      throw new Error('planなしの場合はS2 findingを追加できません。')
     }
   } else if (
     analysis.planReview.status !== 'completed' ||
@@ -827,13 +843,19 @@ function acquireReviewLock(reviewRoot, reviewId) {
   }
 }
 
+function interruptedPrefix(kind, reviewId) {
+  return `.${kind}-${reviewId.length}-${reviewId}-`
+}
+
 function recoverInterrupted(reviewRoot, target, reviewId) {
   const entries = readdirSync(reviewRoot)
+  const backupPrefix = interruptedPrefix('backup', reviewId)
+  const temporaryPrefix = interruptedPrefix('tmp', reviewId)
   const backups = entries
-    .filter((name) => name.startsWith(`.backup-${reviewId}-`))
+    .filter((name) => name.startsWith(backupPrefix))
     .map((name) => join(reviewRoot, name))
   const temporaries = entries
-    .filter((name) => name.startsWith(`.tmp-${reviewId}-`))
+    .filter((name) => name.startsWith(temporaryPrefix))
     .map((name) => join(reviewRoot, name))
   if (backups.length > 1 || temporaries.length > 1) {
     throw new Error('中断済みreview生成物が複数あり、自動回復できません。')
@@ -906,8 +928,14 @@ function writeAtomically(repository, reviewId, report, html, failAt) {
   try {
     recoverInterrupted(realReviewRoot, target, reviewId)
     const nonce = randomUUID().slice(0, 12)
-    temporary = join(realReviewRoot, `.tmp-${reviewId}-${nonce}`)
-    backup = join(realReviewRoot, `.backup-${reviewId}-${nonce}`)
+    temporary = join(
+      realReviewRoot,
+      `${interruptedPrefix('tmp', reviewId)}${nonce}`,
+    )
+    backup = join(
+      realReviewRoot,
+      `${interruptedPrefix('backup', reviewId)}${nonce}`,
+    )
     mkdirSync(temporary)
     writeFileSync(join(temporary, 'report.json'), `${JSON.stringify(report, null, 2)}\n`)
     writeFileSync(join(temporary, 'index.html'), html)

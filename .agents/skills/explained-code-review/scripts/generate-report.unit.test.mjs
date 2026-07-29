@@ -23,7 +23,7 @@ import {
 const here = dirname(fileURLToPath(import.meta.url))
 const skillDirectory = resolve(here, '..')
 
-function fixture() {
+function fixture(reviewId = 'example-review') {
   const repository = mkdtempSync(join(tmpdir(), 'explained-review-generator-'))
   const input = mkdtempSync(join(tmpdir(), 'explained-review-input-'))
   const finding = {
@@ -61,7 +61,7 @@ function fixture() {
   }
   const blind = {
     schemaVersion: 2,
-    reviewId: 'example-review',
+    reviewId,
     repositoryRoot: repository,
     repositoryHash: '1234567890abcdef',
     snapshot: {
@@ -257,7 +257,7 @@ test('targetなしで有効backupがあれば次回起動時に回復する', ()
   const reviewRoot = join(data.repository, '.review')
   renameSync(
     join(reviewRoot, 'example-review'),
-    join(reviewRoot, '.backup-example-review-interrupted'),
+    join(reviewRoot, '.backup-14-example-review-interrupted'),
   )
   run(data)
   assert.deepEqual(readdirSync(reviewRoot).sort(), ['example-review'])
@@ -269,7 +269,7 @@ test('終了済みprocessのlockを回収して中断済みbackupから回復す
   const reviewRoot = join(data.repository, '.review')
   renameSync(
     join(reviewRoot, 'example-review'),
-    join(reviewRoot, '.backup-example-review-interrupted'),
+    join(reviewRoot, '.backup-14-example-review-interrupted'),
   )
   const lock = join(reviewRoot, '.lock-example-review')
   mkdirSync(lock)
@@ -304,6 +304,75 @@ test('実行中processが所有するlockは回収しない', () => {
   assert.throws(() => run(data), /生成が進行中/u)
   assert.equal(readdirSync(reviewRoot).includes('.lock-example-review'), true)
   rmSync(lock, { recursive: true })
+})
+
+test('prefix一致する別reviewの中断backupを無視する', () => {
+  const data = fixture('foo')
+  const reviewRoot = join(data.repository, '.review')
+  mkdirSync(reviewRoot)
+  const otherBackup = join(
+    reviewRoot,
+    '.backup-7-foo-bar-interrupted',
+  )
+  mkdirSync(otherBackup)
+  writeFileSync(
+    join(otherBackup, 'report.json'),
+    JSON.stringify({ review: { id: 'foo-bar' } }),
+  )
+  writeFileSync(join(otherBackup, 'index.html'), '<!doctype html>')
+
+  run(data)
+
+  assert.deepEqual(readdirSync(reviewRoot).sort(), [
+    '.backup-7-foo-bar-interrupted',
+    'foo',
+  ])
+})
+
+test('S2 findingはconfirmedだけを許可しplanなしでは拒否する', () => {
+  for (const status of ['not-reviewed', 'mitigated', 'context-resolved']) {
+    const data = fixture()
+    const stageTwo = {
+      ...structuredClone(data.analysis.groups[0].findings[0]),
+      id: 'S2-001',
+      stage: 'plan',
+      planAssessment: {
+        status,
+        rationale: 'invalid Stage 2 assessment',
+      },
+    }
+    data.analysis.groups[0].findings.push(stageTwo)
+    writeFileSync(data.paths.analysis, JSON.stringify(data.analysis))
+    assert.throws(() => run(data), /S2 finding.*confirmed/u)
+  }
+
+  const noPlan = fixture()
+  const stageTwo = {
+    ...structuredClone(noPlan.analysis.groups[0].findings[0]),
+    id: 'S2-001',
+    stage: 'plan',
+    planAssessment: {
+      status: 'confirmed',
+      rationale: 'plan finding',
+    },
+  }
+  noPlan.analysis.groups[0].findings.push(stageTwo)
+  noPlan.analysis.planReview = {
+    status: 'skipped-no-plan',
+    planPath: null,
+    summary: '',
+  }
+  writeFileSync(
+    noPlan.paths.plan,
+    JSON.stringify({
+      schemaVersion: 2,
+      resolution: 'disabled',
+      path: null,
+      content: null,
+    }),
+  )
+  writeFileSync(noPlan.paths.analysis, JSON.stringify(noPlan.analysis))
+  assert.throws(() => run(noPlan), /planなし.*S2 finding/u)
 })
 
 test('standalone validatorは再生成しても同一で、copy先でnode_modulesなしに動く', () => {
