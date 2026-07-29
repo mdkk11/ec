@@ -118,6 +118,72 @@ test('rename、binary、mode変更を収集しignored fileを除外する', () =
   assert.equal(blind.files.some((file) => file.path === 'ignored.txt'), false)
 })
 
+test('text本文のGit metadata文字列をfile種別として誤判定しない', () => {
+  const { repository, base } = repositoryFixture()
+  const markers = [
+    'GIT binary patch',
+    'Binary files example.old and example.new differ',
+    'Subproject commit 0123456789abcdef',
+    'new mode 160000',
+    'old mode 120000',
+  ]
+  writeFileSync(join(repository, 'markers.txt'), `${markers.join('\n')}\n`)
+  const collectorSource = readFileSync(
+    new URL('./collect-diff.mjs', import.meta.url),
+    'utf8',
+  )
+  writeFileSync(join(repository, 'collector-source.mjs'), collectorSource)
+
+  const result = collectDiff({
+    repository,
+    baseRef: base,
+    noPlan: true,
+    outputDirectory: join(repository, 'inputs'),
+  })
+  const blind = JSON.parse(readFileSync(result.blindInputPath, 'utf8'))
+  const markerFile = blind.files.find((file) => file.path === 'markers.txt')
+  const collectorFile = blind.files.find(
+    (file) => file.path === 'collector-source.mjs',
+  )
+  assert.equal(markerFile.binary, false)
+  assert.equal(markerFile.additions, markers.length)
+  assert.deepEqual(
+    markerFile.hunks.flatMap((hunk) => hunk.lines.map((line) => line.text)),
+    markers,
+  )
+  assert.equal(collectorFile.binary, false)
+  assert.match(JSON.stringify(collectorFile.hunks), /parsePatchMetadata/u)
+  assert.ok(collectorFile.additions > 500)
+})
+
+test('tracked symlinkとsubmoduleをGit headerのmodeから判定する', () => {
+  const { repository, base } = repositoryFixture()
+  symlinkSync('tracked.txt', join(repository, 'linked.txt'))
+  git(repository, ['add', 'linked.txt'])
+  git(repository, [
+    'update-index',
+    '--add',
+    '--cacheinfo',
+    `160000,${base},module-entry`,
+  ])
+  git(repository, ['commit', '-m', 'add special entries'])
+
+  const result = collectDiff({
+    repository,
+    baseRef: base,
+    noPlan: true,
+    scope: 'commits',
+    outputDirectory: join(repository, 'inputs'),
+  })
+  const blind = JSON.parse(readFileSync(result.blindInputPath, 'utf8'))
+  const symlink = blind.files.find((file) => file.path === 'linked.txt')
+  const submodule = blind.files.find((file) => file.path === 'module-entry')
+  assert.equal(symlink.binary, false)
+  assert.match(symlink.hunks[0].lines[0].text, /Tracked symlink changed/u)
+  assert.equal(submodule.binary, false)
+  assert.match(submodule.hunks[0].lines[0].text, /Submodule changed/u)
+})
+
 test('selected planとruleの競合、およびplan symlinkを拒否する', () => {
   const { repository, base } = repositoryFixture()
   mkdirSync(join(repository, 'plans'))

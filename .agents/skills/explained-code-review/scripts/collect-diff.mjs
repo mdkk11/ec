@@ -508,6 +508,35 @@ function hasCommittedChange(repository, mergeBase, headOid, paths) {
   }
 }
 
+function parsePatchMetadata(patch) {
+  const headerLines = []
+  for (const line of patch.split(/\r?\n/u)) {
+    if (line.startsWith('@@ ')) break
+    headerLines.push(line)
+  }
+  const modes = new Set()
+  for (const line of headerLines) {
+    const mode =
+      line.match(
+        /^(?:old mode|new mode|new file mode|deleted file mode) (120000|160000)$/u,
+      ) ??
+      line.match(/^index [0-9a-f]+\.\.[0-9a-f]+ (120000|160000)$/u)
+    if (mode) modes.add(mode[1])
+  }
+  return {
+    binary: headerLines.some(
+      (line) =>
+        line === 'GIT binary patch' ||
+        /^Binary files .+ differ$/u.test(line),
+    ),
+    specialType: modes.has('120000')
+      ? 'Tracked symlink'
+      : modes.has('160000')
+        ? 'Submodule'
+        : null,
+  }
+}
+
 function collectTrackedFiles(
   repository,
   mergeBase,
@@ -563,12 +592,7 @@ function collectTrackedFiles(
       ...pathArguments,
     ])
     const fileId = `file-${files.length + 1}`
-    const binary = /Binary files .* differ|GIT binary patch/u.test(patch)
-    const specialType = /(?:old mode|new mode) 120000/u.test(patch)
-      ? 'Tracked symlink'
-      : /Subproject commit|(?:old mode|new mode) 160000/u.test(patch)
-        ? 'Submodule'
-        : null
+    const { binary, specialType } = parsePatchMetadata(patch)
     if (!binary && Buffer.byteLength(patch) > LIMITS.fileBytes) {
       throw new Error(
         `単一text fileのdiff上限${LIMITS.fileBytes} bytesを超えています: ${path} (${Buffer.byteLength(patch)} bytes)`,
