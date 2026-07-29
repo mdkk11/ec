@@ -1,0 +1,15 @@
+{
+  "name": "explained-code-review-skill",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:validator": "node scripts/build-validator.mjs",
+    "test": "node --test scripts/*.unit.test.mjs",
+    "test:ui": "playwright test --config playwright.config.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.1",
+    "ajv": "8.17.1",
+    "ajv-formats": "3.0.1"
+  }
+}

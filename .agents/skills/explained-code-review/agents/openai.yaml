@@ -1,0 +1,4 @@
+interface:
+  display_name: "Explained Code Review"
+  short_description: "planとworkspaceから解説付きレビュー画面を生成"
+  default_prompt: "$explained-code-review を使って現在のworkspaceを二段階レビューし、解説付き画面を生成してください。"

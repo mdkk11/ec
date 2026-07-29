@@ -5,6 +5,7 @@ storybook-static
 playwright-report
 test-results
 coverage
+.review
 *.tsbuildinfo
 next-env.d.ts
 .DS_Store

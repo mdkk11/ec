@@ -48,10 +48,63 @@ pnpm storybook
 pnpm build-storybook
 ```
 
-初回のPlaywright実行前にChromiumをインストールします。
+アプリ側で初めてPlaywrightを実行する前にChromiumをインストールします。
 
 ```bash
 pnpm exec playwright install chromium
+```
+
+## Explained code review
+
+リポジトリ固有の`explained-code-review` Skillを明示的に呼び出すと、planと現在のworkspaceを実装意図ごと・リスク順に整理したレビュー画面を生成できます。SkillのruntimeはNode.js 20以上とGitだけで、rootの依存関係やpackage scriptを使いません。
+
+インストール、別projectへの移植、全オプション、安全性、Skill開発方法は[Skill単体の利用ガイド](./.agents/skills/explained-code-review/README.md)を参照してください。この文書はSkill folderと一緒にコピーされます。
+
+Codexへ次のように依頼してください。
+
+```text
+$explained-code-review を使い、origin/mainとの差分をレビューして画面を開いてください。
+```
+
+baseやplanを指定する場合は依頼へ含めます。
+
+```text
+$explained-code-review を使い、baseはmain、planはplans/example.mdとしてレビューしてください。
+```
+
+既定scopeはbaseと`HEAD`のmerge-baseから現在workspaceまでです。コミット済み、staged、unstaged、未追跡のnet差分を含み、selected planと`.review/**`は除外します。コミット済み差分だけを見る場合は`scope commits`と依頼してください。
+
+baseはローカルrefを`origin/HEAD`、`origin/main`、`main`、`origin/master`、`master`の順で解決します。`git fetch`は自動実行しないため、remoteの最新状態が必要なら呼び出し前に更新してください。
+
+生成物はGit管理対象外の`.review/<review-id>/`へ保存されます。
+
+- `index.html`: `file://`で開けるself-containedなレビュー画面
+- `report.json`: JSON Schemaで検証済みのレビュー内容
+
+外部CDN、認証、server、DB、GitHub APIは使用しません。group承認、コメント、指摘の解決状態、表示テーマはbrowserのlocalStorageへ保存されます。承認と解決状態は内容fingerprintが一致する場合だけ復元され、変更されたgroupのコメントは「前版コメント・要再確認」として分離されます。
+
+正式な作業順は次のとおりです。
+
+1. `generate`: Skillで収集・二段階レビュー・HTML生成
+2. `review`: `index.html`を`file://`で開き、意図と指摘を確認
+3. `fix`: 必要な修正をworkspaceへ反映
+4. `regenerate`: Skillを再実行
+5. `reapprove`: 新snapshotを再確認・再承認
+6. `commit`: 確認済みsnapshotをコミット
+
+画面上の承認は収集時snapshotに対するものです。修正後は必ず再生成・再承認してください。
+
+Skillだけを別projectへ移す場合は、フォルダ全体をそのprojectの`.agents/skills/explained-code-review/`、またはglobalの`~/.codex/skills/explained-code-review/`へコピーします。通常実行にSkill内の`node_modules`は不要です。project-local版とglobal版が同時にある場合の優先順位は保証しません。
+
+Skill自身の開発・acceptanceだけはSkill directory内で依存を導入します。
+
+```bash
+cd .agents/skills/explained-code-review
+pnpm install --ignore-workspace
+pnpm build:validator
+pnpm test
+pnpm exec playwright install chromium
+pnpm test:ui
 ```
 
 `vite`はNext.jsアプリの実行には使用しません。Vitestと`@storybook/nextjs-vite`が要求するビルダーとしてdevDependencyに限定しています。

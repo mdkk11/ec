@@ -1,0 +1,373 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:explained-code-review:report:v2",
+  "title": "Explained code review report v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "review",
+    "git",
+    "stats",
+    "overview",
+    "stages",
+    "riskCounts",
+    "commits",
+    "groups"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 2 },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "repositoryHash",
+        "scope",
+        "collectedAt",
+        "workspaceFingerprint"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/safeId" },
+        "repositoryHash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{16}$"
+        },
+        "scope": { "enum": ["workspace", "commits"] },
+        "collectedAt": { "type": "string", "format": "date-time" },
+        "workspaceFingerprint": { "$ref": "#/$defs/hash" }
+      }
+    },
+    "git": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "baseRef",
+        "baseOid",
+        "headOid",
+        "mergeBase",
+        "branch",
+        "ahead",
+        "behind"
+      ],
+      "properties": {
+        "baseRef": { "type": "string", "minLength": 1 },
+        "baseOid": { "$ref": "#/$defs/oid" },
+        "headOid": { "$ref": "#/$defs/oid" },
+        "mergeBase": { "$ref": "#/$defs/oid" },
+        "branch": { "type": "string", "minLength": 1 },
+        "ahead": { "type": "integer", "minimum": 0 },
+        "behind": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "stats": { "$ref": "#/$defs/stats" },
+    "overview": { "type": "string", "minLength": 1 },
+    "stages": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["blind", "plan"],
+      "properties": {
+        "blind": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "summary"],
+          "properties": {
+            "status": { "const": "completed" },
+            "summary": { "type": "string", "minLength": 1 }
+          }
+        },
+        "plan": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "planPath", "summary"],
+          "properties": {
+            "status": { "enum": ["completed", "skipped-no-plan"] },
+            "planPath": { "type": ["string", "null"] },
+            "summary": { "type": "string" }
+          }
+        }
+      }
+    },
+    "riskCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["critical", "high", "medium", "low"],
+      "properties": {
+        "critical": { "type": "integer", "minimum": 0 },
+        "high": { "type": "integer", "minimum": 0 },
+        "medium": { "type": "integer", "minimum": 0 },
+        "low": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "commits": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/commit" }
+    },
+    "groups": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/group" }
+    }
+  },
+  "$defs": {
+    "safeId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$"
+    },
+    "hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "oid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40,64}$"
+    },
+    "risk": {
+      "enum": ["critical", "high", "medium", "low"]
+    },
+    "changeType": {
+      "enum": [
+        "feature",
+        "fix",
+        "refactor",
+        "test",
+        "docs",
+        "build",
+        "chore",
+        "mixed"
+      ]
+    },
+    "confidence": {
+      "enum": ["high", "medium", "low"]
+    },
+    "stats": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "files",
+        "hunks",
+        "additions",
+        "deletions",
+        "committedFiles",
+        "stagedFiles",
+        "unstagedFiles",
+        "untrackedFiles"
+      ],
+      "properties": {
+        "files": { "type": "integer", "minimum": 0 },
+        "hunks": { "type": "integer", "minimum": 0 },
+        "additions": { "type": "integer", "minimum": 0 },
+        "deletions": { "type": "integer", "minimum": 0 },
+        "committedFiles": { "type": "integer", "minimum": 0 },
+        "stagedFiles": { "type": "integer", "minimum": 0 },
+        "unstagedFiles": { "type": "integer", "minimum": 0 },
+        "untrackedFiles": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "commit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["oid", "shortOid", "author", "authoredAt", "subject"],
+      "properties": {
+        "oid": { "$ref": "#/$defs/oid" },
+        "shortOid": { "type": "string", "minLength": 4 },
+        "author": { "type": "string" },
+        "authoredAt": { "type": "string", "format": "date-time" },
+        "subject": { "type": "string" }
+      }
+    },
+    "group": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "fingerprint",
+        "title",
+        "summary",
+        "changeType",
+        "risk",
+        "intent",
+        "implementationSummary",
+        "impact",
+        "verificationPoints",
+        "files",
+        "hunks",
+        "findings"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/safeId" },
+        "fingerprint": { "$ref": "#/$defs/hash" },
+        "title": { "type": "string", "minLength": 1 },
+        "summary": { "type": "string", "minLength": 1 },
+        "changeType": { "$ref": "#/$defs/changeType" },
+        "risk": { "$ref": "#/$defs/risk" },
+        "intent": { "type": "string", "minLength": 1 },
+        "implementationSummary": { "type": "string", "minLength": 1 },
+        "impact": { "type": "string", "minLength": 1 },
+        "verificationPoints": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "files": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/file" }
+        },
+        "hunks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/hunk" }
+        },
+        "findings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/finding" }
+        }
+      }
+    },
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "path",
+        "oldPath",
+        "newPath",
+        "status",
+        "additions",
+        "deletions",
+        "binary",
+        "size",
+        "changeSources"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "oldPath": { "type": ["string", "null"] },
+        "newPath": { "type": ["string", "null"] },
+        "status": { "type": "string", "minLength": 1 },
+        "additions": { "type": "integer", "minimum": 0 },
+        "deletions": { "type": "integer", "minimum": 0 },
+        "binary": { "type": "boolean" },
+        "size": { "type": "integer", "minimum": 0 },
+        "changeSources": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": ["committed", "staged", "unstaged", "untracked"]
+          }
+        }
+      }
+    },
+    "hunk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "fileId",
+        "file",
+        "header",
+        "oldStart",
+        "oldLines",
+        "newStart",
+        "newLines",
+        "lines"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "fileId": { "type": "string", "minLength": 1 },
+        "file": { "type": "string", "minLength": 1 },
+        "header": { "type": "string" },
+        "oldStart": { "type": "integer", "minimum": 0 },
+        "oldLines": { "type": "integer", "minimum": 0 },
+        "newStart": { "type": "integer", "minimum": 0 },
+        "newLines": { "type": "integer", "minimum": 0 },
+        "lines": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/diffLine" }
+        }
+      }
+    },
+    "diffLine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "oldLine", "newLine", "text"],
+      "properties": {
+        "kind": { "enum": ["context", "addition", "deletion", "meta"] },
+        "oldLine": { "type": ["integer", "null"], "minimum": 1 },
+        "newLine": { "type": ["integer", "null"], "minimum": 1 },
+        "text": { "type": "string" }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "fingerprint",
+        "stage",
+        "severity",
+        "category",
+        "locationKind",
+        "lineSide",
+        "file",
+        "startLine",
+        "endLine",
+        "title",
+        "issue",
+        "rationale",
+        "suggestion",
+        "confidence",
+        "planAssessment"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^S[12]-[0-9]{3,}$" },
+        "fingerprint": { "$ref": "#/$defs/hash" },
+        "stage": { "enum": ["blind", "plan"] },
+        "severity": { "$ref": "#/$defs/risk" },
+        "category": {
+          "enum": [
+            "bug",
+            "regression",
+            "security",
+            "data-integrity",
+            "performance",
+            "responsibility",
+            "complexity",
+            "error-handling",
+            "test-gap",
+            "unclear-change",
+            "requirement-gap",
+            "plan-mismatch",
+            "unplanned-impact",
+            "plan-defect"
+          ]
+        },
+        "locationKind": {
+          "enum": ["diff", "plan", "rule", "repository"]
+        },
+        "lineSide": { "enum": ["old", "new", null] },
+        "file": { "type": "string", "minLength": 1 },
+        "startLine": { "type": "integer", "minimum": 1 },
+        "endLine": { "type": "integer", "minimum": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "issue": { "type": "string", "minLength": 1 },
+        "rationale": { "type": "string", "minLength": 1 },
+        "suggestion": { "type": "string", "minLength": 1 },
+        "confidence": { "$ref": "#/$defs/confidence" },
+        "planAssessment": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "rationale"],
+          "properties": {
+            "status": {
+              "enum": [
+                "confirmed",
+                "mitigated",
+                "context-resolved",
+                "not-reviewed"
+              ]
+            },
+            "rationale": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    }
+  }
+}

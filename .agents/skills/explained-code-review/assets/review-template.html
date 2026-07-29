@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <title>Explained Diff Review</title>
+    <style>{{STYLE}}</style>
+  </head>
+  <body>
+    <header class="review-header">
+      <div class="brand-block">
+        <p class="eyebrow">DIFF REVIEW</p>
+        <h1 id="review-title">current branch</h1>
+      </div>
+      <dl id="review-stats" class="review-stats" aria-label="差分統計"></dl>
+      <div class="review-progress">
+        <div class="progress-track" aria-hidden="true">
+          <span id="progress-fill"></span>
+        </div>
+        <strong id="approval-progress">承認 0/0</strong>
+        <span id="review-status" class="status-label"></span>
+      </div>
+      <div class="header-actions">
+        <button id="theme-toggle" type="button" aria-label="テーマを切り替える">◐</button>
+        <button id="help-button" type="button" aria-label="キーボード操作を表示する">?</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="snapshot-notice" aria-labelledby="snapshot-heading">
+        <div>
+          <p class="section-number">01 / SNAPSHOT</p>
+          <h2 id="snapshot-heading" class="visually-hidden">レビュー概要</h2>
+          <p id="review-overview"></p>
+        </div>
+        <dl id="snapshot-meta"></dl>
+      </section>
+
+      <section class="group-overview" aria-labelledby="groups-heading">
+        <div class="section-heading">
+          <div>
+            <p class="section-number">02 / CHANGE GROUPS</p>
+            <h2 id="groups-heading" class="visually-hidden">変更グループ</h2>
+          </div>
+          <fieldset id="risk-filter">
+            <legend>リスクで絞り込む</legend>
+          </fieldset>
+          <fieldset id="change-filter">
+            <legend>変更種別で絞り込む</legend>
+          </fieldset>
+        </div>
+        <div id="group-list" class="group-list"></div>
+        <p id="empty-groups" class="empty-state" hidden>
+          選択した条件に該当する変更グループはありません。
+        </p>
+      </section>
+
+      <section class="group-review" aria-labelledby="detail-heading">
+        <p class="section-number">03 / CHANGE GROUP DETAIL</p>
+        <article id="group-detail">
+          <h2 id="detail-heading">変更グループを選択してください</h2>
+        </article>
+      </section>
+    </main>
+
+    <footer class="feedback-bar">
+      <p id="feedback-summary" aria-live="polite"></p>
+      <div>
+        <button id="previous-group" type="button">前のグループ</button>
+        <button id="next-group" type="button">次のグループ</button>
+        <button id="copy-feedback" class="primary-button" type="button">
+          フィードバックをコピー
+        </button>
+      </div>
+    </footer>
+
+    <dialog id="help-dialog" aria-labelledby="help-dialog-title">
+      <form method="dialog">
+        <button class="dialog-close" aria-label="閉じる">×</button>
+        <h2 id="help-dialog-title">キーボード操作</h2>
+        <dl>
+          <div><dt>J / K</dt><dd>次・前のグループ</dd></div>
+          <div><dt>A</dt><dd>選択グループを承認・解除</dd></div>
+          <div><dt>D</dt><dd>ダークモード切替</dd></div>
+          <div><dt>C</dt><dd>Markdownをコピー</dd></div>
+          <div><dt>?</dt><dd>このヘルプを表示</dd></div>
+        </dl>
+      </form>
+    </dialog>
+
+    <dialog id="copy-dialog" aria-labelledby="copy-dialog-title">
+      <form method="dialog">
+        <button class="dialog-close" aria-label="閉じる">×</button>
+        <h2 id="copy-dialog-title">手動でコピーしてください</h2>
+        <p>ブラウザがクリップボードへの書き込みを許可しませんでした。</p>
+        <textarea id="copy-fallback" rows="16" readonly></textarea>
+      </form>
+    </dialog>
+
+    <div id="storage-warning" class="storage-warning" role="status" hidden></div>
+    <script id="report-data" type="application/json">{{REPORT_JSON}}</script>
+    <script>{{SCRIPT}}</script>
+  </body>
+</html>
