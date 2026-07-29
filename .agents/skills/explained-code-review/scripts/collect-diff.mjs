@@ -202,10 +202,43 @@ function statusSnapshot(repository) {
   return { raw, entries: parsePorcelain(raw) }
 }
 
-function changedPlanCandidates(statusEntries, branch) {
+function changedPlanCandidates(
+  repository,
+  mergeBase,
+  headOid,
+  scope,
+  statusEntries,
+  branch,
+) {
   const candidates = new Set()
   for (const entry of statusEntries) {
     for (const path of [entry.path, entry.oldPath]) {
+      if (path && /^plans\/.+\.md$/u.test(path)) {
+        candidates.add(path)
+      }
+    }
+  }
+  const target = scope === 'commits' ? [headOid] : []
+  const committedAndTrackedChanges = parseNameStatus(
+    git(
+      repository,
+      [
+        'diff',
+        '--name-status',
+        '-z',
+        '--find-renames',
+        '--find-copies',
+        '--no-ext-diff',
+        '--no-textconv',
+        mergeBase,
+        ...target,
+        ...pathspec([]),
+      ],
+      { buffer: true },
+    ),
+  )
+  for (const change of committedAndTrackedChanges) {
+    for (const path of [change.oldPath, change.newPath]) {
       if (path && /^plans\/.+\.md$/u.test(path)) {
         candidates.add(path)
       }
@@ -218,7 +251,15 @@ function changedPlanCandidates(statusEntries, branch) {
   return [...candidates]
 }
 
-function resolvePlan(repository, statusEntries, branch, options) {
+function resolvePlan(
+  repository,
+  mergeBase,
+  headOid,
+  scope,
+  statusEntries,
+  branch,
+  options,
+) {
   if (options.noPlan && options.planPath) {
     throw new Error('--planと--no-planは同時に指定できません。')
   }
@@ -240,9 +281,14 @@ function resolvePlan(repository, statusEntries, branch, options) {
     }
   }
 
-  const candidates = changedPlanCandidates(statusEntries, branch).filter(
-    (path) => existsSync(join(repository, path)),
-  )
+  const candidates = changedPlanCandidates(
+    repository,
+    mergeBase,
+    headOid,
+    scope,
+    statusEntries,
+    branch,
+  ).filter((path) => existsSync(join(repository, path)))
   const valid = []
   for (const candidate of [...new Set(candidates)].sort()) {
     try {
@@ -566,20 +612,55 @@ function hasCommittedChange(repository, mergeBase, headOid, paths) {
   }
 }
 
+function specialTypeForMode(mode) {
+  if (mode === '120000') return 'Tracked symlink'
+  if (mode === '160000') return 'Submodule'
+  return null
+}
+
 function parsePatchMetadata(patch) {
   const headerLines = []
+  let inHunk = false
   for (const line of patch.split(/\r?\n/u)) {
-    if (line.startsWith('@@ ')) break
-    headerLines.push(line)
+    if (line.startsWith('diff --git ')) {
+      inHunk = false
+      headerLines.push(line)
+      continue
+    }
+    if (line.startsWith('@@ ')) {
+      inHunk = true
+      continue
+    }
+    if (!inHunk) {
+      headerLines.push(line)
+      if (
+        line === 'GIT binary patch' ||
+        /^Binary files .+ differ$/u.test(line)
+      ) {
+        inHunk = true
+      }
+    }
   }
-  const modes = new Set()
+  let oldMode = null
+  let newMode = null
   for (const line of headerLines) {
-    const mode =
-      line.match(
-        /^(?:old mode|new mode|new file mode|deleted file mode) (120000|160000)$/u,
-      ) ??
-      line.match(/^index [0-9a-f]+\.\.[0-9a-f]+ (120000|160000)$/u)
-    if (mode) modes.add(mode[1])
+    const oldModeMatch = line.match(/^(?:old mode|deleted file mode) (\d{6})$/u)
+    if (oldModeMatch) {
+      oldMode = oldModeMatch[1]
+      continue
+    }
+    const newModeMatch = line.match(/^(?:new mode|new file mode) (\d{6})$/u)
+    if (newModeMatch) {
+      newMode = newModeMatch[1]
+      continue
+    }
+    const indexModeMatch = line.match(
+      /^index [0-9a-f]+\.\.[0-9a-f]+ (\d{6})$/u,
+    )
+    if (indexModeMatch) {
+      oldMode ??= indexModeMatch[1]
+      newMode ??= indexModeMatch[1]
+    }
   }
   return {
     binary: headerLines.some(
@@ -587,12 +668,31 @@ function parsePatchMetadata(patch) {
         line === 'GIT binary patch' ||
         /^Binary files .+ differ$/u.test(line),
     ),
-    specialType: modes.has('120000')
-      ? 'Tracked symlink'
-      : modes.has('160000')
-        ? 'Submodule'
-        : null,
+    oldMode,
+    newMode,
+    oldSpecialType: specialTypeForMode(oldMode),
+    newSpecialType: specialTypeForMode(newMode),
   }
+}
+
+function specialChangeDescription(metadata, changed) {
+  const { oldSpecialType, newSpecialType } = metadata
+  let transition
+  if (oldSpecialType && newSpecialType) {
+    transition =
+      oldSpecialType === newSpecialType
+        ? `${oldSpecialType} changed`
+        : `${oldSpecialType} to ${newSpecialType}`
+  } else if (oldSpecialType) {
+    transition = metadata.newMode
+      ? `${oldSpecialType} to regular file`
+      : `${oldSpecialType} changed`
+  } else {
+    transition = metadata.oldMode
+      ? `Regular file to ${newSpecialType}`
+      : `${newSpecialType} changed`
+  }
+  return `${transition}: ${changed.oldPath ?? '/dev/null'} -> ${changed.newPath ?? '/dev/null'}`
 }
 
 function collectTrackedFiles(
@@ -650,22 +750,37 @@ function collectTrackedFiles(
       ...pathArguments,
     ])
     const fileId = `file-${files.length + 1}`
-    const { binary, specialType } = parsePatchMetadata(patch)
+    const metadata = parsePatchMetadata(patch)
+    const { binary, oldSpecialType, newSpecialType } = metadata
     if (!binary && Buffer.byteLength(patch) > LIMITS.fileBytes) {
       throw new Error(
         `単一text fileのdiff上限${LIMITS.fileBytes} bytesを超えています: ${path} (${Buffer.byteLength(patch)} bytes)`,
       )
     }
-    let hunks = specialType
+    const hasSpecialSide = Boolean(oldSpecialType || newSpecialType)
+    const hasRegularSide = Boolean(
+      (metadata.oldMode && !oldSpecialType) ||
+        (metadata.newMode && !newSpecialType),
+    )
+    const textHunks = binary
+      ? []
+      : parseHunks(
+          patch,
+          fileId,
+          path,
+          hunkNumber + (hasSpecialSide ? 1 : 0),
+        )
+    let hunks = hasSpecialSide
       ? [
           metaHunk(
             hunkNumber,
             fileId,
             path,
-            `${specialType} changed: ${changed.oldPath ?? '/dev/null'} -> ${changed.newPath ?? '/dev/null'}`,
+            specialChangeDescription(metadata, changed),
           ),
+          ...(hasRegularSide ? textHunks : []),
         ]
-      : parseHunks(patch, fileId, path, hunkNumber)
+      : textHunks
     if (hunks.length === 0) {
       hunks = [
         metaHunk(
@@ -990,12 +1105,20 @@ export function collectDiff(options = {}) {
     throw new Error('baseとHEADのmerge-baseがありません。')
   }
 
-  const firstStatus = statusSnapshot(repository)
-  const planInput = resolvePlan(repository, firstStatus.entries, branch, options)
   const scope = options.scope ?? 'workspace'
   if (!['workspace', 'commits'].includes(scope)) {
     throw new Error(`scopeが不正です: ${scope}`)
   }
+  const firstStatus = statusSnapshot(repository)
+  const planInput = resolvePlan(
+    repository,
+    mergeBase,
+    headOid,
+    scope,
+    firstStatus.entries,
+    branch,
+    options,
+  )
   const planPaths = resolvePlanPaths(
     repository,
     mergeBase,

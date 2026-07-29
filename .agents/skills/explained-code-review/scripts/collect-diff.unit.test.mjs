@@ -6,6 +6,7 @@ import {
   mkdirSync,
   readFileSync,
   symlinkSync,
+  unlinkSync,
   writeFileSync,
 } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -81,6 +82,35 @@ test('commits scopeは未コミット内容を含めない', () => {
   assert.doesNotMatch(JSON.stringify(blind.files), /must-not-leak/u)
   assert.equal(blind.stats.untrackedFiles, 0)
 })
+
+for (const scope of ['workspace', 'commits']) {
+  test(`${scope} scopeはコミット済みの変更planを自動選択してBlind入力から除外する`, () => {
+    const { repository, base } = repositoryFixture()
+    mkdirSync(join(repository, 'plans'))
+    writeFileSync(
+      join(repository, 'plans', 'implementation.md'),
+      'secret committed plan body\n',
+    )
+    writeFileSync(join(repository, 'tracked.txt'), 'implementation\n')
+    git(repository, ['add', 'plans/implementation.md', 'tracked.txt'])
+    git(repository, ['commit', '-m', 'add implementation'])
+
+    const result = collectDiff({
+      repository,
+      baseRef: base,
+      scope,
+      outputDirectory: join(repository, 'inputs'),
+    })
+    const blindText = readFileSync(result.blindInputPath, 'utf8')
+    const plan = JSON.parse(readFileSync(result.planInputPath, 'utf8'))
+    assert.equal(plan.resolution, 'auto')
+    assert.equal(plan.path, 'plans/implementation.md')
+    assert.equal(plan.content, 'secret committed plan body\n')
+    assert.doesNotMatch(blindText, /secret committed plan body/u)
+    assert.doesNotMatch(blindText, /plans\/implementation\.md/u)
+    assert.match(blindText, /implementation/u)
+  })
+}
 
 test('収集中のworkspace変更を検出して停止する', () => {
   const { repository, base } = repositoryFixture()
@@ -182,6 +212,52 @@ test('tracked symlinkとsubmoduleをGit headerのmodeから判定する', () => 
   assert.match(symlink.hunks[0].lines[0].text, /Tracked symlink changed/u)
   assert.equal(submodule.binary, false)
   assert.match(submodule.hunks[0].lines[0].text, /Submodule changed/u)
+})
+
+test('symlinkとsubmoduleから通常fileへのtype changeで新規本文を収集する', () => {
+  const { repository } = repositoryFixture()
+  symlinkSync('tracked.txt', join(repository, 'linked.js'))
+  git(repository, ['add', 'linked.js'])
+  const submoduleOid = git(repository, ['rev-parse', 'HEAD'])
+  git(repository, [
+    'update-index',
+    '--add',
+    '--cacheinfo',
+    `160000,${submoduleOid},module-entry.js`,
+  ])
+  git(repository, ['commit', '-m', 'add special entries'])
+  const base = git(repository, ['rev-parse', 'HEAD'])
+
+  unlinkSync(join(repository, 'linked.js'))
+  writeFileSync(join(repository, 'linked.js'), 'export const linked = true\n')
+  git(repository, ['rm', '--cached', 'module-entry.js'])
+  writeFileSync(
+    join(repository, 'module-entry.js'),
+    'export const moduleEntry = true\n',
+  )
+  git(repository, ['add', 'linked.js', 'module-entry.js'])
+  git(repository, ['commit', '-m', 'replace special entries'])
+
+  const result = collectDiff({
+    repository,
+    baseRef: base,
+    noPlan: true,
+    scope: 'commits',
+    outputDirectory: join(repository, 'inputs'),
+  })
+  const blind = JSON.parse(readFileSync(result.blindInputPath, 'utf8'))
+  const symlink = blind.files.find((file) => file.path === 'linked.js')
+  const submodule = blind.files.find((file) => file.path === 'module-entry.js')
+
+  assert.ok(symlink.additions > 0)
+  assert.match(JSON.stringify(symlink.hunks), /export const linked = true/u)
+  assert.match(JSON.stringify(symlink.hunks), /Tracked symlink to regular file/u)
+  assert.ok(submodule.additions > 0)
+  assert.match(
+    JSON.stringify(submodule.hunks),
+    /export const moduleEntry = true/u,
+  )
+  assert.match(JSON.stringify(submodule.hunks), /Submodule to regular file/u)
 })
 
 for (const scope of ['workspace', 'commits']) {
