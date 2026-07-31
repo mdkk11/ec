@@ -20,6 +20,7 @@ type Story = StoryObj<typeof meta>
 
 const handlers = {
   onApplyCoupon: () => undefined,
+  onCheckout: () => undefined,
   onDelete: () => undefined,
   onRemoveCoupon: () => undefined,
   onUpdate: () => undefined,
