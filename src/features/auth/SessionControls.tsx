@@ -52,12 +52,20 @@ export function SessionControls() {
   return (
     <div className="flex max-w-52 items-center gap-3 text-right sm:max-w-72">
       {state.user.role === 'customer' ? (
-        <Link
-          className="text-[11px] font-semibold tracking-[0.06em] underline-offset-4 hover:underline"
-          href="/cart"
-        >
-          カート
-        </Link>
+        <>
+          <Link
+            className="text-[11px] font-semibold tracking-[0.06em] underline-offset-4 hover:underline"
+            href="/orders"
+          >
+            注文履歴
+          </Link>
+          <Link
+            className="text-[11px] font-semibold tracking-[0.06em] underline-offset-4 hover:underline"
+            href="/cart"
+          >
+            カート
+          </Link>
+        </>
       ) : null}
       <div>
         <p

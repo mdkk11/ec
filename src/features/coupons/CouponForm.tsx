@@ -18,6 +18,7 @@ type CouponIssueCode = Extract<
 
 type CouponFormProps = {
   coupon: AppliedCouponDto | null
+  disabled?: boolean
   errorMessage?: string | null
   issueCode?: CouponIssueCode | null
   onApply: (code: string) => Promise<unknown> | void
@@ -40,6 +41,7 @@ export function couponIssueMessage(code: CouponIssueCode) {
 
 export function CouponForm({
   coupon,
+  disabled = false,
   errorMessage = null,
   issueCode = null,
   onApply,
@@ -78,7 +80,7 @@ export function CouponForm({
           )}
           <Button
             className="mt-3"
-            disabled={pending !== null}
+            disabled={disabled || pending !== null}
             onClick={() => void onRemove()}
             variant="text"
           >
@@ -99,7 +101,7 @@ export function CouponForm({
             <input
               autoComplete="off"
               className="h-12 border border-line bg-surface px-4 text-base uppercase"
-              disabled={pending !== null}
+              disabled={disabled || pending !== null}
               id="coupon-code"
               onChange={(event) => setCode(event.target.value)}
               value={code}
@@ -107,7 +109,9 @@ export function CouponForm({
           </label>
           <Button
             className="mt-3 w-full"
-            disabled={pending !== null || code.trim().length === 0}
+            disabled={
+              disabled || pending !== null || code.trim().length === 0
+            }
             type="submit"
             variant="secondary"
           >
