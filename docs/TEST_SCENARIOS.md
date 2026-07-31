@@ -72,7 +72,7 @@
 | `AUTH-004` | ログインAPIが保留中 | 送信ボタンを連続操作 | ボタンを無効化しリクエストは1回 | Front結合 | E2E |
 | `AUTH-005` | 未認証 | 現在セッションAPIへアクセス | 401 `UNAUTHENTICATED` | Backend結合 | Front結合 |
 | `AUTH-006` | 購入者でログイン | 管理APIへアクセス | 403 `FORBIDDEN`、DB変更なし | Backend結合 | E2E |
-| `AUTH-007` | 期限切れセッションCookie | 注文履歴を開く | 401を受けログイン導線を表示 | Backend結合 | Front結合 |
+| `AUTH-007` | 期限切れセッションCookie | 注文履歴APIへアクセス | 401 `UNAUTHENTICATED`。Server Component画面では認証結果からログイン導線を表示 | Backend結合 | Front結合 |
 | `AUTH-008` | ログイン済み | ログアウト後に現在セッションAPIへアクセス | DBセッションとCookieが失効し、401になる | Backend結合 | E2E |
 | `AUTH-009` | 購入者A・Bの注文あり | AがBの注文IDを取得 | 404 `ORDER_NOT_FOUND`、Bの情報を本文へ含めない | Backend結合 | - |
 | `AUTH-010` | 管理者でログイン | カートAPIへアクセス | 403 `FORBIDDEN` | Backend結合 | - |
@@ -147,7 +147,7 @@
 | `ORDER-008` | 注文成功済み | 商品名・価格を管理変更 | 注文履歴は注文時スナップショットを表示 | Backend結合 | Front結合 |
 | `ORDER-009` | 注文履歴あり、同時刻の注文あり | 履歴を取得 | 自分の注文だけをcreatedAt降順、同時刻はid降順で表示 | Backend結合 | E2E |
 | `ORDER-010` | 注文履歴なし | 履歴画面を表示 | 空状態と商品一覧への導線 | Front結合 | VRT |
-| `ORDER-011` | 履歴APIが保留中または500 | 履歴画面を表示 | ローディングまたは再試行可能なエラー | Front結合 | VRT |
+| `ORDER-011` | 注文履歴のServer Componentが描画中、またはserver取得が失敗 | 履歴画面を表示 | route loading状態、または`reset()`で再試行できるerror boundary | Front結合 | VRT |
 | `ORDER-012` | 同じcustomer・同じカート、在庫は十分 | 別DB接続から同時に同じcheckoutTokenで確定 | 注文・在庫減算は1回、後続は400 `EMPTY_CART` | Backend結合 | - |
 | `ORDER-013` | 確認後に同額の商品構成へカートを変更 | 古いcheckoutTokenで注文確定 | 合計が同じでも409 `CHECKOUT_CHANGED`、注文なし | Backend結合 | Front結合 |
 | `ORDER-014` | 確認後に商品を非公開化 | 古いcheckoutTokenで注文確定 | 409 `CHECKOUT_CHANGED`、カート明細を保持 | Backend結合 | Front結合 |

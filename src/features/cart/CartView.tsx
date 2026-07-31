@@ -18,10 +18,21 @@ export type CartViewOperationState = {
   pending: CartOperation[]
 }
 
+export type CartCheckoutState = {
+  confirmationRequired?: boolean
+  errorMessage?: string | null
+  message?: string | null
+  pending: boolean
+  refreshFailed?: boolean
+}
+
 type CartViewProps = {
   cart: CartDto
+  checkoutState?: CartCheckoutState
   onDelete: (itemId: string) => void
   onApplyCoupon: (code: string) => Promise<unknown> | void
+  onCheckout: (checkoutToken: string) => Promise<unknown> | void
+  onRefreshCart?: () => Promise<unknown> | void
   onRemoveCoupon: () => Promise<unknown> | void
   onUpdate: (
     itemId: string,
@@ -47,12 +58,14 @@ function CartLine({
   onDelete,
   onUpdate,
   operationState,
+  interactionDisabled,
 }: {
   cart: CartDto
   item: CartItemDto
   onDelete: CartViewProps['onDelete']
   onUpdate: CartViewProps['onUpdate']
   operationState: CartViewOperationState
+  interactionDisabled: boolean
 }) {
   const [quantityDraft, setQuantityDraft] = useState<string | null>(
     null,
@@ -82,7 +95,7 @@ function CartLine({
 
   return (
     <li
-      aria-busy={updating}
+      aria-busy={updating || interactionDisabled}
       className="grid gap-5 border-b border-line py-6 sm:grid-cols-[8rem_minmax(0,1fr)]"
     >
       <div className="relative aspect-[3/4] overflow-hidden bg-[#ebeae6]">
@@ -125,6 +138,7 @@ function CartLine({
             <input
               aria-label={`${item.name}の数量`}
               className="h-12 w-24 border border-line bg-surface px-3 text-base tabular-nums"
+              disabled={interactionDisabled}
               id={`quantity-${item.id}`}
               inputMode="numeric"
               min={1}
@@ -136,7 +150,9 @@ function CartLine({
           </label>
           <Button
             aria-label={`${item.name}の数量を更新`}
-            disabled={!validQuantity || sameUpdatePending}
+            disabled={
+              interactionDisabled || !validQuantity || sameUpdatePending
+            }
             onClick={async () => {
               const result = await onUpdate(item.id, parsedQuantity)
               if (result) {
@@ -151,7 +167,7 @@ function CartLine({
           </Button>
           <Button
             aria-label={`${item.name}を削除`}
-            disabled={updating}
+            disabled={interactionDisabled || updating}
             onClick={() => onDelete(item.id)}
             variant="text"
           >
@@ -180,8 +196,11 @@ function CartLine({
 
 export function CartView({
   cart,
+  checkoutState = { pending: false },
   onApplyCoupon,
+  onCheckout,
   onDelete,
+  onRefreshCart,
   onRemoveCoupon,
   onUpdate,
   operationState = { errors: [], pending: [] },
@@ -198,6 +217,12 @@ export function CartView({
           </p>
           <Link className="button-primary mt-8" href="/products">
             商品一覧を見る
+          </Link>
+          <Link
+            className="button-secondary mt-3"
+            href="/orders"
+          >
+            注文履歴を見る
           </Link>
         </div>
       </section>
@@ -217,9 +242,14 @@ export function CartView({
       operation.kind === 'apply-coupon' ||
       operation.kind === 'remove-coupon',
   )?.message
+  const cartOperationPending = operationState.pending.length > 0
+  const interactionDisabled = checkoutState.pending
 
   return (
-    <section className="page-wrap py-12 sm:py-16 lg:py-20">
+    <section
+      aria-busy={checkoutState.pending}
+      className="page-wrap py-12 sm:py-16 lg:py-20"
+    >
       <p className="label text-accent">SHOPPING CART</p>
       <h1 className="mt-4 font-serif text-4xl sm:text-5xl">カート</h1>
       <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-14">
@@ -232,6 +262,7 @@ export function CartView({
               onDelete={onDelete}
               onUpdate={onUpdate}
               operationState={operationState}
+              interactionDisabled={interactionDisabled}
             />
           ))}
         </ul>
@@ -239,6 +270,7 @@ export function CartView({
           <h2 className="font-serif text-2xl">合計</h2>
           <CouponForm
             coupon={cart.coupon}
+            disabled={interactionDisabled}
             errorMessage={couponError}
             issueCode={
               couponIssue &&
@@ -278,6 +310,58 @@ export function CartView({
           {cart.checkoutToken === null ? (
             <p className="mt-6 text-sm leading-6 text-accent" role="status">
               カート内の問題を解消すると、注文内容を確認できます。
+            </p>
+          ) : null}
+          {checkoutState.message ? (
+            <p className="mt-6 text-sm leading-6 text-accent" role="status">
+              {checkoutState.message}
+            </p>
+          ) : null}
+          {checkoutState.errorMessage ? (
+            <p className="mt-6 text-sm leading-6 text-accent" role="alert">
+              {checkoutState.errorMessage}
+            </p>
+          ) : null}
+          {(checkoutState.refreshFailed ||
+            checkoutState.confirmationRequired) &&
+          onRefreshCart ? (
+            <Button
+              className="mt-4 w-full"
+              disabled={checkoutState.pending}
+              onClick={() => void onRefreshCart()}
+              variant="secondary"
+            >
+              最新のカートを再取得
+            </Button>
+          ) : null}
+          {checkoutState.confirmationRequired ? (
+            <Link
+              className="button-secondary mt-3 w-full"
+              href="/orders"
+            >
+              注文履歴を確認
+            </Link>
+          ) : null}
+          <Button
+            className="mt-6 w-full"
+            disabled={
+              cart.checkoutToken === null ||
+              cartOperationPending ||
+              checkoutState.confirmationRequired ||
+              checkoutState.refreshFailed ||
+              checkoutState.pending
+            }
+            onClick={() => {
+              if (cart.checkoutToken) {
+                void onCheckout(cart.checkoutToken)
+              }
+            }}
+          >
+            {checkoutState.pending ? '注文を確定しています…' : '注文を確定する'}
+          </Button>
+          {checkoutState.pending ? (
+            <p aria-live="polite" className="sr-only" role="status">
+              注文を確定しています。
             </p>
           ) : null}
           <Link

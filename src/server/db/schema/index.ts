@@ -1,7 +1,9 @@
 import { sql } from 'drizzle-orm'
 import {
+  bigint,
   boolean,
   check,
+  index,
   integer,
   pgEnum,
   pgTable,
@@ -12,6 +14,13 @@ import {
 } from 'drizzle-orm/pg-core'
 
 export const userRole = pgEnum('user_role', ['customer', 'admin'])
+export const orderStatus = pgEnum('order_status', [
+  'received',
+  'processing',
+  'shipped',
+  'completed',
+  'cancelled',
+])
 
 export const users = pgTable(
   'users',
@@ -171,9 +180,92 @@ export const cartItems = pgTable(
   ],
 )
 
+export const orders = pgTable(
+  'orders',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id),
+    status: orderStatus('status').notNull().default('received'),
+    subtotal: bigint('subtotal', { mode: 'number' }).notNull(),
+    couponCode: text('coupon_code'),
+    discountPercent: integer('discount_percent'),
+    discountAmount: bigint('discount_amount', { mode: 'number' }).notNull(),
+    total: bigint('total', { mode: 'number' }).notNull(),
+    version: integer('version').notNull().default(1),
+    cancelledAt: timestamp('cancelled_at', {
+      mode: 'string',
+      withTimezone: true,
+    }),
+    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index('orders_user_created_id_idx').on(
+      table.userId,
+      table.createdAt.desc(),
+      table.id.desc(),
+    ),
+    check('orders_subtotal_non_negative_check', sql`${table.subtotal} >= 0`),
+    check(
+      'orders_discount_percent_check',
+      sql`${table.discountPercent} is null or ${table.discountPercent} between 1 and 100`,
+    ),
+    check(
+      'orders_discount_amount_non_negative_check',
+      sql`${table.discountAmount} >= 0`,
+    ),
+    check('orders_total_non_negative_check', sql`${table.total} >= 0`),
+    check('orders_version_positive_check', sql`${table.version} >= 1`),
+  ],
+)
+
+export const orderItems = pgTable(
+  'order_items',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orderId: uuid('order_id')
+      .notNull()
+      .references(() => orders.id),
+    productId: uuid('product_id')
+      .notNull()
+      .references(() => products.id),
+    productName: text('product_name').notNull(),
+    unitPrice: bigint('unit_price', { mode: 'number' }).notNull(),
+    quantity: integer('quantity').notNull(),
+    lineTotal: bigint('line_total', { mode: 'number' }).notNull(),
+  },
+  (table) => [
+    index('order_items_order_product_idx').on(
+      table.orderId,
+      table.productId,
+    ),
+    check(
+      'order_items_unit_price_non_negative_check',
+      sql`${table.unitPrice} >= 0`,
+    ),
+    check(
+      'order_items_quantity_positive_check',
+      sql`${table.quantity} >= 1`,
+    ),
+    check(
+      'order_items_line_total_non_negative_check',
+      sql`${table.lineTotal} >= 0`,
+    ),
+  ],
+)
+
 export type User = typeof users.$inferSelect
 export type UserRole = (typeof userRole.enumValues)[number]
 export type Product = typeof products.$inferSelect
 export type Coupon = typeof coupons.$inferSelect
 export type Cart = typeof carts.$inferSelect
 export type CartItem = typeof cartItems.$inferSelect
+export type Order = typeof orders.$inferSelect
+export type OrderItem = typeof orderItems.$inferSelect
+export type OrderStatus = (typeof orderStatus.enumValues)[number]
