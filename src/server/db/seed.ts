@@ -13,9 +13,25 @@ export const seedCredentials = {
     email: 'customer@example.test',
     password: 'CustomerPass123!',
   },
-  couponE2eCustomer: {
-    email: 'coupon-e2e@example.test',
-    password: 'CouponPass123!',
+  purchaseChromium: {
+    email: 'purchase-chromium@example.test',
+    password: 'PurchaseChrome123!',
+  },
+  purchaseFirefox: {
+    email: 'purchase-firefox@example.test',
+    password: 'PurchaseFirefox123!',
+  },
+  purchaseMobile: {
+    email: 'purchase-mobile@example.test',
+    password: 'PurchaseMobile123!',
+  },
+  purchaseStockConflict: {
+    email: 'purchase-conflict@example.test',
+    password: 'PurchaseConflict123!',
+  },
+  purchaseWebkit: {
+    email: 'purchase-webkit@example.test',
+    password: 'PurchaseWebkit123!',
   },
 } as const
 
@@ -227,52 +243,169 @@ export async function seedCouponFixtures(db: NodePgDatabase) {
   }
 }
 
-export const e2eCouponProductId =
-  '31000000-0000-4000-8000-000000000001'
+export const e2ePurchaseFixtures = {
+  chromium: {
+    couponCode: 'BUYCHR15',
+    email: seedCredentials.purchaseChromium.email,
+    password: seedCredentials.purchaseChromium.password,
+    productId: '31000000-0000-4000-8000-000000000010',
+  },
+  firefox: {
+    couponCode: 'BUYFFX15',
+    email: seedCredentials.purchaseFirefox.email,
+    password: seedCredentials.purchaseFirefox.password,
+    productId: '31000000-0000-4000-8000-000000000011',
+  },
+  mobile: {
+    email: seedCredentials.purchaseMobile.email,
+    password: seedCredentials.purchaseMobile.password,
+    productId: '31000000-0000-4000-8000-000000000013',
+  },
+  stockConflict: {
+    email: seedCredentials.purchaseStockConflict.email,
+    password: seedCredentials.purchaseStockConflict.password,
+    productId: '31000000-0000-4000-8000-000000000014',
+  },
+  webkit: {
+    couponCode: 'BUYWKT15',
+    email: seedCredentials.purchaseWebkit.email,
+    password: seedCredentials.purchaseWebkit.password,
+    productId: '31000000-0000-4000-8000-000000000012',
+  },
+} as const
 
 export async function seedE2EFixtures(db: NodePgDatabase) {
   await seedAuthenticationUsers(db)
   await seedCatalogProducts(db)
   await seedCouponFixtures(db)
 
-  const passwordHash = await hashPassword(
-    seedCredentials.couponE2eCustomer.password,
-    fixedSalt('mockshop-cpn-e2e'),
-  )
-  await db
-    .insert(users)
-    .values({
-      createdAt: '2026-01-01T00:00:00Z',
-      email: seedCredentials.couponE2eCustomer.email,
-      id: '10000000-0000-4000-8000-000000000002',
-      passwordHash,
-      role: 'customer',
-    })
-    .onConflictDoUpdate({
-      set: {
-        email: seedCredentials.couponE2eCustomer.email,
-        passwordHash,
+  const purchaseUsers = [
+    {
+      credentials: seedCredentials.purchaseChromium,
+      id: '10000000-0000-4000-8000-000000000010',
+      salt: 'mockshop-buy-chr',
+    },
+    {
+      credentials: seedCredentials.purchaseFirefox,
+      id: '10000000-0000-4000-8000-000000000011',
+      salt: 'mockshop-buy-ffx',
+    },
+    {
+      credentials: seedCredentials.purchaseWebkit,
+      id: '10000000-0000-4000-8000-000000000012',
+      salt: 'mockshop-buy-wkt',
+    },
+    {
+      credentials: seedCredentials.purchaseMobile,
+      id: '10000000-0000-4000-8000-000000000013',
+      salt: 'mockshop-buy-mob',
+    },
+    {
+      credentials: seedCredentials.purchaseStockConflict,
+      id: '10000000-0000-4000-8000-000000000014',
+      salt: 'mockshop-buy-cnf',
+    },
+  ] as const
+  for (const fixture of purchaseUsers) {
+    const fixturePasswordHash = await hashPassword(
+      fixture.credentials.password,
+      fixedSalt(fixture.salt),
+    )
+    await db
+      .insert(users)
+      .values({
+        createdAt: '2026-01-01T00:00:00Z',
+        email: fixture.credentials.email,
+        id: fixture.id,
+        passwordHash: fixturePasswordHash,
         role: 'customer',
-      },
-      target: users.id,
-    })
-  const couponProduct = {
-    createdAt: '2026-02-01T00:00:00Z',
-    description: 'クーポンE2E専用の固定商品です。',
-    id: e2eCouponProductId,
-    imagePath: '/images/fixtures/product-placeholder.svg',
-    isPublished: true,
-    name: 'クーポン確認用 トートバッグ',
-    price: 20_000,
-    stock: 5,
-    updatedAt: '2026-02-01T00:00:00Z',
-    version: 1,
-  } as const
-  await db
-    .insert(products)
-    .values(couponProduct)
-    .onConflictDoUpdate({
-      set: couponProduct,
-      target: products.id,
-    })
+      })
+      .onConflictDoUpdate({
+        set: {
+          email: fixture.credentials.email,
+          passwordHash: fixturePasswordHash,
+          role: 'customer',
+        },
+        target: users.id,
+      })
+  }
+
+  const purchaseProducts = [
+    {
+      id: e2ePurchaseFixtures.chromium.productId,
+      name: 'Chromium 購入確認用バッグ',
+    },
+    {
+      id: e2ePurchaseFixtures.firefox.productId,
+      name: 'Firefox 購入確認用バッグ',
+    },
+    {
+      id: e2ePurchaseFixtures.webkit.productId,
+      name: 'WebKit 購入確認用バッグ',
+    },
+    {
+      id: e2ePurchaseFixtures.mobile.productId,
+      name: 'モバイル購入確認用バッグ',
+    },
+    {
+      id: e2ePurchaseFixtures.stockConflict.productId,
+      name: '在庫競合確認用バッグ',
+    },
+  ] as const
+  for (const fixture of purchaseProducts) {
+    const product = {
+      createdAt: '2026-02-02T00:00:00Z',
+      description: '購入E2E専用の固定商品です。',
+      id: fixture.id,
+      imagePath: '/images/fixtures/product-placeholder.svg',
+      isPublished: true,
+      name: fixture.name,
+      price: 20_000,
+      stock: 5,
+      updatedAt: '2026-02-02T00:00:00Z',
+      version: 1,
+    } as const
+    await db
+      .insert(products)
+      .values(product)
+      .onConflictDoUpdate({
+        set: product,
+        target: products.id,
+      })
+  }
+
+  const purchaseCoupons = [
+    {
+      code: e2ePurchaseFixtures.chromium.couponCode,
+      id: '61000000-0000-4000-8000-000000000010',
+    },
+    {
+      code: e2ePurchaseFixtures.firefox.couponCode,
+      id: '61000000-0000-4000-8000-000000000011',
+    },
+    {
+      code: e2ePurchaseFixtures.webkit.couponCode,
+      id: '61000000-0000-4000-8000-000000000012',
+    },
+  ] as const
+  for (const fixture of purchaseCoupons) {
+    const coupon = {
+      code: fixture.code,
+      createdAt: '2026-01-01T00:00:00Z',
+      discountPercent: 15,
+      endsAt: '2099-01-01T00:00:00Z',
+      id: fixture.id,
+      isActive: true,
+      minimumSubtotal: 10_000,
+      startsAt: '2020-01-01T00:00:00Z',
+      updatedAt: '2026-01-01T00:00:00Z',
+    } as const
+    await db
+      .insert(coupons)
+      .values(coupon)
+      .onConflictDoUpdate({
+        set: coupon,
+        target: coupons.id,
+      })
+  }
 }
