@@ -2,7 +2,7 @@
 
 小規模ECを題材に、単体テスト、フロントエンド結合テスト、バックエンド結合テスト、E2E、VRTの責任範囲と運用を検証するサンドボックスです。
 
-現在は `docs/DEVELOPMENT_PLAN.md` のPhase 4として、Next.jsトップページ、PostgreSQL・Drizzle基盤、Cookieセッション認証、公開商品の閲覧、購入者カート、定率クーポンまでを実装しています。注文と管理機能は後続PRで追加します。
+現在は `docs/DEVELOPMENT_PLAN.md` のPhase 5として、Next.jsトップページ、PostgreSQL・Drizzle基盤、Cookieセッション認証、公開商品の閲覧、購入者カート、定率クーポン、注文確定と注文履歴までを実装しています。管理機能は後続PRで追加します。
 
 ## Requirements
 
@@ -48,10 +48,10 @@ pnpm storybook
 pnpm build-storybook
 ```
 
-アプリ側で初めてPlaywrightを実行する前にChromiumをインストールします。
+初回のPlaywright実行前に購入導線で使用する3ブラウザをインストールします。
 
 ```bash
-pnpm exec playwright install chromium
+pnpm exec playwright install chromium firefox webkit
 ```
 
 ## Explained code review
@@ -136,7 +136,7 @@ pnpm test:backend
 
 `db:prepare:test` は `NODE_ENV=test`、DB名、開発DBとの接続先分離、実際の接続先を検証してからテストDBだけを初期化します。`TEST_DATABASE_URL` がない場合に `DATABASE_URL` へフォールバックしません。
 
-E2EはPlaywrightのglobal setupから専用DBをresetし、migrationと固定seedを適用します。実行中の開発serverを再利用せず、`NEXT_DIST_DIR=.next-e2e`へbuildしてから`localhost:3105`でE2E専用serverを起動します。
+E2EはPlaywrightのglobal setupから専用DBをresetし、migrationと固定seedを適用します。実行中の開発serverを再利用せず、`NEXT_DIST_DIR=.next-e2e`へbuildしてから`localhost:3105`でE2E専用serverを起動します。ローカルHTTPでCookieを検証するためのSecure解除は、専用dist、loopback上の `mockshop_e2e`、同一の `DATABASE_URL` / `E2E_DATABASE_URL` がコード上ですべて確認できる場合だけ許可されます。
 
 ```bash
 pnpm db:prepare:e2e
@@ -152,14 +152,14 @@ pnpm test:e2e
 | 購入者 | `customer@example.test` | `CustomerPass123!` |
 | 管理者 | `admin@example.test` | `AdminPass123!` |
 
-E2E global setupは上記に加え、クーポンシナリオ専用の購入者 `coupon-e2e@example.test`（パスワード `CouponPass123!`）を投入します。既存のカートE2Eとはcustomerを共有しません。
+E2E global setupは購入完走、モバイル購入、在庫競合のbrowser projectごとに、固定IDの購入者・商品・クーポンを分離して投入します。各projectは他のprojectが変更するカート・在庫・注文に依存しません。
 
 パスワードはscrypt hashだけをDBへ保存します。ログイン成功時の生セッショントークンはHttpOnly Cookieだけへ、SHA-256 hashはDBだけへ保存します。
 初期セッションはRoot LayoutのServer Componentで解決し、ブラウザの`useEffect`からセッションAPIを取得しません。
 
 ## Products
 
-`db:seed` は固定UUID・固定日時の架空商品を冪等に作成します。公開商品4件のうち1件は在庫切れで、非公開商品1件は公開APIへ返りません。E2E global setupはさらにクーポンシナリオ専用の公開商品1件を追加します。商品画像はリポジトリ内のローカルassetだけを使用します。
+`db:seed` は固定UUID・固定日時の架空商品を冪等に作成します。公開商品4件のうち1件は在庫切れで、非公開商品1件は公開APIへ返りません。E2E global setupはさらにbrowser projectごとの購入用商品を追加します。商品画像はリポジトリ内のローカルassetだけを使用します。
 
 公開商品一覧は `created_at DESC, id ASC` の固定順です。検索、絞り込み、利用者が選択する並び替えは実装しません。購入者でログインすると、在庫がある商品を商品詳細からカートへ追加できます。
 
@@ -191,6 +191,16 @@ E2E global setupは上記に加え、クーポンシナリオ専用の購入者 
 | `FUTURE10` | 利用開始前 |
 | `EXPIRED10` | 期限切れ |
 | `MINIMUM20` | 100,000円以上で20%割引 |
+
+## Orders
+
+注文確定は購入者専用です。カート表示時の`checkoutToken`を送信し、transaction内でカート、商品、クーポンを固定順にロックして最新条件を再検証します。在庫減算、商品version更新、注文snapshot保存、カートclearは同じtransactionで実行します。
+
+- 商品構成・価格・公開状態・クーポン条件の変更は409 `CHECKOUT_CHANGED`
+- tokenに含めない在庫だけの変更は409 `STOCK_CONFLICT`
+- 同じカートへの同時送信は先行1件だけ成功し、後続は400 `EMPTY_CART`
+
+注文履歴、詳細、完了画面はServer Componentからserver-onlyな注文facadeを通して取得し、自分自身のJSON Route Handlerを呼びません。履歴は作成日時降順・同時刻は注文ID降順、明細は商品ID昇順で表示し、現在の商品ではなく注文時snapshotを使用します。
 
 ## Visual regression tests
 

@@ -49,6 +49,7 @@ Client Component ---> TanStack Query ---> API client ---> JSON Route Handler
 - 読取専用の初期表示はServer Componentからserver-only facadeを通して取得する。
 - Cookieセッションの初期状態もRoot Layoutから認証用server-only facadeを通して解決し、ブラウザ起動後のAPI取得に依存しない。
 - Server Componentから自分自身のRoute Handlerをfetchしない。余分なHTTP往復とbuild時のserver依存を作らず、同じfeature use caseを直接再利用する。
+- 注文履歴・注文詳細・注文完了もServer Componentから注文用server-only facadeを通して取得する。注文のJSON GET APIはHTTP契約として提供するが、これらの画面自身からは呼び出さない。
 - ブラウザで再取得・更新・競合制御が必要なserver stateだけ、TanStack Queryと共通APIクライアントからJSON Route Handlerを呼び出す。
 - API通信を`useEffect`で開始・管理しない。
 - Server表示の実データ結合はE2E、Client通信のHTTP境界はMSWを使うフロントエンド結合テストで確認する。
@@ -120,7 +121,7 @@ tests/
 
 メールアドレスは前後空白を除去して小文字へ正規化し、正規化済みの値だけをDBへ保存する。パスワードは16 byte salt、64 byte key、`N=16384`、`r=8`、`p=1` のscrypt hashとして保存し、比較にはconstant-time APIを使用する。未知emailでも固定dummy hashを検証し、認証失敗の応答を統一する。
 
-ログイン時に32 byteの暗号学的乱数をbase64url形式の生トークンとして発行する。Cookie `mockshop_session` には生トークン、DBにはSHA-256ハッシュだけを保存し、検索時も受信トークンをハッシュ化して照合する。Cookieは `Path=/`、`HttpOnly`、`SameSite=Lax`、`Max-Age=604800` とし、`NODE_ENV=production` では `Secure` を付与する。ログアウト時はDB行を削除し、同じPath・属性でCookieを失効させる。期限切れセッションの定期削除ジョブは対象外とする。
+ログイン時に32 byteの暗号学的乱数をbase64url形式の生トークンとして発行する。Cookie `mockshop_session` には生トークン、DBにはSHA-256ハッシュだけを保存し、検索時も受信トークンをハッシュ化して照合する。Cookieは `Path=/`、`HttpOnly`、`SameSite=Lax`、`Max-Age=604800` とし、`NODE_ENV=production` では `Secure` を付与する。HTTPで起動するローカルE2E serverだけは、`E2E_HTTP_SERVER=true`、`NEXT_DIST_DIR=.next-e2e`、同一の `DATABASE_URL` / `E2E_DATABASE_URL`、loopback上の `mockshop_e2e` DBがすべて一致する場合に限り `Secure` を解除する。条件不一致ではsession発行を失敗させ、本番用DBで解除できないようにする。ログアウト時はDB行を削除し、同じPath・属性でCookieを失効させる。期限切れセッションの定期削除ジョブは対象外とする。
 
 ### `products`
 
@@ -246,6 +247,8 @@ DBのCHECK制約で `price >= 0`、`stock >= 0`、`version >= 1` を保証する
 | `GET` | `/api/orders/:orderId` | 必要 | 自分の注文詳細 |
 
 `POST /api/orders` は、直前の `GET /api/cart` で受け取った `checkoutToken` を必須とする。tokenはサーバーがカートversion、商品ID・数量・商品名・単価・公開状態、適用クーポンの全条件、小計・割引額・合計を、固定したkey順・商品ID昇順・UTC日時で正規化し、SHA-256で生成する不透明な文字列とする。在庫数はtokenへ含めず、token自体もDBへ保存しない。注文トランザクションで同じ材料から再計算し、不一致の場合は注文を保存せず409 `CHECKOUT_CHANGED` を返す。
+
+ブラウザの注文APIクライアントは注文確定のPOSTだけを使用する。注文履歴・詳細・完了画面はserver-only facadeから同じ注文ユースケースを直接呼び、履歴は `created_at DESC, id DESC`、明細は商品ID昇順で決定的に取得する。
 
 ### 管理
 
