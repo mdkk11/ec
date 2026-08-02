@@ -77,12 +77,18 @@ test('project-local版とglobal版をnode_modulesなしで同じreportへ生成�
   const analysisPath = join(inputs, 'analysis.json')
   writeFileSync(
     stageOnePath,
-    JSON.stringify({ schemaVersion: 2, summary: '空差分', groups: [] }),
+    JSON.stringify({
+      schemaVersion: 3,
+      mode: 'review',
+      summary: '空差分',
+      groups: [],
+    }),
   )
   writeFileSync(
     analysisPath,
     JSON.stringify({
-      schemaVersion: 2,
+      schemaVersion: 3,
+      mode: 'review',
       overview: '変更はありません。',
       blindSummary: '空差分',
       planReview: {
@@ -91,6 +97,8 @@ test('project-local版とglobal版をnode_modulesなしで同じreportへ生成�
         summary: '',
       },
       groups: [],
+      planCoverage: { status: 'skipped-no-plan', items: [] },
+      verificationItems: [],
     }),
   )
   const argumentsForGenerator = [

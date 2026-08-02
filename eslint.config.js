@@ -14,7 +14,9 @@ export default defineConfig([
     'playwright-report/**',
     'test-results/**',
     '.review/**',
+    '.agents/**/scripts/batch-output-validator.mjs',
     '.agents/**/scripts/report-validator.mjs',
+    '.agents/**/scripts/syntax-highlighter.bundle.mjs',
     'next-env.d.ts',
   ]),
 ])

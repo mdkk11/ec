@@ -21,10 +21,22 @@ export const LIMITS = Object.freeze({
   fileBytes: 5 * 1024 * 1024,
   diffLines: 250_000,
   hunks: 20_000,
+  walkthroughLines: 20_000,
+  blindBatchLines: 4_000,
+  blindBatchBytes: 1024 * 1024,
 })
 
 const REVIEW_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$/u
-const REVIEW_SCHEMA_SALT = 'explained-code-review-v2'
+const REVIEW_SCHEMA_SALT = 'explained-code-review-v3'
+const EXPLAIN_MODES = ['review', 'walkthrough']
+const LOCKFILES = new Set([
+  'pnpm-lock.yaml',
+  'package-lock.json',
+  'yarn.lock',
+  'bun.lock',
+  'bun.lockb',
+])
+const GENERATED_COMMENT_MARKER = /^\s*(?:\/\/|\/\*+|\*|#|<!--|--)\s*(?:@generated\b|generated\s+(?:file|by)\b|do\s+not\s+edit\b)/iu
 const DEFAULT_RULE_FILES = [
   'AGENTS.md',
   'README.md',
@@ -38,6 +50,100 @@ const DEFAULT_RULE_FILES = [
 
 function sha256(value) {
   return createHash('sha256').update(value).digest('hex')
+}
+
+export function explanationPolicy(file, headerText = null) {
+  const path = file.path.toLowerCase()
+  const name = basename(path)
+  let summaryOnlyKind = null
+  let rationale = null
+  if (file.binary) {
+    summaryOnlyKind = 'binary'
+    rationale = 'binary fileはコード区間を表示できません。'
+  } else if (LOCKFILES.has(name)) {
+    summaryOnlyKind = 'lockfile'
+    rationale = 'lockfileは依存解決結果の要約だけを表示します。'
+  } else if (path.endsWith('.map')) {
+    summaryOnlyKind = 'source-map'
+    rationale = 'source mapは生成物として要約だけを表示します。'
+  } else if (path.endsWith('.min.js') || path.endsWith('.min.css')) {
+    summaryOnlyKind = 'minified'
+    rationale = 'minified assetは要約だけを表示します。'
+  } else {
+    const firstLines = headerText ?? file.hunks
+      .flatMap((hunk) => hunk.lines)
+      .filter((line) => line.kind === 'addition' || line.kind === 'context')
+      .slice(0, 5)
+      .map((line) => line.text)
+      .join('\n')
+    if (firstLines.split(/\r?\n/u).some((line) => GENERATED_COMMENT_MARKER.test(line))) {
+      summaryOnlyKind = 'generated'
+      rationale = '先頭5行の生成物markerに基づき要約だけを表示します。'
+    }
+  }
+  return summaryOnlyKind
+    ? { detailLevel: 'summary-only', summaryOnlyKind, rationale }
+    : { detailLevel: 'segmented', summaryOnlyKind: null, rationale: null }
+}
+
+function fileHeader(repository, file, scope, headOid, mergeBase) {
+  if (file.binary) return null
+  try {
+    let content
+    if (file.newPath === null) {
+      content = git(repository, ['show', `${mergeBase}:${file.oldPath}`])
+    } else if (scope === 'commits') {
+      content = git(repository, ['show', `${headOid}:${file.newPath}`])
+    } else {
+      const workspacePath = join(repository, file.newPath)
+      if (!lstatSync(workspacePath).isFile()) return null
+      content = readFileSync(workspacePath, 'utf8')
+    }
+    return content.split(/\r?\n/u).slice(0, 5).join('\n')
+  } catch {
+    return null
+  }
+}
+
+export function createBlindBatches(files) {
+  const batches = []
+  let current = null
+  const flush = () => {
+    if (current) batches.push(current)
+    current = null
+  }
+  for (const hunk of files.flatMap((file) => file.hunks)) {
+    const lineCount = hunk.lines.length
+    const rawBytes = Buffer.byteLength(
+      [hunk.header, ...hunk.lines.map((line) => line.text)].join('\n'),
+    )
+    if (
+      current &&
+      (current.diffLines + lineCount > LIMITS.blindBatchLines ||
+        current.rawBytes + rawBytes > LIMITS.blindBatchBytes)
+    ) {
+      flush()
+    }
+    if (!current) {
+      current = {
+        id: `blind-batch-${batches.length + 1}`,
+        hunkIds: [],
+        diffLines: 0,
+        rawBytes: 0,
+        oversizedSingleHunk: false,
+      }
+    }
+    current.hunkIds.push(hunk.id)
+    current.diffLines += lineCount
+    current.rawBytes += rawBytes
+    current.oversizedSingleHunk =
+      current.hunkIds.length === 1 &&
+      (lineCount > LIMITS.blindBatchLines ||
+        rawBytes > LIMITS.blindBatchBytes)
+    if (current.oversizedSingleHunk) flush()
+  }
+  flush()
+  return batches
 }
 
 function git(repository, args, options = {}) {
@@ -265,7 +371,7 @@ function resolvePlan(
   }
   if (options.noPlan) {
     return {
-      schemaVersion: 2,
+      schemaVersion: 3,
       resolution: 'disabled',
       path: null,
       content: null,
@@ -274,7 +380,7 @@ function resolvePlan(
   if (options.planPath) {
     const file = resolveRegularRepositoryFile(repository, options.planPath)
     return {
-      schemaVersion: 2,
+      schemaVersion: 3,
       resolution: 'explicit',
       path: file.repositoryPath,
       content: readFileSync(file.absolutePath, 'utf8'),
@@ -306,14 +412,14 @@ function resolvePlan(
   }
   if (valid.length === 0) {
     return {
-      schemaVersion: 2,
+      schemaVersion: 3,
       resolution: 'absent',
       path: null,
       content: null,
     }
   }
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     resolution: 'auto',
     path: valid[0].repositoryPath,
     content: readFileSync(valid[0].absolutePath, 'utf8'),
@@ -1079,6 +1185,10 @@ function writeInputFiles(outputDirectory, blindInput, planInput) {
 }
 
 export function collectDiff(options = {}) {
+  const explain = options.explain ?? 'review'
+  if (!EXPLAIN_MODES.includes(explain)) {
+    throw new Error(`--explainは${EXPLAIN_MODES.join('|')}で指定してください。`)
+  }
   const initialRepository = options.repository ?? process.cwd()
   const repository = realpathSync(
     git(initialRepository, ['rev-parse', '--show-toplevel']).trim(),
@@ -1224,6 +1334,27 @@ export function collectDiff(options = {}) {
   }
 
   assertLimits(initialSnapshot, files)
+  files = files.map((file) => ({
+    ...file,
+    explanationPolicy: explanationPolicy(
+      file,
+      fileHeader(repository, file, scope, headOid, mergeBase),
+    ),
+  }))
+  const walkthroughDiffLines = files
+    .filter(
+      (file) => file.explanationPolicy.detailLevel === 'segmented',
+    )
+    .flatMap((file) => file.hunks)
+    .reduce((total, hunk) => total + hunk.lines.length, 0)
+  if (
+    explain === 'walkthrough' &&
+    walkthroughDiffLines > LIMITS.walkthroughLines
+  ) {
+    throw new Error(
+      `walkthrough対象のtext diffが上限${LIMITS.walkthroughLines}行を超えています: ${walkthroughDiffLines}。baseまたはscopeを狭めてください。`,
+    )
+  }
   const rules = collectRulePaths(
     repository,
     files,
@@ -1284,7 +1415,8 @@ export function collectDiff(options = {}) {
     .split(/\s+/u)
 
   const blindInput = {
-    schemaVersion: 2,
+    schemaVersion: 3,
+    mode: explain,
     reviewId,
     repositoryRoot: repository,
     repositoryHash,
@@ -1305,6 +1437,7 @@ export function collectDiff(options = {}) {
     },
     stats,
     files,
+    blindBatches: createBlindBatches(files),
     rules,
   }
 
@@ -1330,6 +1463,7 @@ export function collectDiff(options = {}) {
     planInputPath,
     planResolution: planInput.resolution,
     planPath: planInput.path,
+    mode: explain,
     baseRef: base.ref,
     scope,
     workspaceFingerprint: initialSnapshot.fingerprint,
@@ -1358,6 +1492,7 @@ function parseArguments(argv) {
     else if (argument === '--repository') options.repository = value
     else if (argument === '--review-id') options.reviewId = value
     else if (argument === '--scope') options.scope = value
+    else if (argument === '--explain') options.explain = value
     else if (argument === '--rule') options.rulePaths.push(value)
     else throw new Error(`不明な引数です: ${argument}`)
     index += 1

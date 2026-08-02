@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:explained-code-review:blind-batch:v3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "batchId", "summary", "hunks"],
+  "properties": {
+    "schemaVersion": { "const": 3 },
+    "batchId": { "type": "string", "pattern": "^blind-batch-[1-9][0-9]*$" },
+    "summary": { "type": "string", "minLength": 1 },
+    "hunks": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/hunkAnalysis" }
+    }
+  },
+  "$defs": {
+    "risk": { "enum": ["critical", "high", "medium", "low"] },
+    "changeType": { "enum": ["feature", "fix", "refactor", "test", "docs", "build", "chore", "mixed"] },
+    "hunkAnalysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "hunkId", "suggestedGroupId", "title", "changeType", "risk", "intent",
+        "implementationSummary", "impact", "verificationPoints", "findings", "walkthroughNotes"
+      ],
+      "properties": {
+        "hunkId": { "type": "string", "minLength": 1 },
+        "suggestedGroupId": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$" },
+        "title": { "type": "string", "minLength": 1 },
+        "changeType": { "$ref": "#/$defs/changeType" },
+        "risk": { "$ref": "#/$defs/risk" },
+        "intent": { "type": "string", "minLength": 1 },
+        "implementationSummary": { "type": "string", "minLength": 1 },
+        "impact": { "type": "string", "minLength": 1 },
+        "verificationPoints": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
+        "walkthroughNotes": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/walkthroughNotes" }] }
+      }
+    },
+    "walkthroughNotes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fileId", "responsibility", "implementationSummary", "reviewPoints", "detailLevel", "summaryOnlyKind", "summaryOnlyReason", "segments"],
+      "properties": {
+        "fileId": { "type": "string", "minLength": 1 },
+        "responsibility": { "type": "string", "minLength": 1 },
+        "implementationSummary": { "type": "string", "minLength": 1 },
+        "reviewPoints": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "detailLevel": { "enum": ["segmented", "summary-only"] },
+        "summaryOnlyKind": { "enum": ["binary", "lockfile", "source-map", "minified", "generated", null] },
+        "summaryOnlyReason": { "type": ["string", "null"] },
+        "segments": { "type": "array", "items": { "$ref": "#/$defs/segment" } }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "detailLevel": { "const": "segmented" } },
+            "required": ["detailLevel"]
+          },
+          "then": {
+            "properties": {
+              "summaryOnlyKind": { "const": null },
+              "summaryOnlyReason": { "const": null }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "detailLevel": { "const": "summary-only" } },
+            "required": ["detailLevel"]
+          },
+          "then": {
+            "properties": {
+              "summaryOnlyKind": { "enum": ["binary", "lockfile", "source-map", "minified", "generated"] },
+              "summaryOnlyReason": { "type": "string", "minLength": 1 },
+              "segments": { "type": "array", "maxItems": 0 }
+            }
+          }
+        }
+      ]
+    },
+    "segment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["startLineIndex", "endLineIndex", "whatChanged", "why", "reviewFocus", "findingIndexes"],
+      "properties": {
+        "startLineIndex": { "type": "integer", "minimum": 0 },
+        "endLineIndex": { "type": "integer", "minimum": 0 },
+        "whatChanged": { "type": "string", "minLength": 1 },
+        "why": { "type": "string", "minLength": 1 },
+        "reviewFocus": { "type": "string", "minLength": 1 },
+        "findingIndexes": { "type": "array", "items": { "type": "integer", "minimum": 0 } }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["severity", "category", "locationKind", "lineSide", "file", "startLine", "endLine", "title", "issue", "rationale", "suggestion", "confidence"],
+      "properties": {
+        "severity": { "$ref": "#/$defs/risk" },
+        "category": { "enum": ["bug", "regression", "security", "data-integrity", "performance", "responsibility", "complexity", "error-handling", "test-gap", "unclear-change"] },
+        "locationKind": { "enum": ["diff", "rule", "repository"] },
+        "lineSide": { "enum": ["old", "new", null] },
+        "file": { "type": "string", "minLength": 1 },
+        "startLine": { "type": "integer", "minimum": 1 },
+        "endLine": { "type": "integer", "minimum": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "issue": { "type": "string", "minLength": 1 },
+        "rationale": { "type": "string", "minLength": 1 },
+        "suggestion": { "type": "string", "minLength": 1 },
+        "confidence": { "enum": ["high", "medium", "low"] }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "locationKind": { "const": "diff" } },
+            "required": ["locationKind"]
+          },
+          "then": {
+            "properties": { "lineSide": { "enum": ["old", "new"] } }
+          },
+          "else": {
+            "properties": { "lineSide": { "const": null } }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -16,6 +16,10 @@ repository直下の`.review/<review-id>/`へ次の2ファイルを生成しま�
 - 実装意図ごとの変更グループ表示
 - risk・changeType filter
 - unified diffとAI findingの表示
+- ShikiによるTypeScript、JSON、CSS、Markdownなどのlight/dark構文強調
+- Plan項目ごとの`satisfied / partial / missing / not-applicable`と実装根拠
+- command・目視・性能確認を「未確認」としてPlan充足から分離
+- walkthrough時のgroup-scopedなファイル責務・segment解説
 - グループの承認とfindingのresolve
 - 人間コメントのlocalStorage保存
 - 未解決findingとコメントのMarkdownコピー
@@ -87,6 +91,14 @@ planを使わない場合:
 $explained-code-review を使い、planなしでworkspaceをレビューしてください。
 ```
 
+ファイルごとの実装意図まで読む場合:
+
+```text
+$explained-code-review を使ってworkspaceをファイルごとに詳しく解説してください。
+```
+
+通常の`review`は指摘・Plan coverage・raw diffを生成します。`walkthrough`は同じ内容にファイル責務と最大120 diff行のsegment解説を追加するため、分析時間とreport量が増えます。modeを切り替える場合は再生成します。
+
 Codexは次の順で処理します。
 
 1. baseのmerge-baseから現在workspaceまでのsnapshotを収集
@@ -153,7 +165,8 @@ node <skill-dir>/scripts/collect-diff.mjs \
   [--plan <repository-file> | --no-plan] \
   [--rule <repository-file> ...] \
   [--review-id <id>] \
-  [--output <temporary-directory>]
+  [--output <temporary-directory>] \
+  [--explain review|walkthrough]
 ```
 
 collectorの標準出力に`blindInputPath`、`planInputPath`、`reviewId`が含まれます。Stage 1とStage 2の分析JSONを用意した後、generatorを実行します。
@@ -189,6 +202,10 @@ node <skill-dir>/scripts/generate-report.mjs \
 | 単一text file | 5 MiB |
 | diff行 | 250,000 |
 | hunk | 20,000 |
+| walkthroughのsummary-onlyを除くtext diff | 20,000行 |
+| Blind batch | 4,000 diff行またはraw text 1 MiB |
+| syntax highlight | hunk前後で10秒deadlineを検出、1hunk 100,000 token run、4倍＋256 bytes |
+| report.json | 64 MiB |
 
 上限超過時はtruncateせず停止します。binaryは本文を埋め込まず、path、size、変更種別だけを扱います。mode-only変更はGit meta hunkとして表示します。
 
@@ -199,15 +216,19 @@ node <skill-dir>/scripts/generate-report.mjs \
 ```bash
 cd <skill-dir>
 pnpm install --ignore-workspace
+pnpm build:highlighter
 pnpm build:validator
 pnpm test
+pnpm test:stress
 pnpm exec playwright install chromium
 pnpm test:ui
 ```
 
 - `pnpm test`: Node標準test runnerによるcollector・generator・portable test
+- `pnpm test:stress`: 20,000/20,001行、100,001 token run、250,000行reportの重い境界test
 - `pnpm test:ui`: Chromiumで実際の`file://`画面を確認
 - `pnpm build:validator`: `report-schema.json`からstandalone validatorを再生成
+- `pnpm build:highlighter`: Shiki 4.3.1と選択したtheme/grammarからportable bundleを再生成
 
 通常利用先へ`node_modules`をコピーする必要はありません。
 
