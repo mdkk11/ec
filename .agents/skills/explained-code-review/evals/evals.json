@@ -1,0 +1,45 @@
+{
+  "skill_name": "explained-code-review",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "$explained-code-review を使って、現在の小さなworkspace差分を通常モードでレビューし、画面を生成してください。Planがあれば項目ごとの充足状況も確認してください。",
+      "expected_output": "v3のself-contained HTMLとreport.jsonが生成され、review mode、Plan coverage、Shiki token、安全なfingerprintが確認できる。",
+      "files": [],
+      "expectations": [
+        "report.jsonのschemaVersionが3でmodeがreviewになっている",
+        "Planありの場合はplanCoverageがcompletedで各satisfied項目にevidenceがある",
+        "highlightingがShiki 4.3.1、JavaScript RegExp engine、github-light/github-darkを記録している",
+        "index.htmlが外部CDNやHTTP serverなしでfile URLから表示できる"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "$explained-code-review を使って、Planありの大きなworkspace差分をファイルごとに詳しく解説してください。同じファイルが複数の実装意図に関わる場合は意図ごとに分け、lockfileは要約だけにしてください。Planの部分対応と、テスト実行など未確認の完了条件も区別してください。",
+      "expected_output": "walkthrough modeで同一pathをgroup-scopedに説明し、1000行超hunkを最大120行の論理segmentへ分け、lockfileをsummary-onlyにし、partial Planとruntime verificationを別表示する。",
+      "files": [],
+      "expectations": [
+        "report.jsonのmodeがwalkthroughで、view switchとファイル別navigationが表示される",
+        "同じpathが複数groupに属する場合に各groupのfileExplanationが別IDで存在する",
+        "segmented hunkの全diff行が欠落・重複なく最大120行のsegmentで覆われる",
+        "lockfileがsummary-onlyかつsummaryOnlyKind=lockfileでsegmentを持たない",
+        "partialまたはmissingのPlan項目がS2 findingを参照する",
+        "test command成功や目視確認がverificationItemsのnot-verifiedとして表示される",
+        "初期DOMへ全segment codeを展開せず選択中segmentだけを表示する"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "$explained-code-review を使って、Planなしの大きなworkspace差分をレビューしてください。差分が大きいのでBlind reviewを安全にbatch化し、指摘と実装意図を確認できる画面を生成してください。",
+      "expected_output": "PlanをBlind入力へ漏らさず4,000行または1MiB境界でbatch化し、Planなしの明示、全hunk coverage、large diff paginationを持つreview reportを生成する。",
+      "files": [],
+      "expectations": [
+        "blind-input.jsonの各通常batchが4000 diff行以下かつ1MiB以下でoversized single hunkだけが例外になっている",
+        "planReviewとplanCoverageがskipped-no-planでitemsが空になっている",
+        "S2 findingが0件で、verificationItemsと全group/fileのplanItemIdsが空配列になっている",
+        "全hunkが重複・欠落なく1つのgroupへ割り当てられている",
+        "raw unified diffが400行単位でlazy paginationされる"
+      ]
+    }
+  ]
+}

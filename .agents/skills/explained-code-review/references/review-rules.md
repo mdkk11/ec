@@ -18,7 +18,16 @@ Stage 1 JSONを固定した後で初めてplanを読み、次を確認する。
 - planに記載されていない影響
 - plan自体の誤り、曖昧さ、過剰設計
 
-Stage 1 findingのIDと`planAssessment`以外の全内容は不変にする。planで説明できる場合も削除せず、`confirmed | mitigated | context-resolved | not-reviewed`と理由を追記する。
+Stage 1のgroup ID・順序・hunk割当・説明・file explanation・segmentを完全に保持する。S1 findingは元group、ID、severity、本文、locationを保持し、`planAssessment`だけを更新する。planで説明できる場合も削除しない。Stage 2はS2 finding、Plan link、coverage、verificationだけを追加できる。
+
+## Plan coverageとverification
+
+- coverage itemにするのは差分から静的に判定できる実装、test code、文書要件だけ。
+- `satisfied`はgroupまたはdiff位置を示す具体的evidenceを必須にする。
+- `partial` / `missing`は不足を説明するS2 findingを必須にする。
+- `not-applicable`はscope外または明示的対象外の理由を書く。
+- test fileの追加は「test codeを実装した」evidenceにはできるが、「test commandが成功した」evidenceにはしない。
+- command成功、目視、性能値、portable実行結果は`verificationItems`へ分離し、実行記録を取り込まない限り`not-verified`にする。
 
 ## 実装意図group
 
@@ -29,6 +38,16 @@ Stage 1 findingのIDと`planAssessment`以外の全内容は不変にする。pl
 - group `summary`は一覧で読める短い説明にする。
 - `changeType`は`feature | fix | refactor | test | docs | build | chore | mixed`。
 - riskは失敗時の影響と発生可能性から決め、critical → high → medium → low順に表示する。
+
+## Walkthrough
+
+- navigationと説明の所有単位は`(groupId,fileId)`。同じpathが複数groupに属する場合はgroupごとに説明する。
+- collectorの`explanationPolicy`を変更しない。`summary-only`をAI判断で増やさない。
+- `segmented` hunkは全diff行を0-based inclusive rangeで一度だけ覆う。1segmentは最大120行。
+- 行数で機械的に細切れにせず、同じ目的の隣接範囲をまとめ、異なる責務を同じsegmentへ詰め込まない。
+- 120行上限で継続分割するときは、説明に前後関係を含める。
+- `whatChanged`、`why`、`reviewFocus`は各1〜2文。説明の言い換え反復や1行segment乱造を避ける。
+- 正常な実装説明をfindingへ変換しない。
 
 ## Risk / severity
 

@@ -37,10 +37,28 @@
         <dl id="snapshot-meta"></dl>
       </section>
 
+      <section class="plan-overview" aria-labelledby="plan-heading">
+        <div class="section-heading">
+          <div>
+            <p class="section-number">02 / PLAN COVERAGE</p>
+            <h2 id="plan-heading">Plan照合</h2>
+            <p id="plan-summary"></p>
+          </div>
+          <fieldset id="plan-filter">
+            <legend>状態で絞り込む</legend>
+          </fieldset>
+        </div>
+        <div id="plan-coverage" class="plan-coverage"></div>
+        <section class="verification-panel" aria-labelledby="verification-heading">
+          <h3 id="verification-heading">未確認の実行・目視項目</h3>
+          <div id="verification-items"></div>
+        </section>
+      </section>
+
       <section class="group-overview" aria-labelledby="groups-heading">
         <div class="section-heading">
           <div>
-            <p class="section-number">02 / CHANGE GROUPS</p>
+            <p class="section-number">03 / CHANGE GROUPS</p>
             <h2 id="groups-heading" class="visually-hidden">変更グループ</h2>
           </div>
           <fieldset id="risk-filter">
@@ -57,7 +75,13 @@
       </section>
 
       <section class="group-review" aria-labelledby="detail-heading">
-        <p class="section-number">03 / CHANGE GROUP DETAIL</p>
+        <div class="detail-toolbar">
+          <p class="section-number">04 / CHANGE GROUP DETAIL</p>
+          <div id="view-switch" class="view-switch" hidden>
+            <button type="button" data-view="review">レビュー</button>
+            <button type="button" data-view="walkthrough">ファイル別解説</button>
+          </div>
+        </div>
         <article id="group-detail">
           <h2 id="detail-heading">変更グループを選択してください</h2>
         </article>
