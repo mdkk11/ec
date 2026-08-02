@@ -56,7 +56,7 @@ pnpm exec playwright install chromium firefox webkit
 
 ## Explained code review
 
-リポジトリ固有の`explained-code-review` Skillを明示的に呼び出すと、planと現在のworkspaceを実装意図ごと・リスク順に整理したレビュー画面を生成できます。SkillのruntimeはNode.js 20以上とGitだけで、rootの依存関係やpackage scriptを使いません。
+リポジトリ固有の`explained-code-review` Skillを明示的に呼び出すと、Planと現在のworkspaceを実装意図ごと・リスク順に整理し、Shiki構文強調を備えたself-containedなレビュー画面を生成できます。通常は指摘確認中心の`review`、引き継ぎや実装理解ではファイル責務・segment解説を追加する`walkthrough`を使います。SkillのruntimeはNode.js 20以上とGitだけで、rootの依存関係やpackage scriptを使いません。
 
 インストール、別projectへの移植、全オプション、安全性、Skill開発方法は[Skill単体の利用ガイド](./.agents/skills/explained-code-review/README.md)を参照してください。この文書はSkill folderと一緒にコピーされます。
 
@@ -64,6 +64,7 @@ Codexへ次のように依頼してください。
 
 ```text
 $explained-code-review を使い、origin/mainとの差分をレビューして画面を開いてください。
+$explained-code-review を使い、現在のworkspaceをファイルごとに詳しく解説してください。
 ```
 
 baseやplanを指定する場合は依頼へ含めます。
@@ -101,8 +102,10 @@ Skill自身の開発・acceptanceだけはSkill directory内で依存を導入�
 ```bash
 cd .agents/skills/explained-code-review
 pnpm install --ignore-workspace
+pnpm build:highlighter
 pnpm build:validator
 pnpm test
+pnpm test:stress
 pnpm exec playwright install chromium
 pnpm test:ui
 ```
