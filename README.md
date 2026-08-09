@@ -2,7 +2,7 @@
 
 小規模ECを題材に、単体テスト、フロントエンド結合テスト、バックエンド結合テスト、E2E、VRTの責任範囲と運用を検証するサンドボックスです。
 
-現在は `docs/DEVELOPMENT_PLAN.md` のPhase 7として、Next.jsトップページ、PostgreSQL・Drizzle基盤、Cookieセッション認証、公開商品の閲覧、購入者カート、定率クーポン、注文確定・注文履歴、管理者の商品・在庫管理・注文状態管理までを実装しています。
+現在は `docs/DEVELOPMENT_PLAN.md` のPhase 8として、Next.jsトップページ、PostgreSQL・Drizzle基盤、Cookieセッション認証、公開商品の閲覧、購入者カート、定率クーポン、注文確定・注文履歴、管理者の商品・在庫管理・注文状態管理、CI・VRT運用を実装しています。
 
 ## Requirements
 
@@ -36,6 +36,7 @@ pnpm test:frontend
 pnpm test:backend
 pnpm test:e2e
 pnpm test:vrt
+pnpm test:vrt:update
 pnpm db:up
 pnpm db:down
 pnpm db:generate
@@ -223,7 +224,7 @@ E2E global setupは購入完走、モバイル購入、在庫競合、商品管�
 
 ## Visual regression tests
 
-VRTはStorybookの固定fixtureをPlaywright Chromiumで撮影します。基準画像の生成・更新はCIと同じ `mcr.microsoft.com/playwright:v1.61.1-noble` 環境だけで行い、macOSで生成した画像を正本としてコミットしません。
+VRTはStorybookの固定fixtureをPlaywright Chromiumで撮影します。font・画像の読込完了、light color scheme、`ja-JP` locale、reduced motion、caret非表示、animation無効化を固定し、基準画像の生成・更新はCIと同じ `mcr.microsoft.com/playwright:v1.61.1-noble` 環境だけで行います。macOSで生成した画像を正本としてコミットしません。
 
 ```bash
 pnpm test:vrt
@@ -242,9 +243,23 @@ docker run --rm --ipc=host \
   bash -lc 'corepack pnpm install --frozen-lockfile && corepack pnpm test:vrt:update; vrt_status=$?; chown -R "$HOST_UID:$HOST_GID" /work/tests/vrt/__screenshots__ /work/storybook-static /work/test-results 2>/dev/null || true; exit $vrt_status'
 ```
 
-生成後は対象storyの変更後画像をレビューします。VRT失敗を消すための一括更新や許容値変更は行いません。
+生成後は、対象storyだけを目視し、`git diff -- tests/vrt/__screenshots__` で意図した画像だけが変わっていることを確認してからPRへ含めます。UI変更があるPRでは、影響したstoryのBefore / Afterまたは変更後画像をPRのScreenshotsへ添付します。VRT失敗を消すための一括更新、CIと異なる環境での更新、許容pixel差・retryの拡大は行いません。
 
-CIの `storybook-vrt` と `e2e` ジョブをmainの必須checkにする設定はリポジトリ管理者が手動で行います。GitHubのbranch protectionでmainを対象にし、両方をrequired status checkへ追加してください。
+`storybook-vrt` または `e2e` が失敗すると、GitHub Actionsのrunに7日間のartifactが残ります。`storybook-vrt-failure-*` または `e2e-failure-*` をdownloadし、展開した `playwright-report` は `pnpm exec playwright show-report playwright-report`、`test-results` 内の `trace.zip` は `pnpm exec playwright show-trace <trace.zip>` で確認します。VRTのactual・diff画像も同じartifactの `test-results` に含まれます。
+
+mainはGitHubのbranch protectionで「Require status checks to pass before merging」を有効にし、「Require branches to be up to date before merging」も有効にします。required status checksには次の4件だけを追加します。
+
+- `static-and-unit`
+- `backend-integration`
+- `storybook-vrt`
+- `e2e`
+
+設定後は、次のコマンドで4件と `strict: true` を確認します。workflowをpath filterでskipしないため、必須checkが未実行のままPRを止めることはありません。
+
+```bash
+gh api repos/mdkk11/ec/branches/main/protection/required_status_checks \
+  --jq '{strict, contexts, checks}'
+```
 
 schema変更時はmigrationを生成し、生成されたSQLとmetadataをコミットします。mainへ取り込まれたmigrationは編集しません。
 

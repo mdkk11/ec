@@ -1,4 +1,6 @@
-import { expect, test } from '@playwright/test'
+import { test } from '@playwright/test'
+
+import { captureStory } from './capture-story'
 
 type VrtCase = {
   height: number
@@ -36,30 +38,6 @@ const cases: VrtCase[] = [
 
 for (const vrtCase of cases) {
   test(vrtCase.name, async ({ page }) => {
-    await page.setViewportSize({
-      height: vrtCase.height,
-      width: vrtCase.width,
-    })
-    await page.emulateMedia({ reducedMotion: 'reduce' })
-    await page.goto(`/iframe.html?id=${vrtCase.storyId}&viewMode=story`)
-    await expect(page.locator('#storybook-root')).toBeVisible()
-    await page.evaluate(async () => {
-      await document.fonts.ready
-      await Promise.all(
-        [...document.images].map((image) => {
-          if (image.complete) return Promise.resolve()
-          return new Promise<void>((resolve) => {
-            image.addEventListener('load', () => resolve(), { once: true })
-            image.addEventListener('error', () => resolve(), { once: true })
-          })
-        }),
-      )
-    })
-
-    await expect(page).toHaveScreenshot(`${vrtCase.name}.png`, {
-      animations: 'disabled',
-      caret: 'hide',
-      fullPage: true,
-    })
+    await captureStory(page, vrtCase)
   })
 }

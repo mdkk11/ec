@@ -25,6 +25,8 @@ export default defineConfig({
   testDir: './tests/vrt',
   use: {
     baseURL: storybookUrl,
+    colorScheme: 'light',
+    locale: 'ja-JP',
     trace: 'retain-on-failure',
   },
   webServer: {
