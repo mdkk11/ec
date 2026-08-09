@@ -2,7 +2,7 @@
 
 小規模ECを題材に、単体テスト、フロントエンド結合テスト、バックエンド結合テスト、E2E、VRTの責任範囲と運用を検証するサンドボックスです。
 
-現在は `docs/DEVELOPMENT_PLAN.md` のPhase 6として、Next.jsトップページ、PostgreSQL・Drizzle基盤、Cookieセッション認証、公開商品の閲覧、購入者カート、定率クーポン、注文確定・注文履歴、管理者の商品・在庫管理までを実装しています。注文状態管理は後続PRで追加します。
+現在は `docs/DEVELOPMENT_PLAN.md` のPhase 7として、Next.jsトップページ、PostgreSQL・Drizzle基盤、Cookieセッション認証、公開商品の閲覧、購入者カート、定率クーポン、注文確定・注文履歴、管理者の商品・在庫管理・注文状態管理までを実装しています。
 
 ## Requirements
 
@@ -155,7 +155,7 @@ pnpm test:e2e
 | 購入者 | `customer@example.test` | `CustomerPass123!` |
 | 管理者 | `admin@example.test` | `AdminPass123!` |
 
-E2E global setupは購入完走、モバイル購入、在庫競合、商品管理のbrowser projectごとに、固定IDの購入者・管理者・商品・クーポンを分離して投入します。各projectは他のprojectが変更するカート・在庫・注文・管理商品に依存しません。
+E2E global setupは購入完走、モバイル購入、在庫競合、商品管理、注文管理のbrowser projectごとに、固定IDの購入者・管理者・商品・クーポン・注文を分離して投入します。各projectは他のprojectが変更するカート・在庫・注文・管理商品に依存しません。
 
 パスワードはscrypt hashだけをDBへ保存します。ログイン成功時の生セッショントークンはHttpOnly Cookieだけへ、SHA-256 hashはDBだけへ保存します。
 初期セッションはRoot LayoutのServer Componentで解決し、ブラウザの`useEffect`からセッションAPIを取得しません。
@@ -175,6 +175,14 @@ E2E global setupは購入完走、モバイル購入、在庫競合、商品管�
 商品情報と在庫の更新には取得時の`version`を`expectedVersion`として必須送信します。注文減算や別の管理更新でversionが進んだ場合は409 `VERSION_CONFLICT`となり、入力を保持したまま最新値を表示します。「最新値をフォームへ反映」を選択するまで古い入力を自動送信・上書きしません。
 
 管理商品のbrowser stateはTanStack Queryでadmin IDごとに分離し、更新開始前に古い取得を中断します。operation revisionが一致する応答だけをcacheへ反映し、遅れて返った古い取得結果で新しいversionを巻き戻しません。
+
+## Admin orders
+
+管理者でログインすると、headerの「注文管理」から `/admin/orders` を開けます。注文は作成日時降順で表示され、`received → processing → shipped → completed` の順方向遷移と、`received` または `processing` からの取消だけを選択できます。
+
+状態更新には取得時の注文versionを`expectedVersion`として送信します。先行更新や取消でversionが変わった場合は409 `VERSION_CONFLICT`となり、選択した状態を自動送信せず、最新状態を確認してから再選択します。
+
+取消は注文状態・取消日時・注文明細の商品在庫・商品versionを同一transactionで更新します。取消済み注文を再度変更することはできず、同時取消でも在庫は一度だけ復元されます。
 
 ## Cart
 
