@@ -67,12 +67,20 @@ export function SessionControls() {
           </Link>
         </>
       ) : (
-        <Link
-          className="text-[11px] font-semibold tracking-[0.06em] underline-offset-4 hover:underline"
-          href="/admin/products"
-        >
-          商品管理
-        </Link>
+        <>
+          <Link
+            className="text-[11px] font-semibold tracking-[0.06em] underline-offset-4 hover:underline"
+            href="/admin/products"
+          >
+            商品管理
+          </Link>
+          <Link
+            className="text-[11px] font-semibold tracking-[0.06em] underline-offset-4 hover:underline"
+            href="/admin/orders"
+          >
+            注文管理
+          </Link>
+        </>
       )}
       <div>
         <p

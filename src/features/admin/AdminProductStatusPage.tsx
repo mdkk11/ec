@@ -34,9 +34,9 @@ export function AdminProductStatusPage({
   )
 }
 
-export function AdminLoginRequired() {
+export function AdminLoginRequired({ resource = '商品管理' }: { resource?: string }) {
   return (
-    <AdminProductStatusPage title="商品管理にはログインが必要です">
+    <AdminProductStatusPage title={`${resource}にはログインが必要です`}>
       <Link className="button-primary mt-4" href="/login">
         ログイン
       </Link>
