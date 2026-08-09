@@ -95,7 +95,7 @@ function normalizeCoupon(
   }
 }
 
-function toOrderItemDto(item: {
+export function toOrderItemDto(item: {
   lineTotal: number
   productId: string
   productName: string
@@ -111,7 +111,7 @@ function toOrderItemDto(item: {
   }
 }
 
-function toOrderDto(
+export function toOrderDto(
   order: {
     couponCode: string | null
     createdAt: string
