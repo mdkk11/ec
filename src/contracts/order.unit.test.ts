@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   createOrderRequestSchema,
   orderResponseSchema,
+  updateAdminOrderStatusRequestSchema,
 } from './order'
 
 const validOrder = {
@@ -63,5 +64,24 @@ describe('注文API契約', () => {
         order: { ...validOrder, ...override },
       }).success,
     ).toBe(false)
+  })
+
+  it('管理注文の状態更新requestは状態と正の整数versionを受け付ける', () => {
+    expect(
+      updateAdminOrderStatusRequestSchema.safeParse({
+        expectedVersion: 1,
+        status: 'processing',
+      }).success,
+    ).toBe(true)
+  })
+
+  it.each([
+    ['不正な状態', { expectedVersion: 1, status: 'refunded' }],
+    ['0以下のversion', { expectedVersion: 0, status: 'processing' }],
+    ['小数のversion', { expectedVersion: 1.5, status: 'processing' }],
+  ])('%sを管理注文更新requestで拒否する', (_name, input) => {
+    expect(updateAdminOrderStatusRequestSchema.safeParse(input).success).toBe(
+      false,
+    )
   })
 })

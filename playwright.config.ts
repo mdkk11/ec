@@ -91,6 +91,21 @@ export default defineConfig({
       testMatch: 'admin-products.spec.ts',
       use: { ...devices['Desktop Safari'] },
     },
+    {
+      name: 'chromium-admin-orders',
+      testMatch: 'admin-orders.spec.ts',
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'firefox-admin-orders',
+      testMatch: 'admin-orders.spec.ts',
+      use: { ...devices['Desktop Firefox'] },
+    },
+    {
+      name: 'webkit-admin-orders',
+      testMatch: 'admin-orders.spec.ts',
+      use: { ...devices['Desktop Safari'] },
+    },
   ],
   webServer: {
     command:

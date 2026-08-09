@@ -2,7 +2,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import { hashPassword } from '@/server/auth/password'
 
-import { coupons, products, users } from './schema'
+import { coupons, orderItems, orders, products, users } from './schema'
 
 export const seedCredentials = {
   admin: {
@@ -304,6 +304,24 @@ export const e2eAdminFixtures = {
   },
 } as const
 
+export const e2eAdminOrderFixtures = {
+  chromium: {
+    customerId: '10000000-0000-4000-8000-000000000010',
+    orderId: '72000000-0000-4000-8000-000000000010',
+    productId: '32000000-0000-4000-8000-000000000010',
+  },
+  firefox: {
+    customerId: '10000000-0000-4000-8000-000000000011',
+    orderId: '72000000-0000-4000-8000-000000000011',
+    productId: '32000000-0000-4000-8000-000000000011',
+  },
+  webkit: {
+    customerId: '10000000-0000-4000-8000-000000000012',
+    orderId: '72000000-0000-4000-8000-000000000012',
+    productId: '32000000-0000-4000-8000-000000000012',
+  },
+} as const
+
 export async function seedE2EFixtures(db: NodePgDatabase) {
   await seedAuthenticationUsers(db)
   await seedCatalogProducts(db)
@@ -478,5 +496,40 @@ export async function seedE2EFixtures(db: NodePgDatabase) {
         set: coupon,
         target: coupons.id,
       })
+  }
+
+  for (const [browser, fixture] of Object.entries(e2eAdminOrderFixtures)) {
+    const product = {
+      createdAt: '2026-02-03T00:00:00Z',
+      description: '注文管理E2E専用の固定商品です。',
+      id: fixture.productId,
+      imagePath: '/images/fixtures/product-placeholder.svg',
+      isPublished: false,
+      name: `${browser} 注文管理確認商品`,
+      price: 20_000,
+      stock: 5,
+      updatedAt: '2026-02-03T00:00:00Z',
+      version: 1,
+    } as const
+    await db.insert(products).values(product)
+    await db.insert(orders).values({
+      createdAt: '2026-02-04T00:00:00Z',
+      discountAmount: 0,
+      id: fixture.orderId,
+      status: 'received',
+      subtotal: product.price,
+      total: product.price,
+      updatedAt: '2026-02-04T00:00:00Z',
+      userId: fixture.customerId,
+      version: 1,
+    })
+    await db.insert(orderItems).values({
+      lineTotal: product.price,
+      orderId: fixture.orderId,
+      productId: fixture.productId,
+      productName: product.name,
+      quantity: 1,
+      unitPrice: product.price,
+    })
   }
 }
