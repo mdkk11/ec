@@ -1,28 +1,16 @@
-import { expect, test } from '@playwright/test'
+import { test } from '@playwright/test'
+
+import { captureStory } from './capture-story'
 
 for (const story of ['before-apply', 'applied', 'input-error', 'expired']) {
   for (const width of [375, 1440]) {
     test(`VRT-005-coupon-${story}-${width}`, async ({ page }) => {
-      await page.setViewportSize({
+      await captureStory(page, {
         height: width === 375 ? 812 : 1000,
+        name: `VRT-005-coupon-${story}-${width}`,
+        storyId: `features-coupons-couponform--${story}`,
         width,
       })
-      await page.emulateMedia({ reducedMotion: 'reduce' })
-      await page.goto(
-        `/iframe.html?id=features-coupons-couponform--${story}&viewMode=story`,
-      )
-      await expect(page.locator('#storybook-root')).toBeVisible()
-      await page.evaluate(async () => {
-        await document.fonts.ready
-      })
-      await expect(page).toHaveScreenshot(
-        `VRT-005-coupon-${story}-${width}.png`,
-        {
-          animations: 'disabled',
-          caret: 'hide',
-          fullPage: true,
-        },
-      )
     })
   }
 }
