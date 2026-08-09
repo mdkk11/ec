@@ -1,0 +1,283 @@
+'use client'
+
+import {
+  CancelledError,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
+import Link from 'next/link'
+import { type FormEvent, useEffect, useRef, useState } from 'react'
+
+import {
+  createAdminProductRequestSchema,
+  type CreateAdminProductRequest,
+} from '@/contracts/product'
+import { useSession } from '@/features/auth/SessionProvider'
+import { formatPrice } from '@/features/products/format-price'
+import {
+  createAdminProduct,
+  getAdminProducts,
+} from '@/lib/api-client/admin-product'
+import { ApiClientError } from '@/lib/api-client/request-json'
+
+import {
+  AdminProductForm,
+  type AdminProductFieldErrors,
+  type AdminProductFormField,
+  type AdminProductFormValues,
+} from './AdminProductForm'
+import {
+  AdminLoginRequired,
+  AdminProductStatusPage,
+} from './AdminProductStatusPage'
+import { adminProductsQueryKey } from './admin-product-query'
+
+const initialValues: AdminProductFormValues = {
+  description: '',
+  imagePath: '/images/fixtures/product-placeholder.svg',
+  isPublished: false,
+  name: '',
+  price: '0',
+  stock: '0',
+}
+
+function collectFieldErrors(error: {
+  issues: { message: string; path: PropertyKey[] }[]
+}) {
+  const errors: AdminProductFieldErrors = {}
+  for (const issue of error.issues) {
+    const field = issue.path[0]
+    if (
+      field !== 'name' &&
+      field !== 'description' &&
+      field !== 'price' &&
+      field !== 'imagePath' &&
+      field !== 'isPublished' &&
+      field !== 'stock'
+    ) continue
+    errors[field] ??= []
+    errors[field]?.push(issue.message)
+  }
+  return errors
+}
+
+function parseValues(values: AdminProductFormValues) {
+  return createAdminProductRequestSchema.safeParse({
+    ...values,
+    price: values.price.trim() === '' ? Number.NaN : Number(values.price),
+    stock: values.stock.trim() === '' ? Number.NaN : Number(values.stock),
+  })
+}
+
+function focusFirstError(errors: AdminProductFieldErrors, prefix: string) {
+  const first = ['name', 'description', 'price', 'stock', 'imagePath'].find(
+    (field) => errors[field as AdminProductFormField],
+  )
+  if (first) document.getElementById(`${prefix}-${first}`)?.focus()
+}
+
+export function AdminProductsPage() {
+  const queryClient = useQueryClient()
+  const { setAnonymous, state: sessionState } = useSession()
+  const adminId =
+    sessionState.status === 'authenticated' && sessionState.user.role === 'admin'
+      ? sessionState.user.id
+      : null
+  const queryKey = adminProductsQueryKey(adminId ?? 'disabled')
+  const runningRef = useRef(false)
+  const queryGenerationRef = useRef(0)
+  const query = useQuery({
+    enabled: adminId !== null,
+    queryFn: async ({ signal }) => {
+      const generation = queryGenerationRef.current
+      const startedDuringMutation = runningRef.current
+      try {
+        const { items } = await getAdminProducts(signal)
+        if (
+          startedDuringMutation ||
+          queryGenerationRef.current !== generation
+        ) {
+          throw new CancelledError()
+        }
+        return items
+      } catch (error) {
+        if (
+          startedDuringMutation ||
+          queryGenerationRef.current !== generation
+        ) {
+          throw new CancelledError()
+        }
+        throw error
+      }
+    },
+    queryKey,
+  })
+  const [values, setValues] = useState(initialValues)
+  const [fieldErrors, setFieldErrors] = useState<AdminProductFieldErrors>({})
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [statusMessage, setStatusMessage] = useState<string | null>(null)
+  const [pending, setPending] = useState(false)
+  const revisionRef = useRef(0)
+  const controllerRef = useRef<AbortController | null>(null)
+
+  useEffect(() => () => {
+    revisionRef.current += 1
+    queryGenerationRef.current += 1
+    controllerRef.current?.abort()
+  }, [])
+
+  useEffect(() => {
+    if (query.error instanceof ApiClientError && query.error.status === 401) {
+      setAnonymous()
+    }
+  }, [query.error, setAnonymous])
+
+  function handleChange(field: AdminProductFormField, value: boolean | string) {
+    setValues((current) => ({ ...current, [field]: value }))
+    setFieldErrors((current) => ({ ...current, [field]: undefined }))
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!adminId || runningRef.current) return
+
+    setErrorMessage(null)
+    setStatusMessage(null)
+    const parsed = parseValues(values)
+    if (!parsed.success) {
+      const errors = collectFieldErrors(parsed.error)
+      setFieldErrors(errors)
+      focusFirstError(errors, 'create-product')
+      return
+    }
+
+    const revision = revisionRef.current + 1
+    revisionRef.current = revision
+    runningRef.current = true
+    queryGenerationRef.current += 1
+    setPending(true)
+    setFieldErrors({})
+    controllerRef.current?.abort()
+    const controller = new AbortController()
+    controllerRef.current = controller
+    await queryClient.cancelQueries({ queryKey })
+    if (revisionRef.current !== revision) return
+
+    try {
+      const { product } = await createAdminProduct(
+        parsed.data as CreateAdminProductRequest,
+        controller.signal,
+      )
+      if (revisionRef.current !== revision) return
+      queryClient.setQueryData(queryKey, (items: typeof query.data) => [
+        product,
+        ...(items ?? []).filter((item) => item.id !== product.id),
+      ])
+      setValues(initialValues)
+      setStatusMessage(`${product.name}を作成しました。`)
+    } catch (error) {
+      if (revisionRef.current !== revision) return
+      if (error instanceof ApiClientError && error.status === 401) {
+        setAnonymous()
+        return
+      }
+      if (error instanceof ApiClientError && error.fieldErrors) {
+        setFieldErrors(error.fieldErrors as AdminProductFieldErrors)
+      }
+      setErrorMessage(
+        error instanceof ApiClientError
+          ? error.message
+          : '商品を作成できませんでした。もう一度お試しください。',
+      )
+    } finally {
+      if (revisionRef.current === revision) {
+        runningRef.current = false
+        setPending(false)
+      }
+    }
+  }
+
+  if (sessionState.status === 'loading') {
+    return <AdminProductStatusPage role="status" title="認証状態を確認しています">しばらくお待ちください。</AdminProductStatusPage>
+  }
+  if (sessionState.status === 'error') {
+    return <AdminProductStatusPage action={() => window.location.reload()} role="alert" title="認証状態を確認できませんでした">時間をおいてもう一度お試しください。</AdminProductStatusPage>
+  }
+  if (sessionState.status === 'anonymous') return <AdminLoginRequired />
+  if (sessionState.user.role !== 'admin') {
+    return <AdminProductStatusPage title="商品管理を利用できません">この画面は管理者専用です。</AdminProductStatusPage>
+  }
+  if (query.isPending) {
+    return <AdminProductStatusPage role="status" title="商品を読み込んでいます">しばらくお待ちください。</AdminProductStatusPage>
+  }
+  if (!query.data) {
+    return <AdminProductStatusPage action={() => void query.refetch()} role="alert" title="商品を読み込めませんでした">{query.error instanceof ApiClientError && query.error.kind === 'network' ? 'サーバーへ接続できませんでした。' : '時間をおいてもう一度お試しください。'}</AdminProductStatusPage>
+  }
+
+  return (
+    <section className="page-wrap py-12 sm:py-16 lg:py-20">
+      <p className="label text-accent">ADMINISTRATION</p>
+      <h1 className="mt-4 font-serif text-4xl sm:text-5xl">商品管理</h1>
+      <p className="mt-4 max-w-2xl text-sm leading-7 text-muted">
+        商品の作成、公開状態、価格と在庫を管理します。
+      </p>
+
+      <div className="mt-10 grid gap-10 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,32rem)]">
+        <section>
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <h2 className="font-serif text-3xl">商品一覧</h2>
+              <p className="mt-2 text-sm text-muted">{query.data.length}件</p>
+            </div>
+          </div>
+          {query.data.length === 0 ? (
+            <div className="mt-6 border border-line bg-surface p-8 text-center">
+              <h3 className="font-serif text-2xl">商品はまだありません</h3>
+              <p className="mt-3 text-sm text-muted">右のフォームから最初の商品を作成してください。</p>
+            </div>
+          ) : (
+            <ul className="mt-6 divide-y divide-line border-y border-line">
+              {query.data.map((product) => (
+                <li className="grid gap-3 py-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center" key={product.id}>
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-serif text-2xl">{product.name}</h3>
+                      <span className={`text-xs font-semibold ${product.isPublished ? 'text-ink' : 'text-accent'}`}>
+                        {product.isPublished ? '公開' : '非公開'}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-sm text-muted">
+                      {formatPrice(product.price)} / 在庫 {product.stock} / version {product.version}
+                    </p>
+                  </div>
+                  <Link className="button-secondary" href={`/admin/products/${product.id}`}>
+                    編集する
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section>
+          <h2 className="font-serif text-3xl">新しい商品</h2>
+          <p className="mt-2 text-sm leading-6 text-muted">作成時は非公開です。内容を確認してから公開できます。</p>
+          <div className="mt-6">
+            <AdminProductForm
+              errorMessage={errorMessage}
+              fieldErrors={fieldErrors}
+              idPrefix="create-product"
+              includeStock
+              mode="create"
+              onChange={handleChange}
+              onSubmit={(event) => void handleSubmit(event)}
+              pending={pending}
+              statusMessage={statusMessage}
+              values={values}
+            />
+          </div>
+        </section>
+      </div>
+    </section>
+  )
+}

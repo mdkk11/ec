@@ -2,7 +2,7 @@
 
 小規模ECを題材に、単体テスト、フロントエンド結合テスト、バックエンド結合テスト、E2E、VRTの責任範囲と運用を検証するサンドボックスです。
 
-現在は `docs/DEVELOPMENT_PLAN.md` のPhase 5として、Next.jsトップページ、PostgreSQL・Drizzle基盤、Cookieセッション認証、公開商品の閲覧、購入者カート、定率クーポン、注文確定と注文履歴までを実装しています。管理機能は後続PRで追加します。
+現在は `docs/DEVELOPMENT_PLAN.md` のPhase 6として、Next.jsトップページ、PostgreSQL・Drizzle基盤、Cookieセッション認証、公開商品の閲覧、購入者カート、定率クーポン、注文確定・注文履歴、管理者の商品・在庫管理までを実装しています。注文状態管理は後続PRで追加します。
 
 ## Requirements
 
@@ -155,7 +155,7 @@ pnpm test:e2e
 | 購入者 | `customer@example.test` | `CustomerPass123!` |
 | 管理者 | `admin@example.test` | `AdminPass123!` |
 
-E2E global setupは購入完走、モバイル購入、在庫競合のbrowser projectごとに、固定IDの購入者・商品・クーポンを分離して投入します。各projectは他のprojectが変更するカート・在庫・注文に依存しません。
+E2E global setupは購入完走、モバイル購入、在庫競合、商品管理のbrowser projectごとに、固定IDの購入者・管理者・商品・クーポンを分離して投入します。各projectは他のprojectが変更するカート・在庫・注文・管理商品に依存しません。
 
 パスワードはscrypt hashだけをDBへ保存します。ログイン成功時の生セッショントークンはHttpOnly Cookieだけへ、SHA-256 hashはDBだけへ保存します。
 初期セッションはRoot LayoutのServer Componentで解決し、ブラウザの`useEffect`からセッションAPIを取得しません。
@@ -167,6 +167,14 @@ E2E global setupは購入完走、モバイル購入、在庫競合のbrowser pr
 公開商品一覧は `created_at DESC, id ASC` の固定順です。検索、絞り込み、利用者が選択する並び替えは実装しません。購入者でログインすると、在庫がある商品を商品詳細からカートへ追加できます。
 
 商品一覧・詳細はServer Componentからserver-onlyな商品facadeを通して取得します。Server Componentから自分自身のRoute Handlerをfetchせず、ブラウザでserver stateの取得・更新が必要な機能だけTanStack QueryとJSON APIを使用します。API通信を`useEffect`で実装しません。
+
+## Admin products
+
+管理者でログインすると、headerの「商品管理」から `/admin/products` を開けます。商品一覧には公開・非公開の商品を表示し、新規商品は初期状態を非公開、価格0円、在庫0として作成します。個別編集画面では商品情報・公開状態と在庫を別フォームで更新します。
+
+商品情報と在庫の更新には取得時の`version`を`expectedVersion`として必須送信します。注文減算や別の管理更新でversionが進んだ場合は409 `VERSION_CONFLICT`となり、入力を保持したまま最新値を表示します。「最新値をフォームへ反映」を選択するまで古い入力を自動送信・上書きしません。
+
+管理商品のbrowser stateはTanStack Queryでadmin IDごとに分離し、更新開始前に古い取得を中断します。operation revisionが一致する応答だけをcacheへ反映し、遅れて返った古い取得結果で新しいversionを巻き戻しません。
 
 ## Cart
 
