@@ -76,6 +76,21 @@ export default defineConfig({
       testMatch: 'stock-conflict.spec.ts',
       use: { ...devices['Desktop Chrome'] },
     },
+    {
+      name: 'chromium-admin-products',
+      testMatch: 'admin-products.spec.ts',
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'firefox-admin-products',
+      testMatch: 'admin-products.spec.ts',
+      use: { ...devices['Desktop Firefox'] },
+    },
+    {
+      name: 'webkit-admin-products',
+      testMatch: 'admin-products.spec.ts',
+      use: { ...devices['Desktop Safari'] },
+    },
   ],
   webServer: {
     command:

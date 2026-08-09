@@ -9,6 +9,18 @@ export const seedCredentials = {
     email: 'admin@example.test',
     password: 'AdminPass123!',
   },
+  adminChromium: {
+    email: 'admin-chromium@example.test',
+    password: 'AdminChrome123!',
+  },
+  adminFirefox: {
+    email: 'admin-firefox@example.test',
+    password: 'AdminFirefox123!',
+  },
+  adminWebkit: {
+    email: 'admin-webkit@example.test',
+    password: 'AdminWebkit123!',
+  },
   customer: {
     email: 'customer@example.test',
     password: 'CustomerPass123!',
@@ -274,6 +286,24 @@ export const e2ePurchaseFixtures = {
   },
 } as const
 
+export const e2eAdminFixtures = {
+  chromium: {
+    email: seedCredentials.adminChromium.email,
+    password: seedCredentials.adminChromium.password,
+    productName: 'Chromium 管理作成商品',
+  },
+  firefox: {
+    email: seedCredentials.adminFirefox.email,
+    password: seedCredentials.adminFirefox.password,
+    productName: 'Firefox 管理作成商品',
+  },
+  webkit: {
+    email: seedCredentials.adminWebkit.email,
+    password: seedCredentials.adminWebkit.password,
+    productName: 'WebKit 管理作成商品',
+  },
+} as const
+
 export async function seedE2EFixtures(db: NodePgDatabase) {
   await seedAuthenticationUsers(db)
   await seedCatalogProducts(db)
@@ -325,6 +355,47 @@ export async function seedE2EFixtures(db: NodePgDatabase) {
           email: fixture.credentials.email,
           passwordHash: fixturePasswordHash,
           role: 'customer',
+        },
+        target: users.id,
+      })
+  }
+
+  const adminUsers = [
+    {
+      credentials: seedCredentials.adminChromium,
+      id: '20000000-0000-4000-8000-000000000010',
+      salt: 'mockshop-adm-chr',
+    },
+    {
+      credentials: seedCredentials.adminFirefox,
+      id: '20000000-0000-4000-8000-000000000011',
+      salt: 'mockshop-adm-ffx',
+    },
+    {
+      credentials: seedCredentials.adminWebkit,
+      id: '20000000-0000-4000-8000-000000000012',
+      salt: 'mockshop-adm-wkt',
+    },
+  ] as const
+  for (const fixture of adminUsers) {
+    const fixturePasswordHash = await hashPassword(
+      fixture.credentials.password,
+      fixedSalt(fixture.salt),
+    )
+    await db
+      .insert(users)
+      .values({
+        createdAt: '2026-01-01T00:00:00Z',
+        email: fixture.credentials.email,
+        id: fixture.id,
+        passwordHash: fixturePasswordHash,
+        role: 'admin',
+      })
+      .onConflictDoUpdate({
+        set: {
+          email: fixture.credentials.email,
+          passwordHash: fixturePasswordHash,
+          role: 'admin',
         },
         target: users.id,
       })

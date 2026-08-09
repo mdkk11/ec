@@ -66,7 +66,14 @@ export function SessionControls() {
             カート
           </Link>
         </>
-      ) : null}
+      ) : (
+        <Link
+          className="text-[11px] font-semibold tracking-[0.06em] underline-offset-4 hover:underline"
+          href="/admin/products"
+        >
+          商品管理
+        </Link>
+      )}
       <div>
         <p
           className="truncate text-[10px] text-muted sm:text-[11px]"
