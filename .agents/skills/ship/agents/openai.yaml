@@ -1,0 +1,6 @@
+interface:
+  display_name: "Ship"
+  short_description: "Orchestrate review-ready stacked pull requests"
+  default_prompt: "Use $ship to turn this task into a reviewed, CI-green pull request stack ready for human review."
+policy:
+  allow_implicit_invocation: false

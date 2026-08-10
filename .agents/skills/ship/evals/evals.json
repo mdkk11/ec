@@ -1,0 +1,40 @@
+{
+  "skill_name": "ship",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "PR #42 の $ship を続けて、人間レビュー可能な状態まで進めて。前回は仕様、承認済み計画、実装、ローカル検証、Draft PR作成まで完了している。PR headは実装時から変わっていない。",
+      "expected_output": "既存成果物とPR headを照合し、specificationやplanningを繰り返さずstabilizationから再開する。babysit-pr、説明同期、最終監査を順に一度だけ行い、条件を満たした場合だけReady for reviewへ変更する。",
+      "files": [],
+      "expectations": [
+        "必須依存確認とpreflight/recoveryを行ってから既存フェーズを復元する",
+        "仕様・計画・実装・Draft submissionを繰り返さずstabilizationから再開する",
+        "最終監査を同一headのstabilizationとexplanationの後に一度だけ行う"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "$ship 管理商品のテストを責務別に分割して。現在のfeatureブランチにはPRがないと思うけど、直前の関連PRがもうmerge済みかもしれない。新しい作業を始める前に状態も確認して。",
+      "expected_output": "required-skill確認後、remoteを更新し、openだけでなくmerged/closedを含むPR状態とstackを照合する。関連PRがmerge済みなら重複PRや隣接タスクを勝手に開始せず、その事実を報告して対象を確定する。",
+      "files": [],
+      "expectations": [
+        "実行順として必須依存確認をrepository調査より先に置く",
+        "実行順として対象remoteのfetchをPR不在やbranch ancestryの判断より先に置く",
+        "openだけでなくmerged/closedを含むPR状態とstackを照合対象にする",
+        "関連PRがmergedなら重複PRや隣接タスクを黙って開始しない方針を示す"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "$ship このリファクタを進めて。ただし今日はDraft PR作成までで止めて。後日、同じ会話でCI確認から再開したい。",
+      "expected_output": "Draft PR作成をcheckpointとして扱い、stabilization以降をdeferredとして記録する。PR作成前の確認をPhase 8の最終監査とは呼ばず、後日同じheadで再開した際にstabilizationと説明同期の後で最終監査を一度だけ行う。",
+      "files": [],
+      "expectations": [
+        "Draft PR作成をcheckpointとして記録し、後続フェーズをdeferredにする",
+        "PR作成前にPhase 8の最終監査を実行しない",
+        "再開時はstabilization、explanation、final audit、readyの順に進める",
+        "最終監査は同一PR head/baseのstabilizationとexplanation完了後に一度だけ実行する"
+      ]
+    }
+  ]
+}
