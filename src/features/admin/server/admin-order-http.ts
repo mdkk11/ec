@@ -1,26 +1,19 @@
 import type { NextRequest } from 'next/server'
-import { NextResponse } from 'next/server'
-import type { ZodType } from 'zod'
 
-import type { ApiError } from '@/contracts/api-error'
 import {
   orderListResponseSchema,
   orderResponseSchema,
 } from '@/contracts/order'
 import { requireAdminRequest } from '@/server/auth/request-actor'
+import {
+  apiErrorResponse,
+  noStoreJsonResponse,
+} from '@/server/http/json'
 
 import { AdminOrderServiceError } from './admin-order-service'
 
-export const adminOrderResponseHeaders = {
-  'Cache-Control': 'no-store',
-}
-
 type AuthorizationResult =
   | { ok: true }
-  | { ok: false; response: Response }
-
-type ParseResult<T> =
-  | { ok: true; data: T }
   | { ok: false; response: Response }
 
 export async function authorizeAdminOrderRequest(
@@ -30,7 +23,7 @@ export async function authorizeAdminOrderRequest(
   if (authorization.ok) return { ok: true }
   return {
     ok: false,
-    response: adminOrderErrorResponse(
+    response: apiErrorResponse(
       authorization.code === 'UNAUTHENTICATED' ? 401 : 403,
       authorization.code === 'UNAUTHENTICATED' ? 'UNAUTHENTICATED' : 'FORBIDDEN',
       authorization.code === 'UNAUTHENTICATED'
@@ -40,71 +33,8 @@ export async function authorizeAdminOrderRequest(
   }
 }
 
-function validationFieldErrors(error: {
-  issues: { message: string; path: PropertyKey[] }[]
-}) {
-  const fieldErrors: Record<string, string[]> = {}
-  for (const issue of error.issues) {
-    const field = issue.path[0]
-    if (typeof field !== 'string') continue
-    fieldErrors[field] ??= []
-    fieldErrors[field].push(issue.message)
-  }
-  return Object.keys(fieldErrors).length > 0 ? fieldErrors : undefined
-}
-
-export function adminOrderErrorResponse(
-  status: number,
-  code: string,
-  message: string,
-  fieldErrors?: Record<string, string[]>,
-) {
-  const body: ApiError = {
-    code,
-    message,
-    ...(fieldErrors ? { fieldErrors } : {}),
-  }
-  return NextResponse.json(body, {
-    headers: adminOrderResponseHeaders,
-    status,
-  })
-}
-
-export async function parseAdminOrderJsonRequest<T>(
-  request: NextRequest,
-  schema: ZodType<T>,
-): Promise<ParseResult<T>> {
-  let payload: unknown
-  try {
-    payload = await request.json()
-  } catch {
-    return {
-      ok: false,
-      response: adminOrderErrorResponse(
-        400,
-        'VALIDATION_ERROR',
-        '入力内容を確認してください。',
-      ),
-    }
-  }
-
-  const parsed = schema.safeParse(payload)
-  if (!parsed.success) {
-    return {
-      ok: false,
-      response: adminOrderErrorResponse(
-        400,
-        'VALIDATION_ERROR',
-        '入力内容を確認してください。',
-        validationFieldErrors(parsed.error),
-      ),
-    }
-  }
-  return { data: parsed.data, ok: true }
-}
-
 export function adminOrderServiceErrorResponse(error: AdminOrderServiceError) {
-  return adminOrderErrorResponse(
+  return apiErrorResponse(
     error.code === 'ORDER_NOT_FOUND' ? 404 : 409,
     error.code,
     error.message,
@@ -116,7 +46,7 @@ export function adminOrderRouteErrorResponse(error: unknown) {
     return adminOrderServiceErrorResponse(error)
   }
   console.error('管理注文の処理に失敗しました。', error)
-  return adminOrderErrorResponse(
+  return apiErrorResponse(
     500,
     'INTERNAL_ERROR',
     '注文を処理できませんでした。時間をおいてもう一度お試しください。',
@@ -125,16 +55,10 @@ export function adminOrderRouteErrorResponse(error: unknown) {
 
 export function adminOrderListSuccessResponse(items: unknown) {
   const body = orderListResponseSchema.parse({ items })
-  return NextResponse.json(body, {
-    headers: adminOrderResponseHeaders,
-    status: 200,
-  })
+  return noStoreJsonResponse(body)
 }
 
 export function adminOrderSuccessResponse(order: unknown) {
   const body = orderResponseSchema.parse({ order })
-  return NextResponse.json(body, {
-    headers: adminOrderResponseHeaders,
-    status: 200,
-  })
+  return noStoreJsonResponse(body)
 }

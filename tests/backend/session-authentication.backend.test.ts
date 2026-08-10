@@ -99,6 +99,23 @@ describe('session API', () => {
     await expect(backendDatabase.db.select().from(sessions)).resolves.toHaveLength(0)
   })
 
+  it('null JSONをfieldErrorsなしの400にする', async () => {
+    const response = await POST(
+      new NextRequest(sessionUrl, {
+        body: 'null',
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+      }),
+    )
+
+    expect(response.status).toBe(400)
+    expect(response.headers.get('cache-control')).toBe('no-store')
+    expect(await response.json()).toEqual({
+      code: 'VALIDATION_ERROR',
+      message: '入力内容を確認してください。',
+    })
+  })
+
   it('AUTH-005: Cookieがない場合は401を返す', async () => {
     const response = await GET(new NextRequest(sessionUrl))
 

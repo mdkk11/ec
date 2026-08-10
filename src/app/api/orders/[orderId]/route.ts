@@ -3,12 +3,12 @@ import type { NextRequest } from 'next/server'
 import { orderIdSchema } from '@/contracts/order'
 import {
   authorizeOrderRequest,
-  orderErrorResponse,
   orderRouteErrorResponse,
   orderSuccessResponse,
 } from '@/features/orders/server/order-http'
 import { findOrder } from '@/features/orders/server/order-service'
 import { getRuntimeDatabase } from '@/server/db/runtime'
+import { apiErrorResponse } from '@/server/http/json'
 
 export async function GET(
   request: NextRequest,
@@ -21,7 +21,7 @@ export async function GET(
     const { orderId } = await params
     const parsedId = orderIdSchema.safeParse(orderId)
     if (!parsedId.success) {
-      return orderErrorResponse(
+      return apiErrorResponse(
         404,
         'ORDER_NOT_FOUND',
         '注文が見つかりませんでした。',
@@ -33,7 +33,7 @@ export async function GET(
       userId: authorization.userId,
     })
     if (!order) {
-      return orderErrorResponse(
+      return apiErrorResponse(
         404,
         'ORDER_NOT_FOUND',
         '注文が見つかりませんでした。',

@@ -6,7 +6,6 @@ import {
   orderListSuccessResponse,
   orderRouteErrorResponse,
   orderSuccessResponse,
-  parseOrderJsonRequest,
 } from '@/features/orders/server/order-http'
 import {
   createOrder,
@@ -14,6 +13,7 @@ import {
 } from '@/features/orders/server/order-service'
 import { Temporal } from '@/lib/date-time/temporal'
 import { getRuntimeDatabase } from '@/server/db/runtime'
+import { parseJsonRequest } from '@/server/http/json'
 
 export async function GET(request: NextRequest) {
   try {
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     const authorization = await authorizeOrderRequest(request)
     if (!authorization.ok) return authorization.response
 
-    const parsed = await parseOrderJsonRequest(
+    const parsed = await parseJsonRequest(
       request,
       createOrderRequestSchema,
     )

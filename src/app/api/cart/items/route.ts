@@ -5,18 +5,18 @@ import {
   authorizeCartRequest,
   cartRouteErrorResponse,
   cartSuccessResponse,
-  parseCartJsonRequest,
 } from '@/features/cart/server/cart-http'
 import { addCartItem } from '@/features/cart/server/cart-service'
 import { Temporal } from '@/lib/date-time/temporal'
 import { getRuntimeDatabase } from '@/server/db/runtime'
+import { parseJsonRequest } from '@/server/http/json'
 
 export async function POST(request: NextRequest) {
   try {
     const authorization = await authorizeCartRequest(request)
     if (!authorization.ok) return authorization.response
 
-    const parsed = await parseCartJsonRequest(
+    const parsed = await parseJsonRequest(
       request,
       addCartItemRequestSchema,
     )

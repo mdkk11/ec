@@ -5,7 +5,6 @@ import {
   authorizeCartRequest,
   cartRouteErrorResponse,
   cartSuccessResponse,
-  parseCartJsonRequest,
 } from '@/features/cart/server/cart-http'
 import {
   applyCoupon,
@@ -13,6 +12,7 @@ import {
 } from '@/features/cart/server/cart-service'
 import { Temporal } from '@/lib/date-time/temporal'
 import { getRuntimeDatabase } from '@/server/db/runtime'
+import { parseJsonRequest } from '@/server/http/json'
 
 export async function PUT(request: NextRequest) {
   try {
@@ -20,7 +20,7 @@ export async function PUT(request: NextRequest) {
     const authorization = await authorizeCartRequest(request, now)
     if (!authorization.ok) return authorization.response
 
-    const parsed = await parseCartJsonRequest(
+    const parsed = await parseJsonRequest(
       request,
       applyCouponRequestSchema,
     )
