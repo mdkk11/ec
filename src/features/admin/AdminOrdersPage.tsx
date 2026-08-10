@@ -1,11 +1,7 @@
 'use client'
 
-import {
-  CancelledError,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query'
-import { useEffect, useRef, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
 
 import type { OrderDto, OrderStatus } from '@/contracts/order'
 import { useSession } from '@/features/auth/SessionProvider'
@@ -21,6 +17,7 @@ import {
   AdminProductStatusPage,
 } from './AdminProductStatusPage'
 import { adminOrdersQueryKey, replaceAdminOrder } from './admin-order-query'
+import { useAdminRequestCoordinator } from './use-admin-request-coordinator'
 
 type ConflictState = {
   latest: OrderDto | null
@@ -36,34 +33,14 @@ export function AdminOrdersPage() {
       ? sessionState.user.id
       : null
   const queryKey = adminOrdersQueryKey(adminId ?? 'disabled')
-  const runningRef = useRef(false)
-  const queryGenerationRef = useRef(0)
-  const revisionRef = useRef(0)
-  const controllerRef = useRef<AbortController | null>(null)
+  const requestCoordinator = useAdminRequestCoordinator()
   const query = useQuery({
     enabled: adminId !== null,
-    queryFn: async ({ signal }) => {
-      const generation = queryGenerationRef.current
-      const startedDuringMutation = runningRef.current
-      try {
+    queryFn: ({ signal }) =>
+      requestCoordinator.runGuardedQuery(async () => {
         const { items } = await getAdminOrders(signal)
-        if (
-          startedDuringMutation ||
-          queryGenerationRef.current !== generation
-        ) {
-          throw new CancelledError()
-        }
         return items
-      } catch (error) {
-        if (
-          startedDuringMutation ||
-          queryGenerationRef.current !== generation
-        ) {
-          throw new CancelledError()
-        }
-        throw error
-      }
-    },
+      }),
     queryKey,
   })
   const [selectedStatuses, setSelectedStatuses] = useState<
@@ -73,12 +50,6 @@ export function AdminOrdersPage() {
   const [conflict, setConflict] = useState<ConflictState | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
-
-  useEffect(() => () => {
-    revisionRef.current += 1
-    queryGenerationRef.current += 1
-    controllerRef.current?.abort()
-  }, [])
 
   useEffect(() => {
     if (query.error instanceof ApiClientError && query.error.status === 401) {
@@ -92,12 +63,11 @@ export function AdminOrdersPage() {
     requestedStatus: OrderStatus,
   ) {
     await queryClient.cancelQueries({ queryKey })
-    if (revisionRef.current !== revision) return
-    const controller = new AbortController()
-    controllerRef.current = controller
+    const signal = requestCoordinator.nextOperationSignal(revision)
+    if (!signal) return
     try {
-      const { items } = await getAdminOrders(controller.signal)
-      if (revisionRef.current !== revision) return
+      const { items } = await getAdminOrders(signal)
+      if (!requestCoordinator.isCurrentOperation(revision)) return
       queryClient.setQueryData(queryKey, items)
       setConflict({
         latest: items.find((item) => item.id === orderId) ?? null,
@@ -105,7 +75,7 @@ export function AdminOrdersPage() {
         requestedStatus,
       })
     } catch (error) {
-      if (revisionRef.current !== revision) return
+      if (!requestCoordinator.isCurrentOperation(revision)) return
       if (error instanceof ApiClientError && error.status === 401) {
         setAnonymous()
         return
@@ -118,38 +88,37 @@ export function AdminOrdersPage() {
   }
 
   async function handleUpdate(orderId: string) {
-    if (!adminId || pendingOrderId || conflict?.orderId === orderId) return
+    if (
+      !adminId ||
+      requestCoordinator.isOperationRunning() ||
+      pendingOrderId ||
+      conflict?.orderId === orderId
+    ) return
     const requestedStatus = selectedStatuses[orderId]
     const current = query.data?.find((item) => item.id === orderId)
     if (!requestedStatus || !current) return
 
-    const revision = revisionRef.current + 1
-    revisionRef.current = revision
-    runningRef.current = true
-    queryGenerationRef.current += 1
+    const { revision, signal } = requestCoordinator.beginOperation()
     setPendingOrderId(orderId)
     setErrorMessage(null)
     setStatusMessage(null)
-    controllerRef.current?.abort()
-    const controller = new AbortController()
-    controllerRef.current = controller
     await queryClient.cancelQueries({ queryKey })
-    if (revisionRef.current !== revision) return
+    if (!requestCoordinator.isCurrentOperation(revision)) return
 
     try {
       const { order } = await updateAdminOrderStatus(
         orderId,
         { expectedVersion: current.version, status: requestedStatus },
-        controller.signal,
+        signal,
       )
-      if (revisionRef.current !== revision) return
+      if (!requestCoordinator.isCurrentOperation(revision)) return
       queryClient.setQueryData(queryKey, (items: OrderDto[] | undefined) =>
         replaceAdminOrder(items, order),
       )
       setSelectedStatuses((items) => ({ ...items, [orderId]: undefined }))
       setStatusMessage('注文状態を更新しました。')
     } catch (error) {
-      if (revisionRef.current !== revision) return
+      if (!requestCoordinator.isCurrentOperation(revision)) return
       if (error instanceof ApiClientError && error.status === 401) {
         setAnonymous()
         return
@@ -164,10 +133,7 @@ export function AdminOrdersPage() {
         )
       }
     } finally {
-      if (revisionRef.current === revision) {
-        runningRef.current = false
-        setPendingOrderId(null)
-      }
+      if (requestCoordinator.finishOperation(revision)) setPendingOrderId(null)
     }
   }
 

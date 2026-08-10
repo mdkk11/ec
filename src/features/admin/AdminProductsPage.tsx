@@ -1,12 +1,8 @@
 'use client'
 
-import {
-  CancelledError,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
-import { type FormEvent, useEffect, useRef, useState } from 'react'
+import { type FormEvent, useEffect, useState } from 'react'
 
 import {
   createAdminProductRequestSchema,
@@ -31,6 +27,7 @@ import {
   AdminProductStatusPage,
 } from './AdminProductStatusPage'
 import { adminProductsQueryKey } from './admin-product-query'
+import { useAdminRequestCoordinator } from './use-admin-request-coordinator'
 
 const initialValues: AdminProductFormValues = {
   description: '',
@@ -84,32 +81,14 @@ export function AdminProductsPage() {
       ? sessionState.user.id
       : null
   const queryKey = adminProductsQueryKey(adminId ?? 'disabled')
-  const runningRef = useRef(false)
-  const queryGenerationRef = useRef(0)
+  const requestCoordinator = useAdminRequestCoordinator()
   const query = useQuery({
     enabled: adminId !== null,
-    queryFn: async ({ signal }) => {
-      const generation = queryGenerationRef.current
-      const startedDuringMutation = runningRef.current
-      try {
+    queryFn: ({ signal }) =>
+      requestCoordinator.runGuardedQuery(async () => {
         const { items } = await getAdminProducts(signal)
-        if (
-          startedDuringMutation ||
-          queryGenerationRef.current !== generation
-        ) {
-          throw new CancelledError()
-        }
         return items
-      } catch (error) {
-        if (
-          startedDuringMutation ||
-          queryGenerationRef.current !== generation
-        ) {
-          throw new CancelledError()
-        }
-        throw error
-      }
-    },
+      }),
     queryKey,
   })
   const [values, setValues] = useState(initialValues)
@@ -117,14 +96,6 @@ export function AdminProductsPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
-  const revisionRef = useRef(0)
-  const controllerRef = useRef<AbortController | null>(null)
-
-  useEffect(() => () => {
-    revisionRef.current += 1
-    queryGenerationRef.current += 1
-    controllerRef.current?.abort()
-  }, [])
 
   useEffect(() => {
     if (query.error instanceof ApiClientError && query.error.status === 401) {
@@ -139,7 +110,7 @@ export function AdminProductsPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!adminId || runningRef.current) return
+    if (!adminId || requestCoordinator.isOperationRunning()) return
 
     setErrorMessage(null)
     setStatusMessage(null)
@@ -151,24 +122,18 @@ export function AdminProductsPage() {
       return
     }
 
-    const revision = revisionRef.current + 1
-    revisionRef.current = revision
-    runningRef.current = true
-    queryGenerationRef.current += 1
+    const { revision, signal } = requestCoordinator.beginOperation()
     setPending(true)
     setFieldErrors({})
-    controllerRef.current?.abort()
-    const controller = new AbortController()
-    controllerRef.current = controller
     await queryClient.cancelQueries({ queryKey })
-    if (revisionRef.current !== revision) return
+    if (!requestCoordinator.isCurrentOperation(revision)) return
 
     try {
       const { product } = await createAdminProduct(
         parsed.data as CreateAdminProductRequest,
-        controller.signal,
+        signal,
       )
-      if (revisionRef.current !== revision) return
+      if (!requestCoordinator.isCurrentOperation(revision)) return
       queryClient.setQueryData(queryKey, (items: typeof query.data) => [
         product,
         ...(items ?? []).filter((item) => item.id !== product.id),
@@ -176,7 +141,7 @@ export function AdminProductsPage() {
       setValues(initialValues)
       setStatusMessage(`${product.name}を作成しました。`)
     } catch (error) {
-      if (revisionRef.current !== revision) return
+      if (!requestCoordinator.isCurrentOperation(revision)) return
       if (error instanceof ApiClientError && error.status === 401) {
         setAnonymous()
         return
@@ -190,10 +155,7 @@ export function AdminProductsPage() {
           : '商品を作成できませんでした。もう一度お試しください。',
       )
     } finally {
-      if (revisionRef.current === revision) {
-        runningRef.current = false
-        setPending(false)
-      }
+      if (requestCoordinator.finishOperation(revision)) setPending(false)
     }
   }
 

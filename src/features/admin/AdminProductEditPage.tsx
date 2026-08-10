@@ -1,10 +1,6 @@
 'use client'
 
-import {
-  CancelledError,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
 import { type FormEvent, useEffect, useRef, useState } from 'react'
 
@@ -37,6 +33,7 @@ import {
   adminProductsQueryKey,
   replaceAdminProduct,
 } from './admin-product-query'
+import { useAdminRequestCoordinator } from './use-admin-request-coordinator'
 
 type PendingOperation = 'metadata' | 'refresh' | 'stock' | null
 type ConflictState = {
@@ -115,32 +112,14 @@ export function AdminProductEditPage({ productId }: { productId: string }) {
       ? sessionState.user.id
       : null
   const queryKey = adminProductsQueryKey(adminId ?? 'disabled')
-  const runningRef = useRef(false)
-  const queryGenerationRef = useRef(0)
+  const requestCoordinator = useAdminRequestCoordinator()
   const query = useQuery({
     enabled: adminId !== null,
-    queryFn: async ({ signal }) => {
-      const generation = queryGenerationRef.current
-      const startedDuringMutation = runningRef.current
-      try {
+    queryFn: ({ signal }) =>
+      requestCoordinator.runGuardedQuery(async () => {
         const { items } = await getAdminProducts(signal)
-        if (
-          startedDuringMutation ||
-          queryGenerationRef.current !== generation
-        ) {
-          throw new CancelledError()
-        }
         return items
-      } catch (error) {
-        if (
-          startedDuringMutation ||
-          queryGenerationRef.current !== generation
-        ) {
-          throw new CancelledError()
-        }
-        throw error
-      }
-    },
+      }),
     queryKey,
   })
   const product = query.data?.find((item) => item.id === productId) ?? null
@@ -152,14 +131,6 @@ export function AdminProductEditPage({ productId }: { productId: string }) {
   const [pending, setPending] = useState<PendingOperation>(null)
   const [conflict, setConflict] = useState<ConflictState | null>(null)
   const initializedProductRef = useRef<string | null>(null)
-  const revisionRef = useRef(0)
-  const controllerRef = useRef<AbortController | null>(null)
-
-  useEffect(() => () => {
-    revisionRef.current += 1
-    queryGenerationRef.current += 1
-    controllerRef.current?.abort()
-  }, [])
 
   useEffect(() => {
     if (product && initializedProductRef.current !== product.id) {
@@ -180,41 +151,31 @@ export function AdminProductEditPage({ productId }: { productId: string }) {
     if (field === 'stock') setStockError(null)
   }
 
-  function beginOperation(kind: Exclude<PendingOperation, null>) {
-    const revision = revisionRef.current + 1
-    revisionRef.current = revision
-    runningRef.current = true
-    queryGenerationRef.current += 1
+  function beginPendingOperation(kind: Exclude<PendingOperation, null>) {
     setPending(kind)
     setOperationError(null)
     setStatusMessage(null)
-    controllerRef.current?.abort()
-    const controller = new AbortController()
-    controllerRef.current = controller
-    return { controller, revision }
+    return requestCoordinator.beginOperation()
   }
 
-  function finishOperation(revision: number) {
-    if (revisionRef.current !== revision) return
-    runningRef.current = false
-    setPending(null)
+  function finishPendingOperation(revision: number) {
+    if (requestCoordinator.finishOperation(revision)) setPending(null)
   }
 
   async function loadConflictLatest(revision: number) {
     await queryClient.cancelQueries({ queryKey })
-    if (revisionRef.current !== revision) return
-    const controller = new AbortController()
-    controllerRef.current = controller
+    const signal = requestCoordinator.nextOperationSignal(revision)
+    if (!signal) return
     try {
-      const { items } = await getAdminProducts(controller.signal)
-      if (revisionRef.current !== revision) return
+      const { items } = await getAdminProducts(signal)
+      if (!requestCoordinator.isCurrentOperation(revision)) return
       queryClient.setQueryData(queryKey, items)
       setConflict({
         latest: items.find((item) => item.id === productId) ?? null,
         refreshFailed: false,
       })
     } catch (error) {
-      if (revisionRef.current !== revision) return
+      if (!requestCoordinator.isCurrentOperation(revision)) return
       if (error instanceof ApiClientError && error.status === 401) {
         setAnonymous()
         return
@@ -256,7 +217,12 @@ export function AdminProductEditPage({ productId }: { productId: string }) {
 
   async function handleMetadataSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!product || !values || runningRef.current || conflict) return
+    if (
+      !product ||
+      !values ||
+      requestCoordinator.isOperationRunning() ||
+      conflict
+    ) return
 
     const parsed = parseMetadata(values)
     if (!parsed.success) {
@@ -268,20 +234,21 @@ export function AdminProductEditPage({ productId }: { productId: string }) {
     const changes = metadataChanges(product, values)
     if (Object.keys(changes).length === 0) return
 
-    const { controller, revision } = beginOperation('metadata')
+    const { revision, signal } = beginPendingOperation('metadata')
     setFieldErrors({})
     await queryClient.cancelQueries({ queryKey })
+    if (!requestCoordinator.isCurrentOperation(revision)) return
     try {
       const { product: updated } = await updateAdminProduct(
         product.id,
         { ...changes, expectedVersion: product.version },
-        controller.signal,
+        signal,
       )
-      if (revisionRef.current !== revision) return
+      if (!requestCoordinator.isCurrentOperation(revision)) return
       applySuccessfulProduct(updated, product, 'metadata')
       setStatusMessage('商品情報を更新しました。')
     } catch (error) {
-      if (revisionRef.current !== revision) return
+      if (!requestCoordinator.isCurrentOperation(revision)) return
       if (error instanceof ApiClientError && error.status === 401) {
         setAnonymous()
         return
@@ -299,13 +266,18 @@ export function AdminProductEditPage({ productId }: { productId: string }) {
           : '商品情報を更新できませんでした。もう一度お試しください。',
       )
     } finally {
-      finishOperation(revision)
+      finishPendingOperation(revision)
     }
   }
 
   async function handleStockSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!product || !values || runningRef.current || conflict) return
+    if (
+      !product ||
+      !values ||
+      requestCoordinator.isOperationRunning() ||
+      conflict
+    ) return
 
     const parsed = updateAdminProductStockRequestSchema.safeParse({
       expectedVersion: product.version,
@@ -319,20 +291,21 @@ export function AdminProductEditPage({ productId }: { productId: string }) {
     }
     if (parsed.data.stock === product.stock) return
 
-    const { controller, revision } = beginOperation('stock')
+    const { revision, signal } = beginPendingOperation('stock')
     setStockError(null)
     await queryClient.cancelQueries({ queryKey })
+    if (!requestCoordinator.isCurrentOperation(revision)) return
     try {
       const { product: updated } = await updateAdminProductStock(
         product.id,
         parsed.data,
-        controller.signal,
+        signal,
       )
-      if (revisionRef.current !== revision) return
+      if (!requestCoordinator.isCurrentOperation(revision)) return
       applySuccessfulProduct(updated, product, 'stock')
       setStatusMessage('在庫数を更新しました。')
     } catch (error) {
-      if (revisionRef.current !== revision) return
+      if (!requestCoordinator.isCurrentOperation(revision)) return
       if (error instanceof ApiClientError && error.status === 401) {
         setAnonymous()
         return
@@ -350,15 +323,15 @@ export function AdminProductEditPage({ productId }: { productId: string }) {
           : '在庫数を更新できませんでした。もう一度お試しください。',
       )
     } finally {
-      finishOperation(revision)
+      finishPendingOperation(revision)
     }
   }
 
   async function retryConflictRefresh() {
-    if (runningRef.current) return
-    const { revision } = beginOperation('refresh')
+    if (requestCoordinator.isOperationRunning()) return
+    const { revision } = beginPendingOperation('refresh')
     await loadConflictLatest(revision)
-    finishOperation(revision)
+    finishPendingOperation(revision)
   }
 
   function acceptLatest() {
