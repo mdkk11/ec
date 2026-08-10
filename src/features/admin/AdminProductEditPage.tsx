@@ -324,9 +324,18 @@ function AdminProductEditor({
   const stockUnchanged = values.stock === String(product.stock)
   const blocked = conflict !== null
   const operationRunning = requestCoordinator.operationRunning
+  const waitingForPreviousProductOperation = operationRunning && pending === null
 
   return (
-    <section className="page-wrap py-12 sm:py-16 lg:py-20">
+    <section
+      aria-busy={operationRunning}
+      className="page-wrap py-12 sm:py-16 lg:py-20"
+    >
+      {waitingForPreviousProductOperation ? (
+        <p className="sr-only" role="status">
+          別の商品を更新しています。完了するまでお待ちください。
+        </p>
+      ) : null}
       <Link className="text-sm underline underline-offset-4" href="/admin/products">商品管理へ戻る</Link>
       <p className="label mt-8 text-accent">ADMINISTRATION</p>
       <h1 className="mt-4 font-serif text-4xl sm:text-5xl">{product.name}</h1>
@@ -369,7 +378,7 @@ function AdminProductEditor({
         <section>
           <h2 className="font-serif text-3xl">在庫</h2>
           <form
-            aria-busy={pending === 'stock'}
+            aria-busy={pending === 'stock' || waitingForPreviousProductOperation}
             className="mt-6 border border-line bg-surface p-6"
             noValidate
             onSubmit={(event) => void handleStockSubmit(event)}

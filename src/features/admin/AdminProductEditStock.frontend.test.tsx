@@ -98,9 +98,16 @@ describe('管理商品編集・在庫', () => {
     expect(switchedNameInput).toHaveValue(anotherProduct.name)
     expect(switchedNameInput).toBeDisabled()
     expect(screen.getByRole('button', { name: '商品情報を更新' })).toBeDisabled()
+    expect(screen.getByRole('status')).toHaveTextContent(
+      '別の商品を更新しています。完了するまでお待ちください。',
+    )
+    expect(
+      screen.getByRole('heading', { name: anotherProduct.name }).closest('section'),
+    ).toHaveAttribute('aria-busy', 'true')
 
     releaseUpdate?.()
     await waitFor(() => expect(switchedNameInput).toBeEnabled())
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
   })
 
   it('商品情報を変更fieldだけで更新する', async () => {
