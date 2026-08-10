@@ -13,42 +13,14 @@ import {
   resolveSessionActor,
 } from '@/server/auth/session-service'
 import { getRuntimeDatabase } from '@/server/db/runtime'
-
-const noStoreHeaders = {
-  'Cache-Control': 'no-store',
-}
-
-function errorResponse(
-  status: number,
-  code: string,
-  message: string,
-  fieldErrors?: Record<string, string[]>,
-) {
-  return NextResponse.json(
-    {
-      code,
-      message,
-      ...(fieldErrors ? { fieldErrors } : {}),
-    },
-    { headers: noStoreHeaders, status },
-  )
-}
-
-function validationErrors(error: {
-  issues: { message: string; path: PropertyKey[] }[]
-}) {
-  const fieldErrors: Record<string, string[]> = {}
-  for (const issue of error.issues) {
-    const field = issue.path[0]
-    if (typeof field !== 'string') continue
-    fieldErrors[field] ??= []
-    fieldErrors[field].push(issue.message)
-  }
-  return fieldErrors
-}
+import {
+  apiErrorResponse,
+  noStoreJsonResponse,
+  parseJsonRequest,
+} from '@/server/http/json'
 
 function unauthenticatedResponse() {
-  return errorResponse(
+  return apiErrorResponse(
     401,
     'UNAUTHENTICATED',
     'ログインが必要です。',
@@ -57,43 +29,22 @@ function unauthenticatedResponse() {
 
 export async function POST(request: NextRequest) {
   try {
-    let payload: unknown
-    try {
-      payload = await request.json()
-    } catch {
-      return errorResponse(
-        400,
-        'VALIDATION_ERROR',
-        '入力内容を確認してください。',
-      )
-    }
-
-    const parsed = loginRequestSchema.safeParse(payload)
-    if (!parsed.success) {
-      return errorResponse(
-        400,
-        'VALIDATION_ERROR',
-        '入力内容を確認してください。',
-        validationErrors(parsed.error),
-      )
-    }
+    const parsed = await parseJsonRequest(request, loginRequestSchema)
+    if (!parsed.ok) return parsed.response
 
     const result = await loginWithPassword(parsed.data, {
       db: getRuntimeDatabase().db,
       now: Temporal.Now.instant(),
     })
     if (!result) {
-      return errorResponse(
+      return apiErrorResponse(
         401,
         'INVALID_CREDENTIALS',
         'メールアドレスまたはパスワードが正しくありません。',
       )
     }
 
-    const response = NextResponse.json(
-      { user: result.user },
-      { headers: noStoreHeaders, status: 200 },
-    )
+    const response = noStoreJsonResponse({ user: result.user })
     response.cookies.set(
       SESSION_COOKIE_NAME,
       result.token,
@@ -102,7 +53,7 @@ export async function POST(request: NextRequest) {
     return response
   } catch (error) {
     console.error('セッションの作成に失敗しました。', error)
-    return errorResponse(
+    return apiErrorResponse(
       500,
       'INTERNAL_ERROR',
       '処理に失敗しました。時間をおいてもう一度お試しください。',
@@ -121,13 +72,10 @@ export async function GET(request: NextRequest) {
     })
     if (!actor) return unauthenticatedResponse()
 
-    return NextResponse.json(
-      { user: actor },
-      { headers: noStoreHeaders, status: 200 },
-    )
+    return noStoreJsonResponse({ user: actor })
   } catch (error) {
     console.error('セッションの取得に失敗しました。', error)
-    return errorResponse(
+    return apiErrorResponse(
       500,
       'INTERNAL_ERROR',
       '処理に失敗しました。時間をおいてもう一度お試しください。',
@@ -156,7 +104,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     const response = new NextResponse(null, {
-      headers: noStoreHeaders,
+      headers: { 'Cache-Control': 'no-store' },
       status: 204,
     })
     response.cookies.set(
@@ -167,7 +115,7 @@ export async function DELETE(request: NextRequest) {
     return response
   } catch (error) {
     console.error('セッションの削除に失敗しました。', error)
-    return errorResponse(
+    return apiErrorResponse(
       500,
       'INTERNAL_ERROR',
       '処理に失敗しました。時間をおいてもう一度お試しください。',

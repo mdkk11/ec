@@ -6,10 +6,8 @@ import {
 } from '@/contracts/cart'
 import {
   authorizeCartRequest,
-  cartErrorResponse,
   cartRouteErrorResponse,
   cartSuccessResponse,
-  parseCartJsonRequest,
 } from '@/features/cart/server/cart-http'
 import {
   deleteCartItem,
@@ -17,6 +15,10 @@ import {
 } from '@/features/cart/server/cart-service'
 import { Temporal } from '@/lib/date-time/temporal'
 import { getRuntimeDatabase } from '@/server/db/runtime'
+import {
+  apiErrorResponse,
+  parseJsonRequest,
+} from '@/server/http/json'
 
 type RouteContext = {
   params: Promise<{ itemId: string }>
@@ -34,14 +36,14 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     const parsedItemId = await parseItemId(context)
     if (!parsedItemId.success) {
-      return cartErrorResponse(
+      return apiErrorResponse(
         400,
         'VALIDATION_ERROR',
         'カート明細IDの形式が正しくありません。',
       )
     }
 
-    const parsed = await parseCartJsonRequest(
+    const parsed = await parseJsonRequest(
       request,
       updateCartItemRequestSchema,
     )
@@ -69,7 +71,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
 
     const parsedItemId = await parseItemId(context)
     if (!parsedItemId.success) {
-      return cartErrorResponse(
+      return apiErrorResponse(
         400,
         'VALIDATION_ERROR',
         'カート明細IDの形式が正しくありません。',

@@ -288,7 +288,7 @@ describe('カートAPI', () => {
     await expect(backendDatabase.db.select().from(carts)).resolves.toHaveLength(0)
   })
 
-  it('不正JSONとschema違反を400の入力エラーにする', async () => {
+  it('不正JSON、null、schema違反を400の入力エラーにする', async () => {
     await prepareCatalogAndUsers()
     const cookie = await createCookie()
     const malformedResponse = await addCartItemRoute(
@@ -301,14 +301,25 @@ describe('カートAPI', () => {
         method: 'POST',
       }),
     )
+    const nullResponse = await addCartItemRoute(
+      request('POST', '/items', cookie, null),
+    )
     const schemaResponse = await addItem(cookie, 0)
 
     expect(malformedResponse.status).toBe(400)
+    expect(malformedResponse.headers.get('cache-control')).toBe('no-store')
     expect(await malformedResponse.json()).toEqual({
       code: 'VALIDATION_ERROR',
       message: '入力内容を確認してください。',
     })
+    expect(nullResponse.status).toBe(400)
+    expect(nullResponse.headers.get('cache-control')).toBe('no-store')
+    expect(await nullResponse.json()).toEqual({
+      code: 'VALIDATION_ERROR',
+      message: '入力内容を確認してください。',
+    })
     expect(schemaResponse.status).toBe(400)
+    expect(schemaResponse.headers.get('cache-control')).toBe('no-store')
     expect(await schemaResponse.json()).toEqual({
       code: 'VALIDATION_ERROR',
       fieldErrors: {

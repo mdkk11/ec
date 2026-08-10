@@ -1,11 +1,9 @@
 import type { NextRequest } from 'next/server'
 
 import {
-  adminOrderErrorResponse,
   adminOrderRouteErrorResponse,
   adminOrderSuccessResponse,
   authorizeAdminOrderRequest,
-  parseAdminOrderJsonRequest,
 } from '@/features/admin/server/admin-order-http'
 import { updateAdminOrderStatus } from '@/features/admin/server/admin-order-service'
 import {
@@ -14,6 +12,10 @@ import {
 } from '@/contracts/order'
 import { Temporal } from '@/lib/date-time/temporal'
 import { getRuntimeDatabase } from '@/server/db/runtime'
+import {
+  apiErrorResponse,
+  parseJsonRequest,
+} from '@/server/http/json'
 
 export async function PATCH(
   request: NextRequest,
@@ -26,14 +28,14 @@ export async function PATCH(
     const { orderId } = await params
     const parsedId = orderIdSchema.safeParse(orderId)
     if (!parsedId.success) {
-      return adminOrderErrorResponse(
+      return apiErrorResponse(
         404,
         'ORDER_NOT_FOUND',
         '注文が見つかりませんでした。',
       )
     }
 
-    const parsed = await parseAdminOrderJsonRequest(
+    const parsed = await parseJsonRequest(
       request,
       updateAdminOrderStatusRequestSchema,
     )
