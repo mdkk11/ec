@@ -1,6 +1,7 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
+import { useState } from 'react'
 import { describe, expect, it } from 'vitest'
 
 import type { AdminProductDto } from '@/contracts/product'
@@ -16,6 +17,92 @@ import {
 import { adminProductsQueryKey } from './admin-product-query'
 
 describe('管理商品編集・在庫', () => {
+  it('商品IDを切り替えた場合だけ編集内容を新しい商品で初期化する', async () => {
+    const anotherProduct = {
+      ...product,
+      id: '30000000-0000-4000-8000-000000000002',
+      name: '切替先の商品',
+    }
+    server.use(
+      http.get('/api/admin/products', () =>
+        listResponse([product, anotherProduct]),
+      ),
+    )
+
+    function ProductSwitcher() {
+      const [productId, setProductId] = useState(product.id)
+      return (
+        <>
+          <AdminProductEditPage productId={productId} />
+          <button onClick={() => setProductId(anotherProduct.id)} type="button">
+            別の商品を編集
+          </button>
+        </>
+      )
+    }
+
+    const user = userEvent.setup()
+    renderWithProviders(<ProductSwitcher />)
+    const nameInput = await screen.findByLabelText('商品名')
+    await user.clear(nameInput)
+    await user.type(nameInput, '未送信の商品名')
+
+    await user.click(screen.getByRole('button', { name: '別の商品を編集' }))
+
+    expect(screen.getByLabelText('商品名')).toHaveValue(anotherProduct.name)
+  })
+
+  it('更新中に商品IDを切り替えた場合は完了まで新しい商品の操作を無効化する', async () => {
+    const anotherProduct = {
+      ...product,
+      id: '30000000-0000-4000-8000-000000000002',
+      name: '切替先の商品',
+    }
+    const updated = { ...product, name: '更新中の商品名', version: 2 }
+    let releaseUpdate: (() => void) | undefined
+    const updateGate = new Promise<void>((resolve) => {
+      releaseUpdate = resolve
+    })
+    server.use(
+      http.get('/api/admin/products', () =>
+        listResponse([product, anotherProduct]),
+      ),
+      http.patch('/api/admin/products/:productId', async () => {
+        await updateGate
+        return HttpResponse.json({ product: updated })
+      }),
+    )
+
+    function ProductSwitcher() {
+      const [productId, setProductId] = useState(product.id)
+      return (
+        <>
+          <AdminProductEditPage productId={productId} />
+          <button onClick={() => setProductId(anotherProduct.id)} type="button">
+            別の商品を編集
+          </button>
+        </>
+      )
+    }
+
+    const user = userEvent.setup()
+    renderWithProviders(<ProductSwitcher />)
+    const nameInput = await screen.findByLabelText('商品名')
+    await user.clear(nameInput)
+    await user.type(nameInput, updated.name)
+    await user.click(screen.getByRole('button', { name: '商品情報を更新' }))
+
+    await user.click(screen.getByRole('button', { name: '別の商品を編集' }))
+
+    const switchedNameInput = screen.getByLabelText('商品名')
+    expect(switchedNameInput).toHaveValue(anotherProduct.name)
+    expect(switchedNameInput).toBeDisabled()
+    expect(screen.getByRole('button', { name: '商品情報を更新' })).toBeDisabled()
+
+    releaseUpdate?.()
+    await waitFor(() => expect(switchedNameInput).toBeEnabled())
+  })
+
   it('商品情報を変更fieldだけで更新する', async () => {
     let requestBody: unknown
     const updated = { ...product, name: '更新済み商品', version: 2 }
