@@ -28,6 +28,7 @@ export const Default: Story = {
     ),
     status: 'success',
   },
+  name: '通常',
 }
 
 export const OutOfStock: Story = {
@@ -40,6 +41,7 @@ export const OutOfStock: Story = {
     ),
     status: 'success',
   },
+  name: '在庫切れ',
 }
 
 export const LongContent: Story = {
@@ -50,4 +52,5 @@ export const LongContent: Story = {
     ),
     status: 'success',
   },
+  name: '長い商品名・説明',
 }
