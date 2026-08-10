@@ -28,6 +28,11 @@ import {
   type CartCheckoutState,
   type CartViewOperationState,
 } from './CartView'
+import {
+  checkoutFeedbackAfterRefresh,
+  decideCheckoutError,
+  initialCheckoutFeedback,
+} from './cartCheckoutFeedback'
 
 function StatusPage({
   children,
@@ -69,21 +74,10 @@ function couponErrorMessage(error: ApiClientError) {
   }
 }
 
-const initialCheckoutFeedback = {
-  confirmationRequired: false,
-  errorMessage: null as string | null,
-  message: null as string | null,
-  refreshFailed: false,
-}
-
-export function CartPage() {
+function CustomerCartPage({ customerId }: { customerId: string }) {
   const router = useRouter()
   const queryClient = useQueryClient()
-  const {
-    refresh,
-    setAnonymous,
-    state: sessionState,
-  } = useSession()
+  const { setAnonymous } = useSession()
   const operations = useCartOperations()
   const [checkoutFeedback, setCheckoutFeedback] = useState(
     initialCheckoutFeedback,
@@ -91,19 +85,12 @@ export function CartPage() {
   const [checkoutPending, setCheckoutPending] = useState(false)
   const [checkoutRefreshPending, setCheckoutRefreshPending] =
     useState(false)
-  const customerId =
-    sessionState.status === 'authenticated' &&
-    sessionState.user.role === 'customer'
-      ? sessionState.user.id
-      : null
   const checkoutAbortRef = useRef<AbortController | null>(null)
   const checkoutRunningRef = useRef(false)
-  const currentCustomerRef = useRef(customerId)
   const mountedRef = useRef(false)
   const query = useQuery({
-    enabled: customerId !== null,
     queryFn: ({ signal }) => getCart(signal).then(({ cart }) => cart),
-    queryKey: cartQueryKey(customerId ?? 'disabled'),
+    queryKey: cartQueryKey(customerId),
   })
   const checkoutMutation = useMutation({
     mutationFn: ({
@@ -135,50 +122,6 @@ export function CartPage() {
     }
   }, [query.error, setAnonymous])
 
-  useEffect(() => {
-    if (currentCustomerRef.current !== customerId) {
-      checkoutAbortRef.current?.abort()
-      checkoutAbortRef.current = null
-      checkoutRunningRef.current = false
-      setCheckoutPending(false)
-      setCheckoutRefreshPending(false)
-      setCheckoutFeedback(initialCheckoutFeedback)
-    }
-    currentCustomerRef.current = customerId
-  }, [customerId])
-
-  if (sessionState.status === 'loading') {
-    return (
-      <StatusPage role="status" title="認証状態を確認しています">
-        しばらくお待ちください。
-      </StatusPage>
-    )
-  }
-  if (sessionState.status === 'error') {
-    return (
-      <StatusPage role="alert" title="認証状態を確認できませんでした">
-        <Button className="mt-4" onClick={refresh}>
-          再試行
-        </Button>
-      </StatusPage>
-    )
-  }
-  if (sessionState.status === 'anonymous') {
-    return (
-      <StatusPage title="カートを見るにはログインが必要です">
-        <Link className="button-primary mt-4" href="/login">
-          ログイン
-        </Link>
-      </StatusPage>
-    )
-  }
-  if (sessionState.user.role !== 'customer') {
-    return (
-      <StatusPage title="カートは購入者専用です">
-        管理者アカウントでは購入操作を利用できません。
-      </StatusPage>
-    )
-  }
   if (query.isPending) {
     return (
       <StatusPage role="status" title="カートを読み込んでいます">
@@ -223,49 +166,29 @@ export function CartPage() {
     pending: checkoutPending || checkoutRefreshPending,
   }
 
-  const refreshCartAfterCheckoutError = async (
-    requestCustomerId: string,
-  ) => {
+  const refreshCartAfterCheckoutError = async () => {
     setCheckoutRefreshPending(true)
     const result = await query.refetch()
-    if (
-      !mountedRef.current ||
-      currentCustomerRef.current !== requestCustomerId
-    ) {
-      return
-    }
+    if (!mountedRef.current) return
 
     if (
       result.error instanceof ApiClientError &&
       result.error.status === 401
     ) {
       queryClient.removeQueries({
-        queryKey: cartQueryKey(requestCustomerId),
+        queryKey: cartQueryKey(customerId),
       })
       setAnonymous()
       return
     }
-    setCheckoutFeedback((current) => ({
-      ...current,
-      confirmationRequired: result.isError
-        ? current.confirmationRequired
-        : false,
-      errorMessage:
-        !result.isError && current.confirmationRequired
-          ? null
-          : current.errorMessage,
-      message:
-        !result.isError && current.confirmationRequired
-          ? '最新のカートを取得しました。注文履歴も確認してから、もう一度お試しください。'
-          : current.message,
-      refreshFailed: result.isError,
-    }))
+    setCheckoutFeedback((current) =>
+      checkoutFeedbackAfterRefresh(current, result.isError),
+    )
     setCheckoutRefreshPending(false)
   }
 
   const handleCheckout = async (checkoutToken: string) => {
     if (
-      !customerId ||
       checkoutRunningRef.current ||
       operations.state.pending.length > 0 ||
       query.data?.checkoutToken !== checkoutToken
@@ -273,7 +196,6 @@ export function CartPage() {
       return
     }
 
-    const requestCustomerId = customerId
     const controller = new AbortController()
     checkoutAbortRef.current = controller
     checkoutRunningRef.current = true
@@ -285,76 +207,30 @@ export function CartPage() {
         checkoutToken,
         signal: controller.signal,
       })
-      if (
-        !mountedRef.current ||
-        currentCustomerRef.current !== requestCustomerId
-      ) {
-        return
-      }
+      if (!mountedRef.current) return
 
       queryClient.removeQueries({
-        queryKey: cartQueryKey(requestCustomerId),
+        queryKey: cartQueryKey(customerId),
       })
       router.push(`/orders/${order.id}/complete`)
     } catch (error) {
-      if (
-        !mountedRef.current ||
-        currentCustomerRef.current !== requestCustomerId
-      ) {
-        return
-      }
+      if (!mountedRef.current) return
 
-      if (error instanceof ApiClientError && error.status === 401) {
+      const decision = decideCheckoutError(error)
+      if (decision.type === 'unauthenticated') {
         queryClient.removeQueries({
-          queryKey: cartQueryKey(requestCustomerId),
+          queryKey: cartQueryKey(customerId),
         })
         setAnonymous()
         return
       }
-
-      if (
-        error instanceof ApiClientError &&
-        (error.code === 'CHECKOUT_CHANGED' ||
-          error.code === 'STOCK_CONFLICT' ||
-          error.code === 'EMPTY_CART')
-      ) {
-        const message =
-          error.code === 'STOCK_CONFLICT'
-            ? '在庫が変更されました。最新のカートを確認し、数量を調整してください。'
-            : error.code === 'EMPTY_CART'
-              ? 'カートの内容が変更されました。最新の状態を確認してください。'
-              : '注文内容が変更されました。最新の内容を確認し、もう一度注文を確定してください。'
-        setCheckoutFeedback({
-          confirmationRequired: false,
-          errorMessage: null,
-          message,
-          refreshFailed: false,
-        })
-        await refreshCartAfterCheckoutError(requestCustomerId)
-        return
-      }
-
-      const confirmationRequired =
-        error instanceof ApiClientError &&
-        (error.kind === 'network' || error.kind === 'invalid_response')
-      setCheckoutFeedback({
-        confirmationRequired,
-        errorMessage: confirmationRequired
-          ? '注文結果を確認できませんでした。注文履歴または最新のカートを確認してから、もう一度お試しください。'
-          : error instanceof ApiClientError
-            ? error.message
-            : '注文を確定できませんでした。時間をおいてもう一度お試しください。',
-        message: null,
-        refreshFailed: false,
-      })
+      setCheckoutFeedback(decision.feedback)
+      if (decision.type === 'refresh-cart') await refreshCartAfterCheckoutError()
     } finally {
       if (checkoutAbortRef.current === controller) {
         checkoutAbortRef.current = null
       }
-      if (
-        mountedRef.current &&
-        currentCustomerRef.current === requestCustomerId
-      ) {
+      if (mountedRef.current) {
         checkoutRunningRef.current = false
         setCheckoutPending(false)
       }
@@ -378,9 +254,7 @@ export function CartPage() {
         clearCheckoutFeedback()
         void operations.execute({ itemId, kind: 'delete' })
       }}
-      onRefreshCart={() =>
-        customerId ? refreshCartAfterCheckoutError(customerId) : undefined
-      }
+      onRefreshCart={refreshCartAfterCheckoutError}
       onRemoveCoupon={() => {
         clearCheckoutFeedback()
         return operations.execute({ kind: 'remove-coupon' })
@@ -390,6 +264,50 @@ export function CartPage() {
         return operations.execute({ itemId, kind: 'update', quantity })
       }}
       operationState={operationState}
+    />
+  )
+}
+
+export function CartPage() {
+  const { refresh, state: sessionState } = useSession()
+
+  if (sessionState.status === 'loading') {
+    return (
+      <StatusPage role="status" title="認証状態を確認しています">
+        しばらくお待ちください。
+      </StatusPage>
+    )
+  }
+  if (sessionState.status === 'error') {
+    return (
+      <StatusPage role="alert" title="認証状態を確認できませんでした">
+        <Button className="mt-4" onClick={refresh}>
+          再試行
+        </Button>
+      </StatusPage>
+    )
+  }
+  if (sessionState.status === 'anonymous') {
+    return (
+      <StatusPage title="カートを見るにはログインが必要です">
+        <Link className="button-primary mt-4" href="/login">
+          ログイン
+        </Link>
+      </StatusPage>
+    )
+  }
+  if (sessionState.user.role !== 'customer') {
+    return (
+      <StatusPage title="カートは購入者専用です">
+        管理者アカウントでは購入操作を利用できません。
+      </StatusPage>
+    )
+  }
+
+  return (
+    <CustomerCartPage
+      key={sessionState.user.id}
+      customerId={sessionState.user.id}
     />
   )
 }
