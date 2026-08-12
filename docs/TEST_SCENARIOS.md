@@ -63,7 +63,7 @@
 | `DB-005` | 参照先のないID | session、cart item、order itemを直接insert | 外部キー制約で拒否 | Backend結合 |
 | `DB-006` | coupon table | 範囲外割引率、負の最低購入額、不正な期間を直接insert | CHECK制約で拒否 | Backend結合 |
 | `DB-007` | users、sessions table | 非正規化・重複email、不正role、不正・重複token hashを直接insert | CHECK、enum、一意制約で拒否 | Backend結合 |
-| `DB-008` | categoriesとcategory未導入のproducts | 全migrationと直接DB操作 | 固定5件、other backfill、NOT NULL、一意、CHECK、外部キー、削除制限を保証 | Backend結合 |
+| `DB-008` | categories、category未導入のproducts、既知25商品seed | 全migration、seed、直接DB操作 | 固定5件、既知25商品の期待category割り当て、other backfill、NOT NULL、一意、CHECK、外部キー、削除制限を保証 | Backend結合 |
 
 ## 5. 認証・認可
 

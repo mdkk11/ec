@@ -6,7 +6,7 @@ import { GET as getProduct } from '@/app/api/products/[productId]/route'
 import { GET as listProducts } from '@/app/api/products/route'
 import { categoryIds } from '@/features/categories/category-catalog'
 import { categories, products } from '@/server/db/schema'
-import { seedCategories } from '@/server/db/seed'
+import { seedCatalogProducts, seedCategories } from '@/server/db/seed'
 import { backendDatabase } from '@/test/backend/database'
 
 const productUrl = 'http://localhost:3000/api/products'
@@ -176,6 +176,40 @@ describe('DB-002: productsのDB制約', () => {
 })
 
 describe('カテゴリのDB制約', () => {
+  it('DB-008: seedした既知25商品を期待カテゴリへ割り当てる', async () => {
+    await seedCatalogProducts(backendDatabase.db)
+
+    const actual = await backendDatabase.db
+      .select({ categoryId: products.categoryId, id: products.id })
+      .from(products)
+      .orderBy(products.id)
+    const expected = [
+      {
+        categoryId: categoryIds.clothing,
+        productNumbers: [1, 4, 6, 7, 10, 12, 13, 14],
+      },
+      {
+        categoryId: categoryIds['bags-accessories'],
+        productNumbers: [2, 8, 11, 15, 16],
+      },
+      { categoryId: categoryIds.shoes, productNumbers: [3, 17, 18] },
+      {
+        categoryId: categoryIds['home-living'],
+        productNumbers: [9, 19, 20, 21, 22, 23, 24, 25],
+      },
+      { categoryId: categoryIds.other, productNumbers: [5] },
+    ]
+      .flatMap(({ categoryId, productNumbers }) =>
+        productNumbers.map((productNumber) => ({
+          categoryId,
+          id: `30000000-0000-4000-8000-${String(productNumber).padStart(12, '0')}`,
+        })),
+      )
+      .sort((left, right) => left.id.localeCompare(right.id))
+
+    expect(actual).toEqual(expected)
+  })
+
   it('固定masterと商品categoryのNOT NULL・外部キー・RESTRICTを保証する', async () => {
     await seedCategories(backendDatabase.db)
     const categoryId = categoryIds.other
@@ -187,6 +221,22 @@ describe('カテゴリのDB制約', () => {
         id: '40000000-0000-4000-8000-000000000099',
         name: '重複slug',
         slug: 'other',
+      }),
+    ).rejects.toThrow()
+    await expect(
+      backendDatabase.db.insert(categories).values({
+        displayOrder: 7,
+        id: '40000000-0000-4000-8000-000000000096',
+        name: 'その他',
+        slug: 'duplicate-name',
+      }),
+    ).rejects.toThrow()
+    await expect(
+      backendDatabase.db.insert(categories).values({
+        displayOrder: 10,
+        id: '40000000-0000-4000-8000-000000000095',
+        name: '重複表示順',
+        slug: 'duplicate-display-order',
       }),
     ).rejects.toThrow()
     await expect(
