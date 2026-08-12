@@ -1,9 +1,10 @@
 'use client'
 
 import { CancelledError } from '@tanstack/react-query'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 export function useAdminRequestCoordinator() {
+  const [operationRunning, setOperationRunning] = useState(false)
   const runningRef = useRef(false)
   const queryGenerationRef = useRef(0)
   const revisionRef = useRef(0)
@@ -35,6 +36,7 @@ export function useAdminRequestCoordinator() {
     const revision = revisionRef.current + 1
     revisionRef.current = revision
     runningRef.current = true
+    setOperationRunning(true)
     queryGenerationRef.current += 1
     controllerRef.current?.abort()
     const controller = new AbortController()
@@ -61,6 +63,7 @@ export function useAdminRequestCoordinator() {
   function finishOperation(revision: number) {
     if (!isCurrentOperation(revision)) return false
     runningRef.current = false
+    setOperationRunning(false)
     return true
   }
 
@@ -70,6 +73,7 @@ export function useAdminRequestCoordinator() {
     isCurrentOperation,
     isOperationRunning,
     nextOperationSignal,
+    operationRunning,
     runGuardedQuery,
   }
 }

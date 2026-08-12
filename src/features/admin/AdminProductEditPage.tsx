@@ -2,7 +2,7 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
-import { type FormEvent, useEffect, useRef, useState } from 'react'
+import { type FormEvent, useEffect, useState } from 'react'
 
 import { Button } from '@/components/button/Button'
 import {
@@ -39,6 +39,12 @@ type PendingOperation = 'metadata' | 'refresh' | 'stock' | null
 type ConflictState = {
   latest: AdminProductDto | null
   refreshFailed: boolean
+}
+type AdminProductEditorProps = {
+  product: AdminProductDto
+  queryKey: ReturnType<typeof adminProductsQueryKey>
+  requestCoordinator: ReturnType<typeof useAdminRequestCoordinator>
+  setAnonymous: () => void
 }
 
 function valuesFromProduct(product: AdminProductDto): AdminProductFormValues {
@@ -104,49 +110,23 @@ function metadataChanges(
   return changes
 }
 
-export function AdminProductEditPage({ productId }: { productId: string }) {
+function AdminProductEditor({
+  product,
+  queryKey,
+  requestCoordinator,
+  setAnonymous,
+}: AdminProductEditorProps) {
   const queryClient = useQueryClient()
-  const { setAnonymous, state: sessionState } = useSession()
-  const adminId =
-    sessionState.status === 'authenticated' && sessionState.user.role === 'admin'
-      ? sessionState.user.id
-      : null
-  const queryKey = adminProductsQueryKey(adminId ?? 'disabled')
-  const requestCoordinator = useAdminRequestCoordinator()
-  const query = useQuery({
-    enabled: adminId !== null,
-    queryFn: ({ signal }) =>
-      requestCoordinator.runGuardedQuery(async () => {
-        const { items } = await getAdminProducts(signal)
-        return items
-      }),
-    queryKey,
-  })
-  const product = query.data?.find((item) => item.id === productId) ?? null
-  const [values, setValues] = useState<AdminProductFormValues | null>(null)
+  const [values, setValues] = useState(() => valuesFromProduct(product))
   const [fieldErrors, setFieldErrors] = useState<AdminProductFieldErrors>({})
   const [stockError, setStockError] = useState<string | null>(null)
   const [operationError, setOperationError] = useState<string | null>(null)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const [pending, setPending] = useState<PendingOperation>(null)
   const [conflict, setConflict] = useState<ConflictState | null>(null)
-  const initializedProductRef = useRef<string | null>(null)
-
-  useEffect(() => {
-    if (product && initializedProductRef.current !== product.id) {
-      initializedProductRef.current = product.id
-      setValues(valuesFromProduct(product))
-    }
-  }, [product])
-
-  useEffect(() => {
-    if (query.error instanceof ApiClientError && query.error.status === 401) {
-      setAnonymous()
-    }
-  }, [query.error, setAnonymous])
 
   function handleChange(field: AdminProductFormField, value: boolean | string) {
-    setValues((current) => current ? { ...current, [field]: value } : current)
+    setValues((current) => ({ ...current, [field]: value }))
     setFieldErrors((current) => ({ ...current, [field]: undefined }))
     if (field === 'stock') setStockError(null)
   }
@@ -171,7 +151,7 @@ export function AdminProductEditPage({ productId }: { productId: string }) {
       if (!requestCoordinator.isCurrentOperation(revision)) return
       queryClient.setQueryData(queryKey, items)
       setConflict({
-        latest: items.find((item) => item.id === productId) ?? null,
+        latest: items.find((item) => item.id === product.id) ?? null,
         refreshFailed: false,
       })
     } catch (error) {
@@ -192,11 +172,10 @@ export function AdminProductEditPage({ productId }: { productId: string }) {
     current: AdminProductDto,
     kind: 'metadata' | 'stock',
   ) {
-    queryClient.setQueryData(queryKey, (items: typeof query.data) =>
+    queryClient.setQueryData(queryKey, (items: AdminProductDto[] | undefined) =>
       replaceAdminProduct(items, updated),
     )
     setValues((draft) => {
-      if (!draft) return valuesFromProduct(updated)
       if (kind === 'metadata') {
         return {
           ...draft,
@@ -218,8 +197,6 @@ export function AdminProductEditPage({ productId }: { productId: string }) {
   async function handleMetadataSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (
-      !product ||
-      !values ||
       requestCoordinator.isOperationRunning() ||
       conflict
     ) return
@@ -273,8 +250,6 @@ export function AdminProductEditPage({ productId }: { productId: string }) {
   async function handleStockSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (
-      !product ||
-      !values ||
       requestCoordinator.isOperationRunning() ||
       conflict
     ) return
@@ -344,37 +319,23 @@ export function AdminProductEditPage({ productId }: { productId: string }) {
     setStatusMessage('最新値を反映しました。変更内容を確認してください。')
   }
 
-  if (sessionState.status === 'loading') {
-    return <AdminProductStatusPage role="status" title="認証状態を確認しています">しばらくお待ちください。</AdminProductStatusPage>
-  }
-  if (sessionState.status === 'error') {
-    return <AdminProductStatusPage action={() => window.location.reload()} role="alert" title="認証状態を確認できませんでした">時間をおいてもう一度お試しください。</AdminProductStatusPage>
-  }
-  if (sessionState.status === 'anonymous') return <AdminLoginRequired />
-  if (sessionState.user.role !== 'admin') {
-    return <AdminProductStatusPage title="商品管理を利用できません">この画面は管理者専用です。</AdminProductStatusPage>
-  }
-  if (query.isPending) {
-    return <AdminProductStatusPage role="status" title="商品を読み込んでいます">しばらくお待ちください。</AdminProductStatusPage>
-  }
-  if (!query.data) {
-    return <AdminProductStatusPage action={() => void query.refetch()} role="alert" title="商品を読み込めませんでした">時間をおいてもう一度お試しください。</AdminProductStatusPage>
-  }
-  if (!product || !values) {
-    return (
-      <AdminProductStatusPage title="商品が見つかりませんでした">
-        <Link className="button-secondary mt-4" href="/admin/products">商品管理へ戻る</Link>
-      </AdminProductStatusPage>
-    )
-  }
-
   const changes = metadataChanges(product, values)
   const metadataUnchanged = Object.keys(changes).length === 0
   const stockUnchanged = values.stock === String(product.stock)
   const blocked = conflict !== null
+  const operationRunning = requestCoordinator.operationRunning
+  const waitingForPreviousProductOperation = operationRunning && pending === null
 
   return (
-    <section className="page-wrap py-12 sm:py-16 lg:py-20">
+    <section
+      aria-busy={operationRunning}
+      className="page-wrap py-12 sm:py-16 lg:py-20"
+    >
+      {waitingForPreviousProductOperation ? (
+        <p className="sr-only" role="status">
+          別の商品を更新しています。完了するまでお待ちください。
+        </p>
+      ) : null}
       <Link className="text-sm underline underline-offset-4" href="/admin/products">商品管理へ戻る</Link>
       <p className="label mt-8 text-accent">ADMINISTRATION</p>
       <h1 className="mt-4 font-serif text-4xl sm:text-5xl">{product.name}</h1>
@@ -395,7 +356,7 @@ export function AdminProductEditPage({ productId }: { productId: string }) {
           <h2 className="font-serif text-3xl">商品情報と公開状態</h2>
           <div className="mt-6">
             <AdminProductForm
-              blocked={blocked}
+              blocked={blocked || operationRunning}
               conflictProduct={conflict?.latest}
               errorMessage={operationError}
               fieldErrors={fieldErrors}
@@ -406,7 +367,9 @@ export function AdminProductEditPage({ productId }: { productId: string }) {
               onSubmit={(event) => void handleMetadataSubmit(event)}
               pending={pending === 'metadata' || pending === 'refresh'}
               statusMessage={statusMessage}
-              submitDisabled={metadataUnchanged || pending !== null}
+              submitDisabled={
+                metadataUnchanged || pending !== null || operationRunning
+              }
               values={values}
             />
           </div>
@@ -415,7 +378,7 @@ export function AdminProductEditPage({ productId }: { productId: string }) {
         <section>
           <h2 className="font-serif text-3xl">在庫</h2>
           <form
-            aria-busy={pending === 'stock'}
+            aria-busy={pending === 'stock' || waitingForPreviousProductOperation}
             className="mt-6 border border-line bg-surface p-6"
             noValidate
             onSubmit={(event) => void handleStockSubmit(event)}
@@ -425,7 +388,7 @@ export function AdminProductEditPage({ productId }: { productId: string }) {
               aria-describedby={stockError ? 'edit-product-stock-error' : undefined}
               aria-invalid={stockError ? true : undefined}
               className="mt-2 min-h-12 w-full border border-line bg-surface px-4 text-base outline-none focus:border-ink focus:ring-2 focus:ring-ink/20 disabled:bg-canvas disabled:text-muted"
-              disabled={blocked || pending !== null}
+              disabled={blocked || pending !== null || operationRunning}
               id="edit-product-stock"
               inputMode="numeric"
               min={0}
@@ -436,12 +399,73 @@ export function AdminProductEditPage({ productId }: { productId: string }) {
             />
             {stockError ? <p className="mt-2 text-sm text-accent" id="edit-product-stock-error" role="alert">{stockError}</p> : null}
             <p className="mt-4 text-sm leading-6 text-muted">注文や取消でも商品versionが更新されます。</p>
-            <Button className="mt-6 w-full" disabled={blocked || pending !== null || stockUnchanged} type="submit">
+            <Button className="mt-6 w-full" disabled={blocked || pending !== null || operationRunning || stockUnchanged} type="submit">
               {pending === 'stock' ? '在庫を更新しています…' : '在庫を更新'}
             </Button>
           </form>
         </section>
       </div>
     </section>
+  )
+}
+
+export function AdminProductEditPage({ productId }: { productId: string }) {
+  const { setAnonymous, state: sessionState } = useSession()
+  const adminId =
+    sessionState.status === 'authenticated' && sessionState.user.role === 'admin'
+      ? sessionState.user.id
+      : null
+  const queryKey = adminProductsQueryKey(adminId ?? 'disabled')
+  const requestCoordinator = useAdminRequestCoordinator()
+  const query = useQuery({
+    enabled: adminId !== null,
+    queryFn: ({ signal }) =>
+      requestCoordinator.runGuardedQuery(async () => {
+        const { items } = await getAdminProducts(signal)
+        return items
+      }),
+    queryKey,
+  })
+
+  useEffect(() => {
+    if (query.error instanceof ApiClientError && query.error.status === 401) {
+      setAnonymous()
+    }
+  }, [query.error, setAnonymous])
+
+  if (sessionState.status === 'loading') {
+    return <AdminProductStatusPage role="status" title="認証状態を確認しています">しばらくお待ちください。</AdminProductStatusPage>
+  }
+  if (sessionState.status === 'error') {
+    return <AdminProductStatusPage action={() => window.location.reload()} role="alert" title="認証状態を確認できませんでした">時間をおいてもう一度お試しください。</AdminProductStatusPage>
+  }
+  if (sessionState.status === 'anonymous') return <AdminLoginRequired />
+  if (sessionState.user.role !== 'admin') {
+    return <AdminProductStatusPage title="商品管理を利用できません">この画面は管理者専用です。</AdminProductStatusPage>
+  }
+  if (query.isPending) {
+    return <AdminProductStatusPage role="status" title="商品を読み込んでいます">しばらくお待ちください。</AdminProductStatusPage>
+  }
+  if (!query.data) {
+    return <AdminProductStatusPage action={() => void query.refetch()} role="alert" title="商品を読み込めませんでした">時間をおいてもう一度お試しください。</AdminProductStatusPage>
+  }
+
+  const product = query.data.find((item) => item.id === productId)
+  if (!product) {
+    return (
+      <AdminProductStatusPage title="商品が見つかりませんでした">
+        <Link className="button-secondary mt-4" href="/admin/products">商品管理へ戻る</Link>
+      </AdminProductStatusPage>
+    )
+  }
+
+  return (
+    <AdminProductEditor
+      key={product.id}
+      product={product}
+      queryKey={queryKey}
+      requestCoordinator={requestCoordinator}
+      setAnonymous={setAnonymous}
+    />
   )
 }
