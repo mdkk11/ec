@@ -88,6 +88,8 @@ Client Component -> TanStack Query -> API client -> JSON Route Handler -> featur
 - 商品・注文の物理削除を追加しない。
 - カート・注文・履歴はcustomer専用、管理機能はadmin専用とし、adminに購入者権限を暗黙付与しない。
 - クーポン管理UI/APIを追加せず、migration、seed、fixtureで用意する。
+- 商品は固定・単一・非階層のカテゴリへ必ず所属させる。カテゴリmasterのCRUD、複数所属、親子階層を追加しない。
+- トップページの編集テーマを商品カテゴリへ接続しない。
 
 ## DBとmigration
 
@@ -165,7 +167,7 @@ Client Component -> TanStack Query -> API client -> JSON Route Handler -> featur
 
 - 本物の決済、配送、税、返金
 - OAuth、会員登録、パスワード再設定、ゲスト購入
-- 商品バリエーション、カテゴリ、検索、絞り込み、お気に入り
+- 商品バリエーション、検索、カテゴリ以外の絞り込み、お気に入り
 - 複数・定額クーポン、利用回数制限
 - 在庫予約、監査ログ、通知、リアルタイム更新
 - マイクロサービス、多言語、多通貨

@@ -17,6 +17,7 @@
 | セッション・ロール・所有権 | △ | ○ | ◎ | ○ | - |
 | 商品画面の表示状態 | ○ | ◎ | ○ | ○ | ○ |
 | 商品公開条件・DB制約 | ○ | ○ | ◎ | ○ | - |
+| 商品カテゴリmaster・管理割り当て | ○ | ◎ | ◎ | ○ | ○ |
 | カート画面の操作・状態 | ○ | ◎ | ○ | ○ | ○ |
 | カート永続化・競合 | ○ | ○ | ◎ | ○ | - |
 | クーポン計算・境界 | ◎ | ○ | ○ | ○ | - |
@@ -44,6 +45,7 @@
 | `UNIT-CART-001` | 単価1,200円の商品を数量3 | 行小計と商品小計を計算 | 3,600円 |
 | `UNIT-CART-002` | 数量0、負数、小数 | 数量schemaで検証 | すべて拒否 |
 | `UNIT-PRODUCT-001` | 価格・在庫・versionの境界値 | 管理入力schemaで検証 | 価格・在庫は0を許可、version/expectedVersionは1以上の整数だけ許可 |
+| `UNIT-CATEGORY-001` | 固定5カテゴリと管理商品入力 | category ID・slug・必須選択をschemaで検証 | 固定値を受け入れ、不正slug・ID・未選択を拒否し、categoryだけのPATCHを許可 |
 | `UNIT-ORDER-001` | 各注文状態 | 次状態を判定 | PRODUCTで定義した5遷移だけ許可 |
 | `UNIT-ORDER-002` | 同一状態、逆方向、取消後 | 次状態を判定 | `INVALID_STATUS_TRANSITION` |
 | `UNIT-API-001` | 各domain error | API errorへ変換 | 規定のHTTP statusとcodeになる |
@@ -61,6 +63,7 @@
 | `DB-005` | 参照先のないID | session、cart item、order itemを直接insert | 外部キー制約で拒否 | Backend結合 |
 | `DB-006` | coupon table | 範囲外割引率、負の最低購入額、不正な期間を直接insert | CHECK制約で拒否 | Backend結合 |
 | `DB-007` | users、sessions table | 非正規化・重複email、不正role、不正・重複token hashを直接insert | CHECK、enum、一意制約で拒否 | Backend結合 |
+| `DB-008` | categoriesとcategory未導入のproducts | 全migrationと直接DB操作 | 固定5件、other backfill、NOT NULL、一意、CHECK、外部キー、削除制限を保証 | Backend結合 |
 
 ## 5. 認証・認可
 
@@ -169,6 +172,7 @@
 | `ADMIN-011` | 管理一覧APIが空・保留・失敗 | 各状態を表示 | 専用の空・ローディング・エラー表示 | Front結合 | VRT |
 | `ADMIN-012` | 管理者が商品versionを取得後、customerが注文 | 古いexpectedVersionで在庫更新 | 注文減算を上書きせず409 `VERSION_CONFLICT` | Backend結合 | - |
 | `ADMIN-013` | 管理者が商品versionを取得後、別管理者が注文取消 | 古いexpectedVersionで在庫更新 | 在庫復元を上書きせず409 `VERSION_CONFLICT` | Backend結合 | - |
+| `ADMIN-014` | 管理商品作成・編集画面 | カテゴリを明示して作成し、categoryだけを更新 | categoryを保存してversionを進め、不明IDはfield error、409時は入力を保持 | Backend結合 | Front結合 / E2E |
 
 ## 11. E2Eシナリオ
 
@@ -176,7 +180,7 @@
 | --- | --- | --- | --- |
 | `E2E-001` | 購入者の正常導線 | ログイン→一覧→詳細→カート→クーポン→注文→履歴 | Chromium / Firefox / WebKit |
 | `E2E-002` | 在庫変更 | カート表示後にfixture在庫を変更→注文失敗→カート再読込 | Chromium |
-| `E2E-003` | 商品・在庫管理 | 管理者ログイン→商品作成→在庫変更→非公開化 | Chromium / Firefox / WebKit |
+| `E2E-003` | 商品・在庫管理 | 管理者ログイン→カテゴリを明示して商品作成→在庫変更→非公開化 | Chromium / Firefox / WebKit |
 | `E2E-004` | ロール制御 | 購入者で管理URLへ移動→アクセス拒否 | Chromium / Firefox / WebKit |
 | `E2E-005` | モバイル購入 | モバイルviewportで一覧→詳細→カート→注文 | Mobile Chromium |
 | `E2E-006` | 注文状態管理 | 管理者ログイン→受付注文を処理中へ更新→表示確認 | Chromium / Firefox / WebKit |
@@ -194,7 +198,7 @@
 | `VRT-004` | Cart | 通常、空、更新中、在庫競合 | 375 / 1440 |
 | `VRT-005` | CouponForm | 適用前、適用済み、入力エラー、期限切れ | 375 / 1440 |
 | `VRT-006` | OrderHistory | 通常、空、ローディング、エラー | 375 / 1440 |
-| `VRT-007` | AdminProductForm | 通常、入力エラー、更新中、競合 | 768 / 1440 |
+| `VRT-007` | AdminProductForm | category選択を含む通常、入力エラー、更新中、競合 | 768 / 1440 |
 | `VRT-008` | AdminOrderTable | 通常、空、更新中、競合 | 768 / 1440 |
 | `VRT-009` | StorefrontShell | 匿名状態のトップ、ヘッダー、フッター | 375 / 768 / 1440 |
 
