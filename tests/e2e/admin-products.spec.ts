@@ -34,7 +34,7 @@ test('E2E-003: 管理者が商品を作成し、在庫変更後に非公開化�
   await page.getByLabel('パスワード').fill(admin.password)
   await page.getByRole('button', { name: 'ログイン' }).click()
   await expect(page).toHaveURL('/')
-  await page.getByRole('link', { name: '商品管理' }).click()
+  await page.getByRole('link', { name: 'Products' }).click()
   await expect(page).toHaveURL('/admin/products')
 
   await page.getByLabel('商品名').fill(admin.productName)

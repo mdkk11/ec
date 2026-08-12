@@ -25,6 +25,12 @@ const authenticatedUser = {
   role: 'customer' as const,
 }
 
+const adminUser = {
+  email: 'admin@example.test',
+  id: '20000000-0000-4000-8000-000000000001',
+  role: 'admin' as const,
+}
+
 async function fillCredentials(user: ReturnType<typeof userEvent.setup>) {
   await user.type(
     screen.getByLabelText('メールアドレス'),
@@ -155,7 +161,7 @@ describe('ログインフォーム', () => {
       </SessionProvider>,
     )
 
-    expect(await screen.findByRole('link', { name: 'ログイン' })).toBeVisible()
+    expect(await screen.findByRole('link', { name: 'Login' })).toBeVisible()
     await fillCredentials(user)
     await user.click(screen.getByRole('button', { name: 'ログイン' }))
 
@@ -173,6 +179,30 @@ describe('ログインフォーム', () => {
     )
 
     expect(screen.getByText(authenticatedUser.email)).toBeVisible()
+    expect(screen.getByRole('link', { name: 'Items' })).toHaveAttribute('href', '/products')
+    expect(screen.getByRole('link', { name: 'Orders' })).toHaveAttribute('href', '/orders')
+    expect(screen.getByRole('link', { name: 'Cart' })).toHaveAttribute('href', '/cart')
+    expect(screen.getByRole('button', { name: 'Logout' })).toBeVisible()
+  })
+
+  it('管理者向けの実在するナビゲーションだけを表示する', () => {
+    render(
+      <SessionProvider initialState={{ status: 'authenticated', user: adminUser }}>
+        <SiteHeader />
+      </SessionProvider>,
+    )
+
+    expect(screen.getByRole('link', { name: 'Items' })).toHaveAttribute('href', '/products')
+    expect(screen.getByRole('link', { name: 'Products' })).toHaveAttribute(
+      'href',
+      '/admin/products',
+    )
+    expect(screen.getByRole('link', { name: 'Orders' })).toHaveAttribute(
+      'href',
+      '/admin/orders',
+    )
+    expect(screen.getByRole('button', { name: 'Logout' })).toBeVisible()
+    expect(screen.queryByRole('link', { name: 'Cart' })).not.toBeInTheDocument()
   })
 
   it('logoutの500では認証表示を維持して再試行可能なerrorを表示する', async () => {
@@ -198,12 +228,12 @@ describe('ログインフォーム', () => {
     )
 
     expect(await screen.findByText(authenticatedUser.email)).toBeVisible()
-    await user.click(screen.getByRole('button', { name: 'ログアウト' }))
+    await user.click(screen.getByRole('button', { name: 'Logout' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       '失敗しました。再度お試しください。',
     )
     expect(screen.getByText(authenticatedUser.email)).toBeVisible()
-    expect(screen.getByRole('button', { name: 'ログアウト' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Logout' })).toBeEnabled()
   })
 })

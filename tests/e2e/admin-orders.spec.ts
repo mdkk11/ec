@@ -31,7 +31,7 @@ test('E2E-006: 管理者が受付注文を処理中へ更新できる', async ({
   await page.getByLabel('パスワード').fill(admin.password)
   await page.getByRole('button', { name: 'ログイン' }).click()
   await expect(page).toHaveURL('/')
-  await page.getByRole('link', { name: '注文管理' }).click()
+  await page.getByRole('link', { name: 'Orders' }).click()
   await expect(page).toHaveURL('/admin/orders')
 
   const row = page.getByRole('row').filter({ hasText: order.orderId })

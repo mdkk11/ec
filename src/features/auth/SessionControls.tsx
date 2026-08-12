@@ -41,56 +41,56 @@ export function SessionControls() {
   if (state.status === 'anonymous') {
     return (
       <Link
-        className="text-[11px] font-semibold tracking-[0.08em] underline-offset-4 hover:underline"
+        className="inline-flex min-h-11 items-center text-[10px] font-semibold tracking-[0.04em] underline-offset-4 hover:underline sm:text-[11px] sm:tracking-[0.08em]"
         href="/login"
       >
-        ログイン
+        Login
       </Link>
     )
   }
 
   return (
-    <div className="flex max-w-52 items-center gap-3 text-right sm:max-w-72">
+    <div className="flex items-center gap-1 whitespace-nowrap text-right sm:gap-3">
       {state.user.role === 'customer' ? (
         <>
           <Link
-            className="text-[11px] font-semibold tracking-[0.06em] underline-offset-4 hover:underline"
+            className="inline-flex min-h-11 items-center text-[10px] font-semibold tracking-[0.02em] underline-offset-4 hover:underline sm:text-[11px] sm:tracking-[0.06em]"
             href="/orders"
           >
-            注文履歴
+            Orders
           </Link>
           <Link
-            className="text-[11px] font-semibold tracking-[0.06em] underline-offset-4 hover:underline"
+            className="inline-flex min-h-11 items-center text-[10px] font-semibold tracking-[0.02em] underline-offset-4 hover:underline sm:text-[11px] sm:tracking-[0.06em]"
             href="/cart"
           >
-            カート
+            Cart
           </Link>
         </>
       ) : (
         <>
           <Link
-            className="text-[11px] font-semibold tracking-[0.06em] underline-offset-4 hover:underline"
+            className="inline-flex min-h-11 items-center text-[10px] font-semibold tracking-[0.02em] underline-offset-4 hover:underline sm:text-[11px] sm:tracking-[0.06em]"
             href="/admin/products"
           >
-            商品管理
+            Products
           </Link>
           <Link
-            className="text-[11px] font-semibold tracking-[0.06em] underline-offset-4 hover:underline"
+            className="inline-flex min-h-11 items-center text-[10px] font-semibold tracking-[0.02em] underline-offset-4 hover:underline sm:text-[11px] sm:tracking-[0.06em]"
             href="/admin/orders"
           >
-            注文管理
+            Orders
           </Link>
         </>
       )}
-      <div>
+      <div className="shrink-0">
         <p
-          className="truncate text-[10px] text-muted sm:text-[11px]"
+          className="hidden max-w-40 truncate text-[10px] text-muted sm:block sm:text-[11px]"
           title={state.user.email}
         >
           {state.user.email}
         </p>
         <button
-          className="mt-1 text-[10px] font-semibold tracking-[0.06em] underline underline-offset-4 disabled:cursor-wait disabled:opacity-60"
+          className="inline-flex min-h-11 items-center text-[10px] font-semibold tracking-[0.02em] underline underline-offset-4 disabled:cursor-wait disabled:opacity-60 sm:min-h-0 sm:tracking-[0.06em]"
           disabled={isLoggingOut}
           onClick={async () => {
             if (isLoggingOut) return
@@ -106,7 +106,7 @@ export function SessionControls() {
           }}
           type="button"
         >
-          {isLoggingOut ? 'ログアウト中…' : 'ログアウト'}
+          {isLoggingOut ? 'ログアウト中…' : 'Logout'}
         </button>
         {logoutError ? (
           <p
