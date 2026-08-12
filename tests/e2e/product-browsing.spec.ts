@@ -15,7 +15,39 @@ test('E2E-007/PRODUCT-001/010/011: Server Componentの商品一覧から詳細�
   await expect(
     page.getByRole('heading', { level: 1, name: '商品一覧' }),
   ).toBeVisible()
-  await expect(page.getByText('9点')).toBeVisible()
+  await expect(page.getByText('29点')).toBeVisible()
+
+  const catalogProductImages = page.locator(
+    'article:has(a[href^="/products/30000000-0000-4000-8000-"]) img',
+  )
+  await expect(catalogProductImages).toHaveCount(24)
+
+  const fixturePaths = new Set<string>()
+  for (let index = 0; index < 24; index += 1) {
+    const productImage = catalogProductImages.nth(index)
+    await productImage.scrollIntoViewIfNeeded()
+    await expect(productImage).toBeVisible()
+
+    const imageState = await productImage.evaluate((image) => {
+      if (!(image instanceof HTMLImageElement)) {
+        throw new Error('商品画像がimg要素ではありません。')
+      }
+
+      const optimizedUrl = new URL(image.currentSrc, image.ownerDocument.baseURI)
+      return {
+        complete: image.complete,
+        naturalWidth: image.naturalWidth,
+        originalPath: optimizedUrl.searchParams.get('url'),
+        optimizedOrigin: optimizedUrl.origin,
+      }
+    })
+    expect(imageState.complete).toBe(true)
+    expect(imageState.naturalWidth).toBeGreaterThan(0)
+    expect(imageState.optimizedOrigin).toBe(new URL(page.url()).origin)
+    expect(imageState.originalPath).toMatch(/^\/images\/home\/[a-z-]+\.jpg$/u)
+    fixturePaths.add(imageState.originalPath ?? '')
+  }
+  expect(fixturePaths.size).toBe(24)
 
   const firstProductLink = page
     .getByRole('article')
