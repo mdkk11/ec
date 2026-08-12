@@ -105,10 +105,10 @@
 
 ### 4.4 Story IDを維持して表示名を日本語化する
 
-- 各Story objectの `name` に、画面上の差分が分かる日本語名を設定する。例は「通常」「商品なし」「読み込み中」「取得エラー」「在庫切れ」「長い商品名」「更新中」「競合」である。
+- 画面状態を表す各Story objectの `name` に、差分が分かる日本語名を設定する。例は「通常」「商品なし」「読み込み中」「取得エラー」「在庫切れ」「長い商品名」「更新中」「競合」である。
 - export名は変更しない。VRTが使用するstory IDと `tests/vrt/*.vrt.spec.ts` の参照先を維持するためである。
 - `title`、`parameters`、`decorators`、provider、fixture、event handlerは維持する。
-- Buttonのvariant storyは削除しない。今回の目的は表示名と既存状態の対応を明確にすることであり、story catalogの削減を混ぜない。
+- Buttonのvariant storyは削除せず、コード上のvariant名と対応する英語のexport名を表示名として維持する。
 - storyの追加・削除、VRT対象状態・viewport、基準画像は変更しない。
 
 ## 5. 採用しない方針
@@ -227,7 +227,7 @@
 
 ### 手順4: Storybookの表示名を日本語化する
 
-1. 11個のstory fileへ、export名を変えず日本語の `name` を追加する。
+1. 画面状態を表す10個のstory fileへ、export名を変えず日本語の `name` を追加する。Buttonのvariant storyは英語のexport名を維持する。
 2. VRT対象storyのexport名と `tests/vrt/*.vrt.spec.ts` の参照文字列が変更されていないことを差分と検索で確認する。
 3. Storybook buildとVRTを実行し、story IDの解決と基準画像が変わらないことを確認する。
 4. ローカルVRTが文字描画差で失敗する場合は、同じ環境の `origin/main` を一時worktreeで同一testへ通す。mainでも同じ差が出る場合は基準画像を更新せず、PRのPlaywright container上のCI結果を合格判定に使う。
@@ -275,7 +275,7 @@
 - `pnpm build-storybook`
 - `pnpm test:vrt`
 - VRT 8シナリオのstory IDが解決し、基準画像の更新なしで成功する。
-- Storybook sidebarで各状態が日本語名として区別できる。
+- Storybook sidebarで画面状態は日本語名、Buttonのvariantは英語名として区別できる。
 - ローカルでのみVRTが失敗する場合、`origin/main` の同一testでも同一差が出ることを確認し、PRのLinux container上のVRTを最終判定にする。
 
 ### 実行しない確認
@@ -308,7 +308,7 @@
 - customer変更を監視して複数stateを手動resetするEffectと `currentCustomerRef` がなくなる。
 - checkout error分類と再取得後feedback更新が、React・QueryClient・routerへ依存しない純粋関数として同階層のファイルに置かれる。
 - checkout判断の全branch（再取得成功時の確認要否を含む）がunit testで、実コンポーネントの通信・操作・raceが既存Frontend結合テストで成功する。
-- Storybookの既存storyが日本語表示名を持ち、export名、story ID、VRT対象、fixture、基準画像が変わらない。
+- Storybookの画面状態storyが日本語表示名を持ち、Buttonのvariantは英語名を維持し、export名、story ID、VRT対象、fixture、基準画像が変わらない。
 - Server Component、server-only facade、TanStack Query、API client、Route Handler、use case、Drizzleの依存方向に変更がない。
 - 新規dependency、API変更、business rule変更、DB変更、migration、画面文言変更、CSS変更、VRT基準画像更新がない。
 - `pnpm lint`、`pnpm typecheck`、`pnpm test:unit`、`pnpm test:frontend`、`pnpm build`、`pnpm build-storybook` が成功する。

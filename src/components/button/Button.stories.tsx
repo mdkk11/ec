@@ -17,19 +17,16 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-export const Primary: Story = { name: 'プライマリ' }
+export const Primary: Story = {}
 
 export const Secondary: Story = {
   args: { variant: 'secondary' },
-  name: 'セカンダリ',
 }
 
 export const Text: Story = {
   args: { variant: 'text' },
-  name: 'テキスト',
 }
 
 export const Disabled: Story = {
   args: { disabled: true, children: '処理中' },
-  name: '無効',
 }
