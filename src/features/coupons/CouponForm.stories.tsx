@@ -32,16 +32,18 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-export const BeforeApply: Story = {}
+export const BeforeApply: Story = { name: '適用前' }
 
 export const Applied: Story = {
   args: { coupon: appliedCoupon },
+  name: '適用済み',
 }
 
 export const InputError: Story = {
   args: {
     errorMessage: 'クーポンが見つかりませんでした。',
   },
+  name: '入力エラー',
 }
 
 export const Expired: Story = {
@@ -49,4 +51,5 @@ export const Expired: Story = {
     coupon: appliedCoupon,
     issueCode: 'COUPON_EXPIRED',
   },
+  name: '期限切れ',
 }

@@ -19,6 +19,7 @@ export const Default: Story = {
     items: productListFixture,
     status: 'success',
   },
+  name: '通常',
 }
 
 export const Empty: Story = {
@@ -26,16 +27,19 @@ export const Empty: Story = {
     items: [],
     status: 'success',
   },
+  name: '商品なし',
 }
 
 export const Loading: Story = {
   args: {
     status: 'loading',
   },
+  name: '読み込み中',
 }
 
 export const Error: Story = {
   args: {
     status: 'error',
   },
+  name: '取得エラー',
 }

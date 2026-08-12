@@ -28,14 +28,17 @@ export const Default: Story = {
     onUpdate: () => undefined,
     status: 'success',
   },
+  name: '通常',
 }
 
 export const Empty: Story = {
   args: { items: [], status: 'success' },
+  name: '注文なし',
 }
 
 export const Loading: Story = {
   args: { status: 'loading' },
+  name: '読み込み中',
 }
 
 export const Updating: Story = {
@@ -47,6 +50,7 @@ export const Updating: Story = {
     selectedStatuses: { [adminOrderFixture.id]: 'processing' },
     status: 'success',
   },
+  name: '更新中',
 }
 
 export const Conflict: Story = {
@@ -57,8 +61,10 @@ export const Conflict: Story = {
     onAcknowledgeConflict: () => undefined,
     status: 'success',
   },
+  name: '競合',
 }
 
 export const Error: Story = {
   args: { onRetry: () => undefined, status: 'error' },
+  name: '取得エラー',
 }

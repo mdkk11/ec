@@ -28,10 +28,12 @@ const handlers = {
 
 export const Default: Story = {
   args: { cart: cartFixture, ...handlers },
+  name: '通常',
 }
 
 export const Empty: Story = {
   args: { cart: emptyCartFixture, ...handlers },
+  name: '空のカート',
 }
 
 export const Updating: Story = {
@@ -49,8 +51,10 @@ export const Updating: Story = {
     },
     ...handlers,
   },
+  name: '更新中',
 }
 
 export const StockConflict: Story = {
   args: { cart: stockConflictCartFixture, ...handlers },
+  name: '在庫競合',
 }

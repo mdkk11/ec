@@ -43,7 +43,7 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-export const Default: Story = {}
+export const Default: Story = { name: '通常' }
 
 export const InputError: Story = {
   args: {
@@ -54,10 +54,12 @@ export const InputError: Story = {
     },
     values: { ...values, name: '', price: '-1', stock: '1.5' },
   },
+  name: '入力エラー',
 }
 
 export const Updating: Story = {
   args: { pending: true },
+  name: '更新中',
 }
 
 export const Conflict: Story = {
@@ -73,4 +75,5 @@ export const Conflict: Story = {
     onAcceptLatest: () => undefined,
     values: { ...values, name: '入力中の商品名', price: '29700', stock: '10' },
   },
+  name: '競合',
 }
