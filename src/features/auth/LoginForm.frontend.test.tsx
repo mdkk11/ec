@@ -179,7 +179,7 @@ describe('ログインフォーム', () => {
     )
 
     expect(screen.getByText(authenticatedUser.email)).toBeVisible()
-    expect(screen.getByRole('link', { name: 'Items' })).toHaveAttribute('href', '/products')
+    expect(screen.getByRole('link', { name: 'ALL ITEMS' })).toHaveAttribute('href', '/products')
     expect(screen.getByRole('link', { name: 'Orders' })).toHaveAttribute('href', '/orders')
     expect(screen.getByRole('link', { name: 'Cart' })).toHaveAttribute('href', '/cart')
     expect(screen.getByRole('button', { name: 'Logout' })).toBeVisible()
@@ -192,7 +192,7 @@ describe('ログインフォーム', () => {
       </SessionProvider>,
     )
 
-    expect(screen.getByRole('link', { name: 'Items' })).toHaveAttribute('href', '/products')
+    expect(screen.getByRole('link', { name: 'ALL ITEMS' })).toHaveAttribute('href', '/products')
     expect(screen.getByRole('link', { name: 'Products' })).toHaveAttribute(
       'href',
       '/admin/products',

@@ -37,7 +37,7 @@ test('共通レイアウトをキーボードで利用でき、横方向に崩�
   await expect(page.getByRole('heading', { level: 1, name: 'Made for quieter days.' })).toBeVisible()
   await expect(page.getByRole('heading', { level: 2, name: 'New essentials' })).toBeVisible()
   const header = page.getByRole('banner')
-  await expect(header.getByRole('link', { name: 'Items' })).toHaveAttribute(
+  await expect(header.getByRole('link', { name: 'ALL ITEMS' })).toHaveAttribute(
     'href',
     '/products',
   )

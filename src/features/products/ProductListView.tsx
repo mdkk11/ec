@@ -30,7 +30,7 @@ export function ProductListView(props: ProductListViewProps) {
             </Link>
           </li>
           <li aria-hidden="true">/</li>
-          <li aria-current="page">商品一覧</li>
+          <li aria-current="page">ALL ITEMS</li>
         </ol>
       </nav>
 
@@ -38,7 +38,7 @@ export function ProductListView(props: ProductListViewProps) {
         <div>
           <p className="label text-accent">CATALOG</p>
           <h1 className="mt-3 font-serif text-5xl tracking-tight sm:text-6xl">
-            商品一覧
+            ALL ITEMS
           </h1>
           <p className="mt-5 max-w-2xl text-sm leading-7 text-muted">
             日常に長く残る服と道具を、新しく届いた順にご覧いただけます。

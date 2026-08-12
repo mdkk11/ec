@@ -18,7 +18,7 @@ export function SiteFooter() {
           <ul className="mt-5 space-y-3 text-sm text-muted">
             <li>
               <Link className="transition-colors hover:text-ink" href="/products">
-                Items
+                ALL ITEMS
               </Link>
             </li>
           </ul>

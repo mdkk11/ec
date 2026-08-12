@@ -17,7 +17,7 @@ export function SiteHeader() {
           className="flex justify-self-start text-[10px] font-semibold tracking-[0.04em] sm:text-[11px] sm:tracking-[0.08em]"
         >
           <Link className="nav-link inline-flex min-h-11 items-center" href="/products">
-            Items
+            ALL ITEMS
           </Link>
         </nav>
 
