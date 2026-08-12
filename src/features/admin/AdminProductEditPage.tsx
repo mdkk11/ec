@@ -49,6 +49,7 @@ type AdminProductEditorProps = {
 
 function valuesFromProduct(product: AdminProductDto): AdminProductFormValues {
   return {
+    categoryId: product.categoryId,
     description: product.description,
     imagePath: product.imagePath,
     isPublished: product.isPublished,
@@ -65,6 +66,7 @@ function collectMetadataErrors(error: {
   for (const issue of error.issues) {
     const field = issue.path[0]
     if (
+      field !== 'categoryId' &&
       field !== 'name' &&
       field !== 'description' &&
       field !== 'price' &&
@@ -78,7 +80,7 @@ function collectMetadataErrors(error: {
 }
 
 function focusFirstMetadataError(errors: AdminProductFieldErrors) {
-  const first = ['name', 'description', 'price', 'imagePath'].find(
+  const first = ['categoryId', 'name', 'description', 'price', 'imagePath'].find(
     (field) => errors[field as AdminProductFormField],
   )
   if (first) document.getElementById(`edit-product-${first}`)?.focus()
@@ -98,6 +100,9 @@ function metadataChanges(
 ): Omit<UpdateAdminProductRequest, 'expectedVersion'> {
   const changes: Omit<UpdateAdminProductRequest, 'expectedVersion'> = {}
   const price = Number(values.price)
+  if (values.categoryId !== product.categoryId) {
+    changes.categoryId = values.categoryId
+  }
   if (values.name !== product.name) changes.name = values.name
   if (values.description !== product.description) {
     changes.description = values.description
@@ -179,6 +184,7 @@ function AdminProductEditor({
       if (kind === 'metadata') {
         return {
           ...draft,
+          categoryId: updated.categoryId,
           description: updated.description,
           imagePath: updated.imagePath,
           isPublished: updated.isPublished,

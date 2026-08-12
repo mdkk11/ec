@@ -8,7 +8,7 @@ import type {
   UpdateAdminProductStockRequest,
 } from '@/contracts/product'
 import type { Temporal } from '@/lib/date-time/temporal'
-import { products } from '@/server/db/schema'
+import { categories, products } from '@/server/db/schema'
 
 type AdminProductDependencies = {
   db: NodePgDatabase
@@ -16,6 +16,7 @@ type AdminProductDependencies = {
 }
 
 const adminProductSelection = {
+  categoryId: products.categoryId,
   description: products.description,
   id: products.id,
   imagePath: products.imagePath,
@@ -27,6 +28,7 @@ const adminProductSelection = {
 }
 
 type AdminProductRecord = {
+  categoryId: string
   description: string
   id: string
   imagePath: string
@@ -46,11 +48,26 @@ function toAdminProductDto(product: AdminProductRecord): AdminProductDto {
 
 export class AdminProductServiceError extends Error {
   constructor(
-    readonly code: 'PRODUCT_NOT_FOUND' | 'VERSION_CONFLICT',
+    readonly code: 'INVALID_CATEGORY' | 'PRODUCT_NOT_FOUND' | 'VERSION_CONFLICT',
     message: string,
   ) {
     super(message)
     this.name = 'AdminProductServiceError'
+  }
+}
+
+async function assertCategoryExists(categoryId: string, db: NodePgDatabase) {
+  const [category] = await db
+    .select({ id: categories.id })
+    .from(categories)
+    .where(eq(categories.id, categoryId))
+    .limit(1)
+
+  if (!category) {
+    throw new AdminProductServiceError(
+      'INVALID_CATEGORY',
+      '選択したカテゴリが見つかりませんでした。',
+    )
   }
 }
 
@@ -69,6 +86,7 @@ export async function createAdminProduct(
   input: CreateAdminProductRequest,
   { db, now }: AdminProductDependencies,
 ): Promise<AdminProductDto> {
+  await assertCategoryExists(input.categoryId, db)
   const timestamp = now.toString()
   const [record] = await db
     .insert(products)
@@ -112,6 +130,7 @@ export async function updateAdminProduct(
   { db, now }: AdminProductDependencies,
 ): Promise<AdminProductDto> {
   const { expectedVersion, ...changes } = input
+  if (changes.categoryId) await assertCategoryExists(changes.categoryId, db)
   const [record] = await db
     .update(products)
     .set({

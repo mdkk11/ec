@@ -18,6 +18,7 @@ import { POST as createOrderRoute } from '@/app/api/orders/route'
 import { GET as getPublishedProductRoute } from '@/app/api/products/[productId]/route'
 import { GET as listPublishedProductsRoute } from '@/app/api/products/route'
 import { Temporal } from '@/lib/date-time/temporal'
+import { categoryIds } from '@/features/categories/category-catalog'
 import { hashSessionToken } from '@/server/auth/session-token'
 import { products, sessions } from '@/server/db/schema'
 import {
@@ -97,6 +98,7 @@ describe('管理商品API', () => {
 
     const createResponse = await createAdminProductRoute(
       request('POST', '/admin/products', adminCookie, {
+        categoryId: categoryIds.other,
         description: '管理画面から作成した商品です。',
         imagePath: '/images/fixtures/product-placeholder.svg',
         isPublished: false,
@@ -111,6 +113,7 @@ describe('管理商品API', () => {
     expect(createResponse.headers.get('cache-control')).toBe('no-store')
     expect(createdBody.product).toMatchObject({
       availability: 'in_stock',
+      categoryId: categoryIds.other,
       isPublished: false,
       name: '管理作成商品',
       stock: 2,
@@ -127,11 +130,41 @@ describe('管理商品API', () => {
       .toBe(true)
   })
 
+  it('不明カテゴリの商品作成を400 field errorで拒否する', async () => {
+    await prepareFixtures()
+    const adminCookie = await createCookie(adminId)
+
+    const response = await createAdminProductRoute(
+      request('POST', '/admin/products', adminCookie, {
+        categoryId: '49999999-9999-4999-8999-999999999999',
+        description: '保存されない商品です。',
+        imagePath: '/images/fixtures/product-placeholder.svg',
+        isPublished: false,
+        name: '不明カテゴリ商品',
+        price: 1_000,
+        stock: 1,
+      }),
+    )
+
+    expect(response.status).toBe(400)
+    expect(await response.json()).toMatchObject({
+      code: 'VALIDATION_ERROR',
+      fieldErrors: { categoryId: ['選択したカテゴリが見つかりませんでした。'] },
+    })
+    await expect(
+      backendDatabase.db
+        .select({ id: products.id })
+        .from(products)
+        .where(eq(products.name, '不明カテゴリ商品')),
+    ).resolves.toEqual([])
+  })
+
   it('AUTH-006: 未認証を401、customerを403にしDBを変更しない', async () => {
     await prepareFixtures()
     const customerCookie = await createCookie(customerId)
     const before = await backendDatabase.db.select().from(products)
     const createBody = {
+      categoryId: categoryIds.other,
       description: '拒否される商品です。',
       imagePath: '/images/fixtures/product-placeholder.svg',
       isPublished: false,
@@ -170,6 +203,7 @@ describe('管理商品API', () => {
 
     const negativePrice = await createAdminProductRoute(
       request('POST', '/admin/products', adminCookie, {
+        categoryId: categoryIds.other,
         description: '不正価格です。',
         imagePath: '/images/fixtures/product-placeholder.svg',
         isPublished: false,
@@ -239,6 +273,44 @@ describe('管理商品API', () => {
         .from(products)
         .where(eq(products.id, productId)),
     ).resolves.toEqual([{ name: '先行更新商品', version: 2 }])
+  })
+
+  it('カテゴリだけの更新でversionを進め、不明カテゴリをfield errorで拒否する', async () => {
+    await prepareFixtures()
+    const adminCookie = await createCookie(adminId)
+
+    const updated = await updateProduct(adminCookie, productId, {
+      categoryId: categoryIds['bags-accessories'],
+      expectedVersion: 1,
+    })
+    expect(updated.status).toBe(200)
+    expect(await updated.json()).toMatchObject({
+      product: {
+        categoryId: categoryIds['bags-accessories'],
+        version: 2,
+      },
+    })
+
+    const invalid = await updateProduct(adminCookie, productId, {
+      categoryId: '49999999-9999-4999-8999-999999999999',
+      expectedVersion: 2,
+    })
+    expect(invalid.status).toBe(400)
+    expect(await invalid.json()).toMatchObject({
+      code: 'VALIDATION_ERROR',
+      fieldErrors: {
+        categoryId: ['選択したカテゴリが見つかりませんでした。'],
+      },
+    })
+    await expect(
+      backendDatabase.db
+        .select({ categoryId: products.categoryId, version: products.version })
+        .from(products)
+        .where(eq(products.id, productId)),
+    ).resolves.toEqual([{
+      categoryId: categoryIds['bags-accessories'],
+      version: 2,
+    }])
   })
 
   it('ADMIN-005: 他の在庫更新後に古いexpectedVersionを409にする', async () => {

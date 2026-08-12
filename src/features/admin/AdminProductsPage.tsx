@@ -30,6 +30,7 @@ import { adminProductsQueryKey } from './admin-product-query'
 import { useAdminRequestCoordinator } from './use-admin-request-coordinator'
 
 const initialValues: AdminProductFormValues = {
+  categoryId: '',
   description: '',
   imagePath: '/images/fixtures/product-placeholder.svg',
   isPublished: false,
@@ -45,6 +46,7 @@ function collectFieldErrors(error: {
   for (const issue of error.issues) {
     const field = issue.path[0]
     if (
+      field !== 'categoryId' &&
       field !== 'name' &&
       field !== 'description' &&
       field !== 'price' &&
@@ -67,7 +69,7 @@ function parseValues(values: AdminProductFormValues) {
 }
 
 function focusFirstError(errors: AdminProductFieldErrors, prefix: string) {
-  const first = ['name', 'description', 'price', 'stock', 'imagePath'].find(
+  const first = ['categoryId', 'name', 'description', 'price', 'stock', 'imagePath'].find(
     (field) => errors[field as AdminProductFormField],
   )
   if (first) document.getElementById(`${prefix}-${first}`)?.focus()

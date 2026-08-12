@@ -1,9 +1,12 @@
+import { eq } from 'drizzle-orm'
 import { NextRequest } from 'next/server'
 import { describe, expect, it, vi } from 'vitest'
 
 import { GET as getProduct } from '@/app/api/products/[productId]/route'
 import { GET as listProducts } from '@/app/api/products/route'
-import { products } from '@/server/db/schema'
+import { categoryIds } from '@/features/categories/category-catalog'
+import { categories, products } from '@/server/db/schema'
+import { seedCategories } from '@/server/db/seed'
 import { backendDatabase } from '@/test/backend/database'
 
 const productUrl = 'http://localhost:3000/api/products'
@@ -13,8 +16,11 @@ async function insertProduct(
 ) {
   const id = overrides.id ?? crypto.randomUUID()
   const createdAt = overrides.createdAt ?? '2026-03-01T00:00:00Z'
+  const { categoryId = categoryIds.other, ...changes } = overrides
 
+  await seedCategories(backendDatabase.db)
   await backendDatabase.db.insert(products).values({
+    categoryId,
     createdAt,
     description: 'Backend結合テストの商品説明です。',
     id,
@@ -25,7 +31,7 @@ async function insertProduct(
     stock: 1,
     updatedAt: createdAt,
     version: 1,
-    ...overrides,
+    ...changes,
   })
 
   return id
@@ -166,5 +172,47 @@ describe('DB-002: productsのDB制約', () => {
     ['0のversion', { version: 0 }],
   ])('%sを拒否する', async (_label, overrides) => {
     await expect(insertProduct(overrides)).rejects.toThrow()
+  })
+})
+
+describe('カテゴリのDB制約', () => {
+  it('固定masterと商品categoryのNOT NULL・外部キー・RESTRICTを保証する', async () => {
+    await seedCategories(backendDatabase.db)
+    const categoryId = categoryIds.other
+    const productId = await insertProduct({ categoryId })
+
+    await expect(
+      backendDatabase.db.insert(categories).values({
+        displayOrder: 6,
+        id: '40000000-0000-4000-8000-000000000099',
+        name: '重複slug',
+        slug: 'other',
+      }),
+    ).rejects.toThrow()
+    await expect(
+      backendDatabase.db.insert(categories).values({
+        displayOrder: 0,
+        id: '40000000-0000-4000-8000-000000000098',
+        name: '不正表示順',
+        slug: 'invalid-order',
+      }),
+    ).rejects.toThrow()
+    await expect(
+      backendDatabase.db.insert(categories).values({
+        displayOrder: 6,
+        id: '40000000-0000-4000-8000-000000000097',
+        name: '不正slug',
+        slug: 'Invalid_Slug',
+      }),
+    ).rejects.toThrow()
+    await expect(
+      backendDatabase.db
+        .update(products)
+        .set({ categoryId: '49999999-9999-4999-8999-999999999999' })
+        .where(eq(products.id, productId)),
+    ).rejects.toThrow()
+    await expect(
+      backendDatabase.db.delete(categories).where(eq(categories.id, categoryId)),
+    ).rejects.toThrow()
   })
 })

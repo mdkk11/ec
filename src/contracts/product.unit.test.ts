@@ -13,6 +13,8 @@ import {
   updateAdminProductStockRequestSchema,
 } from './product'
 
+const categoryId = '40000000-0000-4000-8000-000000000001'
+
 const product = {
   availability: 'in_stock',
   description: '軽やかな素材の商品です。',
@@ -73,6 +75,7 @@ describe('product contract', () => {
   it('UNIT-PRODUCT-001: 管理商品DTOと一覧・単体envelopeを受け入れる', () => {
     const adminProduct = {
       ...product,
+      categoryId,
       isPublished: true,
       stock: 0,
       version: 1,
@@ -87,6 +90,7 @@ describe('product contract', () => {
 
   it('UNIT-PRODUCT-001: 価格・在庫は0、expectedVersionは1を許可する', () => {
     const input = {
+      categoryId,
       description: product.description,
       imagePath: product.imagePath,
       isPublished: false,
@@ -118,6 +122,7 @@ describe('product contract', () => {
   ])('UNIT-PRODUCT-001: %sを拒否する', (_label, overrides) => {
     expect(
       createAdminProductRequestSchema.safeParse({
+        categoryId,
         description: product.description,
         imagePath: product.imagePath,
         isPublished: false,
@@ -146,6 +151,7 @@ describe('product contract', () => {
 
   it('管理入力で空の必須fieldと外部画像URLを拒否する', () => {
     const base = {
+      categoryId,
       description: product.description,
       imagePath: product.imagePath,
       isPublished: false,
@@ -163,5 +169,24 @@ describe('product contract', () => {
         imagePath: 'https://example.com/image.jpg',
       }).success,
     ).toBe(false)
+  })
+
+  it('管理作成ではcategoryを必須とし、categoryだけの更新を許可する', () => {
+    expect(
+      createAdminProductRequestSchema.safeParse({
+        description: product.description,
+        imagePath: product.imagePath,
+        isPublished: false,
+        name: product.name,
+        price: 0,
+        stock: 0,
+      }).success,
+    ).toBe(false)
+    expect(
+      updateAdminProductRequestSchema.safeParse({
+        categoryId,
+        expectedVersion: 1,
+      }).success,
+    ).toBe(true)
   })
 })

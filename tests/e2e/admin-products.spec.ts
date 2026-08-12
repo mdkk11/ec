@@ -38,6 +38,7 @@ test('E2E-003: 管理者が商品を作成し、在庫変更後に非公開化�
   await expect(page).toHaveURL('/admin/products')
 
   await page.getByLabel('商品名').fill(admin.productName)
+  await page.getByLabel('カテゴリ').selectOption({ label: 'その他' })
   await page.getByLabel('商品説明').fill('管理E2Eで作成した固定商品です。')
   await page.getByLabel('価格（円）').fill('19800')
   await page.getByLabel('在庫数').fill('3')
