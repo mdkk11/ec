@@ -18,7 +18,7 @@ test('共通レイアウトをキーボードで利用でき、横方向に崩�
 
   const images = page.locator('img')
   const imageCount = await images.count()
-  expect(imageCount).toBe(8)
+  expect(imageCount).toBe(12)
   for (let index = 0; index < imageCount; index += 1) {
     const image = images.nth(index)
     await image.scrollIntoViewIfNeeded()

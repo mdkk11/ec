@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import Link from 'next/link'
 
 import { ArrowRightIcon } from '@/components/icons/ArrowRightIcon'
 
@@ -19,9 +20,9 @@ export function HeroSection() {
               季節の輪郭を、軽やかに。新しい日々のための静かな色と、心地よい素材。
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <a className="button-primary" href="#new">
+              <Link className="button-primary" href="/products">
                 新着を見る <ArrowRightIcon />
-              </a>
+              </Link>
               <a className="button-secondary" href="#edit">
                 コレクションを見る
               </a>

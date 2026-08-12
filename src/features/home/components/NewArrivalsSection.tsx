@@ -15,7 +15,9 @@ export function NewArrivalsSection() {
             New essentials
           </h2>
         </div>
-        <p className="text-xs font-semibold tracking-[0.08em] text-muted">4 ITEMS</p>
+        <p className="text-xs font-semibold tracking-[0.08em] text-muted">
+          {previewProducts.length} ITEMS
+        </p>
       </div>
 
       <div className="mt-7 grid grid-cols-2 gap-x-3 gap-y-10 sm:gap-x-5 lg:grid-cols-4">

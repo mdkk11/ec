@@ -1,5 +1,44 @@
 import { expect, test } from '@playwright/test'
 
+test('E2E-007: トップの新着8商品から実在する詳細へ移動する', async ({
+  page,
+  request,
+}) => {
+  await page.goto('/')
+
+  const previewProductLinks = page
+    .getByRole('main')
+    .getByRole('link', { name: /の詳細を見る$/u })
+  await expect(previewProductLinks).toHaveCount(8)
+
+  const hrefs = await previewProductLinks.evaluateAll((links) =>
+    links.map((link) => link.getAttribute('href')),
+  )
+  expect(hrefs.every((href): href is string => href !== null)).toBe(true)
+  expect(new Set(hrefs).size).toBe(8)
+
+  for (const href of hrefs) {
+    if (!href) throw new Error('トップの商品詳細リンクにhrefがありません。')
+    const response = await request.get(href)
+    expect(response.status()).toBe(200)
+  }
+
+  const firstProductLink = previewProductLinks.first()
+  await expect(firstProductLink).toHaveAccessibleName(
+    'リネンブレンド オーバーシャツの詳細を見る',
+  )
+  await firstProductLink.click()
+  await expect(page).toHaveURL(
+    '/products/30000000-0000-4000-8000-000000000001',
+  )
+  await expect(
+    page.getByRole('heading', {
+      level: 1,
+      name: 'リネンブレンド オーバーシャツ',
+    }),
+  ).toBeVisible()
+})
+
 test('E2E-007/PRODUCT-001/010/011: Server Componentの商品一覧から詳細へ移動する', async ({
   page,
 }) => {

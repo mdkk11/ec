@@ -180,7 +180,7 @@
 | `E2E-004` | ロール制御 | 購入者で管理URLへ移動→アクセス拒否 | Chromium / Firefox / WebKit |
 | `E2E-005` | モバイル購入 | モバイルviewportで一覧→詳細→カート→注文 | Mobile Chromium |
 | `E2E-006` | 注文状態管理 | 管理者ログイン→受付注文を処理中へ更新→表示確認 | Chromium / Firefox / WebKit |
-| `E2E-007` | 商品閲覧 | Server Componentの商品一覧→キーボードで詳細→一覧へ戻る | Chromium |
+| `E2E-007` | 商品閲覧 | TOPの新着8商品の実在確認・代表商品の詳細遷移、Server Componentの商品一覧→キーボードで詳細→一覧へ戻る | Chromium |
 
 `E2E-002` の途中状態はテスト専用HTTP APIで作らず、テストプロセスから専用fixture更新スクリプトを実行する。ビジネスルールの全境界値やDB同時接続はE2Eへ持ち込まない。
 

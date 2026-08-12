@@ -6,7 +6,7 @@ export type EditorialItem = {
 }
 
 export type PreviewProduct = {
-  id: number
+  id: string
   brand: string
   name: string
   price: string
@@ -39,7 +39,7 @@ export const editorialItems: EditorialItem[] = [
 
 export const previewProducts: PreviewProduct[] = [
   {
-    id: 1,
+    id: '30000000-0000-4000-8000-000000000001',
     brand: 'ATELIER NOMA',
     name: 'リネンブレンド オーバーシャツ',
     price: '¥28,600',
@@ -49,7 +49,7 @@ export const previewProducts: PreviewProduct[] = [
     colorValue: '#e9e5db',
   },
   {
-    id: 2,
+    id: '30000000-0000-4000-8000-000000000002',
     brand: 'STUDIO KERN',
     name: 'ソフトレザー デイバッグ',
     price: '¥39,600',
@@ -59,7 +59,7 @@ export const previewProducts: PreviewProduct[] = [
     colorValue: '#171714',
   },
   {
-    id: 3,
+    id: '30000000-0000-4000-8000-000000000003',
     brand: 'FORM / 01',
     name: 'スエード コートスニーカー',
     price: '¥22,000',
@@ -69,7 +69,7 @@ export const previewProducts: PreviewProduct[] = [
     colorValue: '#b5472f',
   },
   {
-    id: 4,
+    id: '30000000-0000-4000-8000-000000000004',
     brand: 'MOCKSHOP OBJECTS',
     name: 'ドライタッチ コットンTシャツ',
     price: '¥12,100',
@@ -77,5 +77,45 @@ export const previewProducts: PreviewProduct[] = [
     alt: '白のドライタッチ コットンTシャツ',
     color: 'Chalk',
     colorValue: '#e9e5db',
+  },
+  {
+    id: '30000000-0000-4000-8000-000000000006',
+    brand: 'ATELIER NOMA',
+    name: 'コットンツイル ワイドトラウザー',
+    price: '¥24,200',
+    image: '/images/home/cotton-twill-trousers.jpg',
+    alt: 'トープ色のコットンツイル ワイドトラウザー',
+    color: 'Taupe',
+    colorValue: '#8d8173',
+  },
+  {
+    id: '30000000-0000-4000-8000-000000000007',
+    brand: 'STUDIO KERN',
+    name: 'ファインウール リブカーディガン',
+    price: '¥31,900',
+    image: '/images/home/rib-cardigan.jpg',
+    alt: 'グレージュのファインウール リブカーディガン',
+    color: 'Greige',
+    colorValue: '#aaa195',
+  },
+  {
+    id: '30000000-0000-4000-8000-000000000008',
+    brand: 'FORM / 01',
+    name: 'ウォッシュドキャンバス トート',
+    price: '¥16,500',
+    image: '/images/home/canvas-tote.jpg',
+    alt: '生成り色のウォッシュドキャンバス トート',
+    color: 'Ecru',
+    colorValue: '#d8d0bf',
+  },
+  {
+    id: '30000000-0000-4000-8000-000000000009',
+    brand: 'MOCKSHOP OBJECTS',
+    name: 'ストーンウェア マグ',
+    price: '¥4,950',
+    image: '/images/home/stoneware-mug.jpg',
+    alt: 'サンド色のストーンウェア マグ',
+    color: 'Sand',
+    colorValue: '#c4b7a2',
   },
 ]
