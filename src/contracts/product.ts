@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { categoryIdSchema } from './category'
+import { categoryIdSchema, publicCategoryDtoSchema } from './category'
 
 export const productIdSchema = z.uuid()
 
@@ -10,6 +10,7 @@ export const productAvailabilitySchema = z.enum([
 ])
 
 export const productDtoSchema = z.object({
+  category: publicCategoryDtoSchema,
   id: productIdSchema,
   name: z.string().min(1),
   description: z.string().min(1),

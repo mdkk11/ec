@@ -75,12 +75,83 @@ describe('公開商品API', () => {
     ])
     expect(body.items[0]).toMatchObject({
       availability: 'out_of_stock',
+      category: { name: 'その他', slug: 'other' },
       id: tieEarlierId,
     })
     for (const item of body.items) {
       expect(item).not.toHaveProperty('stock')
       expect(item).not.toHaveProperty('version')
       expect(item).not.toHaveProperty('isPublished')
+      expect(item).not.toHaveProperty('categoryId')
+    }
+  })
+
+  it('PRODUCT-014: 実在categoryの公開商品だけを既存の固定順で返す', async () => {
+    const newerId = '30000000-0000-4000-8000-000000000011'
+    const earlierTieId = '30000000-0000-4000-8000-000000000012'
+    const laterTieId = '30000000-0000-4000-8000-000000000013'
+    await insertProduct({
+      categoryId: categoryIds.clothing,
+      createdAt: '2026-03-03T00:00:00Z',
+      id: newerId,
+    })
+    await insertProduct({
+      categoryId: categoryIds.clothing,
+      createdAt: '2026-03-02T00:00:00Z',
+      id: laterTieId,
+    })
+    await insertProduct({
+      categoryId: categoryIds.clothing,
+      createdAt: '2026-03-02T00:00:00Z',
+      id: earlierTieId,
+    })
+    await insertProduct({ categoryId: categoryIds.shoes })
+    await insertProduct({
+      categoryId: categoryIds.clothing,
+      isPublished: false,
+    })
+
+    const response = await listProducts(
+      new NextRequest(`${productUrl}?category=clothing`),
+    )
+    const body = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(body.items.map((item: { id: string }) => item.id)).toEqual([
+      newerId,
+      earlierTieId,
+      laterTieId,
+    ])
+    expect(body.items.every(
+      (item: { category: { slug: string } }) =>
+        item.category.slug === 'clothing',
+    )).toBe(true)
+  })
+
+  it('PRODUCT-016/017: 実在する空categoryを200、不明slugを404、空・重複queryを400にする', async () => {
+    await seedCategories(backendDatabase.db)
+
+    const empty = await listProducts(
+      new NextRequest(`${productUrl}?category=home-living`),
+    )
+    const unknown = await listProducts(
+      new NextRequest(`${productUrl}?category=unknown-category`),
+    )
+    const invalidRequests = [
+      new NextRequest(`${productUrl}?category=`),
+      new NextRequest(`${productUrl}?category=clothing&category=shoes`),
+    ]
+    const invalidResponses = await Promise.all(
+      invalidRequests.map((request) => listProducts(request)),
+    )
+
+    expect(empty.status).toBe(200)
+    expect(await empty.json()).toEqual({ items: [] })
+    expect(unknown.status).toBe(404)
+    expect(await unknown.json()).toMatchObject({ code: 'CATEGORY_NOT_FOUND' })
+    expect(invalidResponses.map(({ status }) => status)).toEqual([400, 400])
+    for (const response of invalidResponses) {
+      expect(await response.json()).toMatchObject({ code: 'VALIDATION_ERROR' })
     }
   })
 
@@ -95,6 +166,7 @@ describe('公開商品API', () => {
     expect(body).toMatchObject({
       product: {
         availability: 'out_of_stock',
+        category: { name: 'その他', slug: 'other' },
         id,
         price: 12_100,
       },
@@ -102,6 +174,7 @@ describe('公開商品API', () => {
     expect(body.product).not.toHaveProperty('stock')
     expect(body.product).not.toHaveProperty('version')
     expect(body.product).not.toHaveProperty('isPublished')
+    expect(body.product).not.toHaveProperty('categoryId')
   })
 
   it('PRODUCT-006: 非公開商品と存在しない商品を同じ404にする', async () => {

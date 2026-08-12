@@ -2,6 +2,7 @@ import type { ProductDto } from '@/contracts/product'
 
 export const productFixture: ProductDto = {
   availability: 'in_stock',
+  category: { name: '衣類', slug: 'clothing' },
   description:
     '軽やかなリネン混素材を使い、羽織りとしても一枚でも着られるよう仕立てたオーバーシャツです。',
   id: '30000000-0000-4000-8000-000000000001',
@@ -12,6 +13,7 @@ export const productFixture: ProductDto = {
 
 export const outOfStockProductFixture: ProductDto = {
   availability: 'out_of_stock',
+  category: { name: 'バッグ・服飾小物', slug: 'bags-accessories' },
   description:
     'しなやかなレザーと控えめな金具を組み合わせた、日常使いのためのデイバッグです。',
   id: '30000000-0000-4000-8000-000000000002',
@@ -22,6 +24,7 @@ export const outOfStockProductFixture: ProductDto = {
 
 export const longProductFixture: ProductDto = {
   availability: 'in_stock',
+  category: { name: '衣類', slug: 'clothing' },
   description:
     '季節の変わり目から盛夏まで長く着られるよう、通気性と肌離れのよさを両立した素材を選びました。ゆとりのある輪郭を保ちながら、袖口や裾の細かな仕様を整えることで、日常のさまざまな場面に自然になじむ一着へ仕上げています。',
   id: '30000000-0000-4000-8000-000000000003',
@@ -35,6 +38,7 @@ export const productListFixture = [
   outOfStockProductFixture,
   {
     availability: 'in_stock',
+    category: { name: 'シューズ', slug: 'shoes' },
     description: '落ち着いた色合いのスエードスニーカーです。',
     id: '30000000-0000-4000-8000-000000000004',
     imagePath: '/images/home/suede-sneakers.jpg',
@@ -43,6 +47,7 @@ export const productListFixture = [
   },
   {
     availability: 'in_stock',
+    category: { name: '衣類', slug: 'clothing' },
     description: '毎日のためのコットンTシャツです。',
     id: '30000000-0000-4000-8000-000000000005',
     imagePath: '/images/home/cotton-tshirt.jpg',

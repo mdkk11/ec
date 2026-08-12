@@ -4,6 +4,7 @@ import {
   productListResponseSchema,
   productResponseSchema,
 } from '@/contracts/product'
+import { publicCategoryCatalog } from '@/features/categories/category-catalog'
 import { getRuntimeDatabase } from '@/server/db/runtime'
 
 import {
@@ -11,12 +12,18 @@ import {
   listPublishedProducts,
 } from './product-service'
 
-export async function loadProductListPageData() {
+export async function loadProductListPageData(categorySlug?: string) {
   const items = await listPublishedProducts({
+    categorySlug,
     db: getRuntimeDatabase().db,
   })
 
-  return productListResponseSchema.parse({ items }).items
+  return {
+    categories: publicCategoryCatalog,
+    items: productListResponseSchema.parse({ items }).items,
+    selectedCategory:
+      publicCategoryCatalog.find(({ slug }) => slug === categorySlug) ?? null,
+  }
 }
 
 export async function loadProductDetailPageData(productId: string) {

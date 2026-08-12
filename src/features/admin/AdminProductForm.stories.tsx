@@ -69,6 +69,7 @@ export const Conflict: Story = {
     blocked: true,
     conflictProduct: {
       ...adminProductFixture,
+      category: { name: 'バッグ・服飾小物', slug: 'bags-accessories' },
       categoryId: '40000000-0000-4000-8000-000000000002',
       isPublished: false,
       price: 30_800,

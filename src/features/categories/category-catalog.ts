@@ -1,4 +1,7 @@
-import type { CategoryDto } from '@/contracts/category'
+import type {
+  CategoryDto,
+  PublicCategoryDto,
+} from '@/contracts/category'
 
 export const categoryCatalog = [
   {
@@ -39,3 +42,8 @@ export type CategoryId = (typeof categoryCatalog)[number]['id']
 export const categoryIds = Object.fromEntries(
   categoryCatalog.map(({ id, slug }) => [slug, id]),
 ) as Record<CategorySlug, CategoryId>
+
+export const publicCategoryCatalog = categoryCatalog.map(({ name, slug }) => ({
+  name,
+  slug,
+})) satisfies PublicCategoryDto[]

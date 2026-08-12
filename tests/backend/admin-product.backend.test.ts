@@ -113,6 +113,7 @@ describe('管理商品API', () => {
     expect(createResponse.headers.get('cache-control')).toBe('no-store')
     expect(createdBody.product).toMatchObject({
       availability: 'in_stock',
+      category: { name: 'その他', slug: 'other' },
       categoryId: categoryIds.other,
       isPublished: false,
       name: '管理作成商品',
@@ -286,6 +287,7 @@ describe('管理商品API', () => {
     expect(updated.status).toBe(200)
     expect(await updated.json()).toMatchObject({
       product: {
+        category: { name: 'バッグ・服飾小物', slug: 'bags-accessories' },
         categoryId: categoryIds['bags-accessories'],
         version: 2,
       },

@@ -7,6 +7,7 @@ import type {
   UpdateAdminProductRequest,
   UpdateAdminProductStockRequest,
 } from '@/contracts/product'
+import { categoryCatalog } from '@/features/categories/category-catalog'
 import type { Temporal } from '@/lib/date-time/temporal'
 import { categories, products } from '@/server/db/schema'
 
@@ -40,8 +41,12 @@ type AdminProductRecord = {
 }
 
 function toAdminProductDto(product: AdminProductRecord): AdminProductDto {
+  const category = categoryCatalog.find(({ id }) => id === product.categoryId)
+  if (!category) throw new Error('商品カテゴリを解決できませんでした。')
+
   return {
     availability: product.stock > 0 ? 'in_stock' : 'out_of_stock',
+    category: { name: category.name, slug: category.slug },
     ...product,
   }
 }
