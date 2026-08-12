@@ -4,7 +4,7 @@ import { ProductListView } from '@/features/products/ProductListView'
 import { loadProductListPageData } from '@/features/products/server/product-page-data'
 
 export const metadata: Metadata = {
-  title: '商品一覧',
+  title: 'ALL ITEMS',
   description: 'MockShopで公開中の商品を、新しく届いた順にご覧いただけます。',
 }
 

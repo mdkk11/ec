@@ -13,7 +13,7 @@ export function EditorialSection() {
           </h2>
         </div>
         <p className="max-w-sm text-sm leading-7 text-muted">
-          色、素材、佇まいから選んだ、今の暮らしに馴染む3つの編集。
+          今季の服と道具を、素材と使い心地から3つのテーマで選びました。
         </p>
       </div>
 

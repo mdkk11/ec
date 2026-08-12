@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import { HomePage } from '@/features/home/HomePage'
 
 const title = 'Made for quieter days.'
-const description = '季節の輪郭を、軽やかに。新しい日々のための静かな色と、心地よい素材。'
+const description = '軽やかな素材と落ち着いた色を、春から夏の日常へ。'
 
 export const metadata: Metadata = {
   title: {

@@ -1,58 +1,28 @@
-import { Logo } from './Logo'
+import Link from 'next/link'
 
-const footerGroups = [
-  {
-    title: 'SHOP',
-    items: [
-      { href: '/products', label: '商品一覧' },
-      { href: '/#edit', label: '季節の編集' },
-      { href: '/#journal', label: 'MockShopについて' },
-    ],
-  },
-  {
-    title: 'HELP',
-    items: [
-      { label: '配送と返品' },
-      { label: 'お問い合わせ' },
-      { label: 'サイズガイド' },
-      { label: 'よくある質問' },
-    ],
-  },
-  {
-    title: 'FOLLOW',
-    items: [{ label: 'Instagram' }, { label: 'Pinterest' }, { label: 'Journal' }],
-  },
-] as const
+import { Logo } from './Logo'
 
 export function SiteFooter() {
   return (
     <footer className="bg-[#ebe9e3]">
-      <div className="page-wrap grid gap-12 py-14 sm:grid-cols-2 lg:grid-cols-4 lg:py-20">
-        <div className="sm:col-span-2 lg:col-span-1">
+      <div className="page-wrap grid gap-12 py-14 sm:grid-cols-2 lg:py-20">
+        <div>
           <Logo />
           <p className="mt-5 max-w-xs text-sm leading-7 text-muted">
-            日常に長く残る服と道具を、静かな編集で。
+            毎日の服と道具を、素材と使い心地から選ぶ小さなオンラインストアです。
           </p>
         </div>
 
-        {footerGroups.map((group) => (
-          <div key={group.title}>
-            <h2 className="label">{group.title}</h2>
-            <ul className="mt-5 space-y-3 text-sm text-muted">
-              {group.items.map((item) => (
-                <li key={item.label}>
-                  {'href' in item ? (
-                    <a className="transition-colors hover:text-ink" href={item.href}>
-                      {item.label}
-                    </a>
-                  ) : (
-                    item.label
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
+        <div>
+          <h2 className="label">SHOP</h2>
+          <ul className="mt-5 space-y-3 text-sm text-muted">
+            <li>
+              <Link className="transition-colors hover:text-ink" href="/products">
+                ALL ITEMS
+              </Link>
+            </li>
+          </ul>
+        </div>
       </div>
 
       <div className="page-wrap flex flex-col gap-3 border-t border-ink/15 py-5 text-[10px] tracking-[0.08em] text-muted sm:flex-row sm:items-center sm:justify-between">

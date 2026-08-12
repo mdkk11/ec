@@ -15,7 +15,12 @@ describe('HomePage', () => {
     expect(screen.getByRole('heading', { level: 2, name: 'New essentials' })).toBeInTheDocument()
     expect(screen.getByText('リネンブレンド オーバーシャツ')).toBeInTheDocument()
     expect(screen.getByText('8 ITEMS')).toBeInTheDocument()
-    expect(screen.getByText('メールマガジン登録は準備中です')).toBeInTheDocument()
+    expect(
+      screen.getByText('軽やかな素材と落ち着いた色を、春から夏の日常へ。'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('今季の服と道具を、素材と使い心地から3つのテーマで選びました。'),
+    ).toBeInTheDocument()
   })
 
   it('主要CTAと新着8商品を実在する商品ルートへ接続する', () => {
@@ -43,5 +48,6 @@ describe('HomePage', () => {
     expect(screen.queryByRole('button', { name: /カートに追加/u })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /お気に入り/u })).not.toBeInTheDocument()
     expect(screen.queryByRole('searchbox')).not.toBeInTheDocument()
+    expect(screen.queryByText('メールマガジン登録は準備中です')).not.toBeInTheDocument()
   })
 })

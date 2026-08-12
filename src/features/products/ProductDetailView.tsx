@@ -40,7 +40,7 @@ function Breadcrumbs({ productName }: { productName?: string }) {
             className="underline-offset-4 hover:underline"
             href="/products"
           >
-            商品一覧
+            ALL ITEMS
           </Link>
         </li>
         {productName ? (

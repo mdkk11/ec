@@ -52,7 +52,7 @@ test('E2E-007/PRODUCT-001/010/011: Server Componentの商品一覧から詳細�
   await page.goto('/products')
 
   await expect(
-    page.getByRole('heading', { level: 1, name: '商品一覧' }),
+    page.getByRole('heading', { level: 1, name: 'ALL ITEMS' }),
   ).toBeVisible()
   await expect(page.getByText('29点')).toBeVisible()
 

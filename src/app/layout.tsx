@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     template: '%s | MockShop',
   },
   applicationName: 'MockShop',
-  description: '日常に長く残る服と道具を、静かな編集で届けるオンラインストア。',
+  description: '毎日の服と道具を、素材と使い心地から選ぶ小さなオンラインストアです。',
 }
 
 export default async function RootLayout({

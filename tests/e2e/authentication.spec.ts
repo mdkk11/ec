@@ -30,9 +30,9 @@ test('AUTH-001/004/008/012: 購入者が一度だけログインし、ログア�
   await page.reload()
   await expect(page.getByText('customer@example.test')).toBeVisible()
 
-  await page.getByRole('button', { name: 'ログアウト' }).click()
-  await expect(page.getByRole('link', { name: 'ログイン' })).toBeVisible()
+  await page.getByRole('button', { name: 'Logout' }).click()
+  await expect(page.getByRole('link', { name: 'Login' })).toBeVisible()
 
   await page.reload()
-  await expect(page.getByRole('link', { name: 'ログイン' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Login' })).toBeVisible()
 })

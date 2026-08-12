@@ -17,7 +17,7 @@ export function HeroSection() {
               Made for quieter days.
             </h1>
             <p className="mt-7 max-w-sm text-sm leading-7 sm:text-base">
-              季節の輪郭を、軽やかに。新しい日々のための静かな色と、心地よい素材。
+              軽やかな素材と落ち着いた色を、春から夏の日常へ。
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link className="button-primary" href="/products">

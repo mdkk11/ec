@@ -2,7 +2,6 @@ import { BrandStatementSection } from './components/BrandStatementSection'
 import { EditorialSection } from './components/EditorialSection'
 import { HeroSection } from './components/HeroSection'
 import { NewArrivalsSection } from './components/NewArrivalsSection'
-import { NewsletterSection } from './components/NewsletterSection'
 
 export function HomePage() {
   return (
@@ -11,7 +10,6 @@ export function HomePage() {
       <EditorialSection />
       <NewArrivalsSection />
       <BrandStatementSection />
-      <NewsletterSection />
     </>
   )
 }
