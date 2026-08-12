@@ -273,6 +273,8 @@ PRはレビュー可能な目的単位とし、実装だけ・テストだけに
 固定・単一・非階層のカテゴリを、既存フェーズへ暗黙に混ぜず2つのstacked PRで追加する。
 
 1. `feature/category-foundation`: 固定カテゴリmaster、商品への必須外部キー、既存商品のother backfill、seed、管理商品作成・編集の必須割り当て、DB・管理テストを実装する。公開商品DTOと公開一覧は変更しない。
-2. `feature/category-browsing`: 公開DTO、`GET /api/products` のcategory query、Server Component一覧・詳細、カテゴリnavigation、公開閲覧テストとVRTを親PRの上へ実装する。
+2. `feature/category-browsing`: 公開DTO、`GET /api/products` のcategory query、Server Component一覧・詳細、カテゴリnavigation、公開閲覧テストとVRTを親PRの上へ実装する。全件・カテゴリ別、実在空category、不正・不明slugの境界を分ける。
+
+Layer 2では `PRODUCT-014`〜`PRODUCT-017` の該当テストが成功することをDoDとする。
 
 各PRはlint、typecheck、担当テスト、build、Storybook buildを通し、下位PR変更時は上位PRをrestackして検証し直す。
