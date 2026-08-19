@@ -295,6 +295,11 @@ Layer 2では `PRODUCT-014`〜`PRODUCT-017` の該当テストが成功するこ
 
 Layer 1のDoDは、公開一覧と詳細のDTO境界、カートresponse、数量更新の正常・400・500・network・request raceを適切な最小テストレベルで確認し、関連するFrontend結合、Backend結合、代表E2E、Storybook/VRT、lint、typecheck、buildが成功することである。DB schema、migration、seed、checkoutTokenの材料は変更しない。
 
-### Layer 2: 将来のfollow-up `feature/navigation-admin-images`
+### Layer 2: `feature/navigation-admin-images`
 
-Layer 1の上位branchでは、共通ヘッダーのrole別カートアイコン・マイページdropdownと、管理商品一覧の実画像thumbnailを別のレビュー単位で扱う。Layer 1の文書・実装・検証が確定するまでは、これらを実装済みの仕様としてPRODUCT、ARCHITECTURE、TEST_STRATEGY、TEST_SCENARIOS、DESIGNへ記載しない。
+- 匿名headerを `ログイン`、購入者をカートアイコンとマイページ、管理者をマイページへ整理する。
+- native detailsのマイページにメールアドレス、role別のオーダー・商品管理、logout状態を表示し、管理者にはカートを表示しない。
+- 管理商品一覧を表示componentへ切り出し、管理DTOの実画像thumbnailと既存metadata・編集導線を表示する。フォームの画像previewは追加しない。
+- `AUTH-013`、`ADMIN-015`、`VRT-009`、`VRT-010` を担当範囲とする。
+
+Layer 2のDoDは、role別headerをFrontend結合と代表E2E、open状態をStorefrontShell Story/VRT、管理一覧の意味をFrontend結合、レイアウトをAdminProductList Story/VRTで確認し、lint、typecheck、build、Storybook buildが成功することである。
