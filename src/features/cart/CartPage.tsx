@@ -164,7 +164,11 @@ function CustomerCartPage({ customerId }: { customerId: string }) {
           : error instanceof ApiClientError &&
               error.code === 'QUANTITY_EXCEEDS_STOCK'
             ? ('refresh' as const)
-            : ('retry' as const),
+            : error instanceof ApiClientError &&
+                (error.kind === 'network' ||
+                  (error.status !== undefined && error.status >= 500))
+              ? ('retry' as const)
+              : undefined,
     })),
     pending: operations.state.pending.map(({ operation }) => operation),
   }

@@ -60,6 +60,33 @@ describe('カート画面', () => {
     )
   })
 
+  it('CART-016: 現在庫までの数量だけを選択肢に表示する', async () => {
+    server.use(
+      http.get('/api/cart', () =>
+        cartResponse({
+          ...cartFixture,
+          items: [
+            {
+              ...cartFixture.items[0]!,
+              availableStock: 3,
+              quantity: 2,
+            },
+          ],
+        }),
+      ),
+    )
+    renderWithProviders(<CartPage />)
+
+    const quantityInput = await screen.findByLabelText(
+      'リネンブレンド オーバーシャツの数量',
+    )
+    expect(
+      Array.from(quantityInput.querySelectorAll('option'), (option) =>
+        option.textContent?.trim(),
+      ),
+    ).toEqual(['1点', '2点', '3点'])
+  })
+
   it('CART-005: 商品を削除して空状態へ更新する', async () => {
     server.use(
       http.get('/api/cart', () => cartResponse(cartFixture)),
@@ -311,7 +338,22 @@ describe('カート画面', () => {
     expect(screen.queryByText('注文可能な数量を超えています')).not.toBeInTheDocument()
   })
 
-  it('CART-017: 一時失敗時は希望値と確定済み合計を維持し、同じ数量で再試行する', async () => {
+  it.each([
+    {
+      failure: () =>
+        HttpResponse.json(
+          { code: 'INTERNAL_ERROR', message: '一時的なエラーです。' },
+          { status: 500 },
+        ),
+      message: '一時的なエラー',
+      name: '500',
+    },
+    {
+      failure: () => HttpResponse.error(),
+      message: 'サーバーへ接続できませんでした',
+      name: '通信失敗',
+    },
+  ])('CART-008: $nameでは同じ希望数量を再試行する', async ({ failure, message }) => {
     let patchCount = 0
     server.use(
       http.get('/api/cart', () =>
@@ -325,12 +367,7 @@ describe('カート画面', () => {
       http.patch('/api/cart/items/:itemId', async ({ request }) => {
         patchCount += 1
         const { quantity } = (await request.json()) as { quantity: number }
-        if (patchCount === 1) {
-          return HttpResponse.json(
-            { code: 'INTERNAL_ERROR', message: '一時的なエラーです。' },
-            { status: 500 },
-          )
-        }
+        if (patchCount === 1) return failure()
         const item = {
           ...cartFixture.items[0]!,
           lineTotal: itemUnitPrice() * quantity,
@@ -353,13 +390,37 @@ describe('カート画面', () => {
     )
     await user.selectOptions(quantityInput, '4')
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('一時的なエラー')
+    expect(await screen.findByRole('alert')).toHaveTextContent(message)
     expect(quantityInput).toHaveValue('4')
     expect(screen.getAllByText('¥57,200')).toHaveLength(3)
     await user.click(screen.getByRole('button', { name: '再試行' }))
 
     expect(await screen.findAllByText('¥114,400')).toHaveLength(3)
     expect(patchCount).toBe(2)
+  })
+
+  it('CART-008: 4xxでは同じ操作の再試行を表示しない', async () => {
+    server.use(
+      http.get('/api/cart', () => cartResponse(cartFixture)),
+      http.patch('/api/cart/items/:itemId', () =>
+        HttpResponse.json(
+          { code: 'CART_ITEM_NOT_FOUND', message: '明細が見つかりません。' },
+          { status: 404 },
+        ),
+      ),
+    )
+    const user = userEvent.setup()
+    renderWithProviders(<CartPage />)
+
+    await user.selectOptions(
+      await screen.findByLabelText('リネンブレンド オーバーシャツの数量'),
+      '4',
+    )
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      '明細が見つかりません',
+    )
+    expect(screen.queryByRole('button', { name: '再試行' })).not.toBeInTheDocument()
   })
 
   it('CART-004/CART-010/CART-017: issueを表示し、再取得後に利用可能へ戻す', async () => {
