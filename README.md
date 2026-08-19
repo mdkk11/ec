@@ -35,6 +35,7 @@ pnpm test:unit
 pnpm test:frontend
 pnpm test:backend
 pnpm test:e2e
+pnpm test:e2e:selected
 pnpm test:vrt
 pnpm test:vrt:update
 pnpm db:up
@@ -44,6 +45,7 @@ pnpm db:migrate
 pnpm db:seed
 pnpm db:prepare:test
 pnpm db:prepare:e2e
+pnpm ci:impact:select
 pnpm build
 pnpm storybook
 pnpm build-storybook
@@ -145,6 +147,15 @@ E2EはPlaywrightのglobal setupから専用DBをresetし、migrationと固定see
 ```bash
 pnpm db:prepare:e2e
 pnpm test:e2e
+```
+
+PRのGitHub Actionsは変更pathから4つのrequired jobを選択し、E2E job内ではdependency graphと `config/impact/e2e-map.json` からsmoke＋影響specを実行します。分類不能、共通基盤、map・graph・selectorの異常は全実行へ倒します。選択理由はStep Summaryと `e2e-impact-*` artifactで確認できます。`main` pushは常に全ジョブ・全E2Eを実行します。
+
+ローカルで差分選択を確認する場合はbase/head SHAを指定します。
+
+```bash
+IMPACT_BASE_SHA=<base-sha> IMPACT_HEAD_SHA=<head-sha> pnpm ci:impact:select
+pnpm test:e2e:selected
 ```
 
 ## Authentication

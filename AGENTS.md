@@ -185,6 +185,7 @@ pnpm test:unit
 pnpm test:frontend
 pnpm test:backend
 pnpm test:e2e
+pnpm test:e2e:selected
 pnpm test:vrt
 pnpm test:vrt:update
 pnpm db:up
@@ -194,6 +195,7 @@ pnpm db:migrate
 pnpm db:seed
 pnpm db:prepare:test
 pnpm db:prepare:e2e
+pnpm ci:impact:select
 pnpm build
 pnpm build-storybook
 ```
@@ -206,6 +208,8 @@ pnpm build-storybook
 - `db:prepare:e2e` は `E2E_DATABASE_URL` の専用E2E DBだけをguard後に初期化し、migrationと固定seedを適用する。
 - `test:backend` は準備済みのテストDBに対して実行し、DB準備を暗黙に行わない。
 - `test:e2e` はPlaywright global setupでE2E DBを再準備し、開発serverや開発DBを再利用しない。
+- `ci:impact:select` はPR差分からE2E specを選び、分類不能・high-risk・解析失敗では全specへ倒す。
+- `test:e2e:selected` は選択結果が有効な場合だけ対象specを実行し、欠落・不正時は `test:e2e` へ倒す。
 
 ## PR前の確認
 
