@@ -100,7 +100,7 @@ export function SessionControls() {
               className="inline-flex min-h-11 items-center text-sm font-semibold underline-offset-4 hover:underline"
               href={admin ? '/admin/orders' : '/orders'}
             >
-              オーダー
+              注文履歴
             </Link>
           </nav>
           <button

@@ -39,7 +39,7 @@
 - 500/networkでは選択値と確定済み合計を保持し、error時だけ `再試行` を表示して同じ希望数量を再送できるようにする。どちらの失敗も、より新しいqueued draftがある場合は古いerrorを表示・反映しない。
 - カート追加は送信中だけ同一商品の重複requestを防止し、完了後は再度1点追加できる。
 - 空カートの既存 `商品一覧を見る` と `注文履歴を見る` 導線を中央揃えの縦並びにし、共通のgapで間隔を作る。文言とhrefは変更しない。
-- ヘッダーは匿名時に `ログイン` を直接表示する。customerは読み上げ名 `カート` のcart iconを直接表示し、`マイページ` dropdownにemail、`オーダー`、`ログアウト` を置く。adminはcartを表示せず、dropdownにemail、`商品管理`、`オーダー`、`ログアウト` を置く。
+- ヘッダーは匿名時に `ログイン` を直接表示する。customerは読み上げ名 `カート` のcart iconを直接表示し、`マイページ` dropdownにemail、`注文履歴`、`ログアウト` を置く。adminはcartを表示せず、dropdownにemail、`商品管理`、`注文履歴`、`ログアウト` を置く。
 - カート件数badge、商品フォームの画像preview、新しいUI/icon library、DB変更、在庫の自動補正、backend idempotency keyは追加しない。
 
 ## 3. 解決する問題
@@ -84,7 +84,7 @@
 - anonymous labelを `ログイン` へ変更する。
 - customerのcartはinline SVGを持つicon-only linkとし、visible tooltipに依存せず `aria-label="カート"` を付ける。badgeは追加しない。
 - account操作はnative `details` / `summary` の `マイページ` dropdownにまとめる。追加libraryやglobal click listenerを導入せず、keyboardのEnter/Spaceと標準focusを利用する。
-- dropdown内はemailを非操作情報として示し、role別の実在linkとlogout buttonだけを置く。customerは `オーダー`、adminは `商品管理` と `オーダー` を表示する。
+- dropdown内はemailを非操作情報として示し、role別の実在linkとlogout buttonだけを置く。customerは `注文履歴`、adminは `商品管理` と `注文履歴` を表示する。
 - logout pending/errorは既存SessionProviderとlocal stateを維持し、dropdown内で支援技術へ通知する。role境界とadminにcartを出さない規則を維持する。
 
 ### 管理商品一覧画像
@@ -264,7 +264,7 @@ Layer 2はLayer 1へruntime上の技術依存を持たないが、1つの承認�
 
 - 公開商品詳細でseedの正確なstockを表示する代表1例を既存商品閲覧scenarioへ追加する。
 - cart E2Eはspinbutton操作をcombobox selectionへ置き換え、選択直後の更新完了と実商品画像のlocal pathを確認する。
-- app-shell E2Eは匿名 `ログイン`、customer cart icon / マイページ / オーダー / ログアウト、admin 商品管理 / オーダー / ログアウト、mobile non-overlapを確認する。
+- app-shell E2Eは匿名 `ログイン`、customer cart icon / マイページ / 注文履歴 / ログアウト、admin 商品管理 / 注文履歴 / ログアウト、mobile non-overlapを確認する。
 - 管理商品一覧画像はFrontend結合とVRTを主担当とし、画像専用E2Eを追加しない。既存管理E2Eはheader dropdownから商品管理へ到達する変更だけへ追従する。
 
 ### Storybook・VRT・build

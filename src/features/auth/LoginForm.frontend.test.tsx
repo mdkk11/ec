@@ -185,7 +185,7 @@ describe('ログインフォーム', () => {
     const menu = screen.getByRole('button', { name: 'マイページ' })
     await user.click(menu)
     expect(screen.getByText(authenticatedUser.email)).toBeVisible()
-    expect(screen.getByRole('link', { name: 'オーダー' })).toHaveAttribute('href', '/orders')
+    expect(screen.getByRole('link', { name: '注文履歴' })).toHaveAttribute('href', '/orders')
     expect(screen.getByRole('button', { name: 'ログアウト' })).toBeVisible()
   })
 
@@ -204,7 +204,7 @@ describe('ログインフォーム', () => {
       'href',
       '/admin/products',
     )
-    expect(screen.getByRole('link', { name: 'オーダー' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: '注文履歴' })).toHaveAttribute(
       'href',
       '/admin/orders',
     )

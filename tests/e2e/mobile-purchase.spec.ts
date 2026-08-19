@@ -21,7 +21,7 @@ test('E2E-005: Mobile Chromiumで商品一覧から注文を完了する', async
   await expect(page.getByRole('link', { name: 'カート' })).toBeVisible()
   await page.getByRole('button', { name: 'マイページ' }).click()
   await expect(page.getByText(fixture.email)).toBeVisible()
-  await expect(page.getByRole('link', { name: 'オーダー' })).toBeVisible()
+  await expect(page.getByRole('link', { name: '注文履歴' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'ログアウト' })).toBeVisible()
 
   await page.goto('/products')

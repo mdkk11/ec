@@ -298,7 +298,7 @@ Layer 1のDoDは、公開一覧と詳細のDTO境界、カートresponse、数�
 ### Layer 2: `feature/navigation-admin-images`
 
 - 匿名headerを `ログイン`、購入者をカートアイコンとマイページ、管理者をマイページへ整理する。
-- native detailsのマイページにメールアドレス、role別のオーダー・商品管理、logout状態を表示し、管理者にはカートを表示しない。
+- native detailsのマイページにメールアドレス、role別の注文履歴・商品管理、logout状態を表示し、管理者にはカートを表示しない。
 - 管理商品一覧を表示componentへ切り出し、管理DTOの実画像thumbnailと既存metadata・編集導線を表示する。フォームの画像previewは追加しない。
 - `AUTH-013`、`ADMIN-015`、`VRT-009`、`VRT-010` を担当範囲とする。
 

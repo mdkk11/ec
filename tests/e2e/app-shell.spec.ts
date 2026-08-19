@@ -101,7 +101,7 @@ test('共通レイアウトをキーボードで利用でき、横方向に崩�
     await customerMenu.focus()
     await page.keyboard.press('Enter')
     await expect(page.getByText('customer@example.test')).toBeVisible()
-    await expect(page.getByRole('link', { name: 'オーダー' })).toHaveAttribute(
+    await expect(page.getByRole('link', { name: '注文履歴' })).toHaveAttribute(
       'href',
       '/orders',
     )
@@ -120,7 +120,7 @@ test('共通レイアウトをキーボードで利用でき、横方向に崩�
       'href',
       '/admin/products',
     )
-    await expect(page.getByRole('link', { name: 'オーダー' })).toHaveAttribute(
+    await expect(page.getByRole('link', { name: '注文履歴' })).toHaveAttribute(
       'href',
       '/admin/orders',
     )
