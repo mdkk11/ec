@@ -278,3 +278,23 @@ PRはレビュー可能な目的単位とし、実装だけ・テストだけに
 Layer 2では `PRODUCT-014`〜`PRODUCT-017` の該当テストが成功することをDoDとする。
 
 各PRはlint、typecheck、担当テスト、build、Storybook buildを通し、下位PR変更時は上位PRをrestackして検証し直す。
+
+## 8. Phase 10: 商品詳細・カートUIの正確性改善
+
+既存の商品閲覧・カート機能へ追加要件を暗黙に混ぜず、2層のfollow-up stackとして扱う。
+
+### Layer 1: `feature/product-cart-accuracy`
+
+- 公開一覧の `ProductDto` は在庫状態だけを維持し、商品詳細専用DTOへ正確な現在庫を追加する。
+- カートDTOへ実商品画像と表示時点の現在庫を追加し、在庫内のnative selectを選択した時点で数量更新する。
+- 保存数量が現在庫を超える場合は自動補正せず、400では最新カートの明示的再取得、500・通信失敗では同じ希望数量の再試行を提供する。新しい選択を古い応答で上書きしない。
+- 商品追加と数量更新の保留中の同一操作を重複送信せず、完了後は再操作を許可する。
+- カートは実商品画像を表示し、空状態の2導線を中央の縦並びと共通gapで配置する。
+- global smooth scrollを削除し、`prefers-reduced-motion` のanimation・transition抑止は維持する。
+- `PRODUCT-008`、`PRODUCT-011`、`CART-003`、`CART-006`〜`CART-009`、`CART-014`〜`CART-018`、`VRT-003`、`VRT-004` を担当範囲とする。
+
+Layer 1のDoDは、公開一覧と詳細のDTO境界、カートresponse、数量更新の正常・400・500・network・request raceを適切な最小テストレベルで確認し、関連するFrontend結合、Backend結合、代表E2E、Storybook/VRT、lint、typecheck、buildが成功することである。DB schema、migration、seed、checkoutTokenの材料は変更しない。
+
+### Layer 2: 将来のfollow-up `feature/navigation-admin-images`
+
+Layer 1の上位branchでは、共通ヘッダーのrole別カートアイコン・マイページdropdownと、管理商品一覧の実画像thumbnailを別のレビュー単位で扱う。Layer 1の文書・実装・検証が確定するまでは、これらを実装済みの仕様としてPRODUCT、ARCHITECTURE、TEST_STRATEGY、TEST_SCENARIOS、DESIGNへ記載しない。
