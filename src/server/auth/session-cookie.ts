@@ -7,6 +7,7 @@ type SessionCookieEnvironment = {
   DATABASE_URL?: string
   E2E_DATABASE_URL?: string
   E2E_HTTP_SERVER?: string
+  GITHUB_ACTIONS?: string
   NEXT_DIST_DIR?: string
 }
 
@@ -44,6 +45,7 @@ function readSessionCookieEnvironment(): SessionCookieEnvironment {
     DATABASE_URL: process.env.DATABASE_URL,
     E2E_DATABASE_URL: process.env.E2E_DATABASE_URL,
     E2E_HTTP_SERVER: process.env.E2E_HTTP_SERVER,
+    GITHUB_ACTIONS: process.env.GITHUB_ACTIONS,
     NEXT_DIST_DIR: process.env.NEXT_DIST_DIR,
   }
 }
@@ -62,11 +64,15 @@ function isLocalE2eHttpServer(environment: SessionCookieEnvironment) {
 
   const target = new URL(databaseUrl)
   const databaseName = target.pathname.replace(/^\//u, '')
+  const isAllowedHost =
+    target.hostname === 'localhost' ||
+    target.hostname === '127.0.0.1' ||
+    (environment.GITHUB_ACTIONS === 'true' && target.hostname === 'postgres')
   if (
-    (target.hostname !== 'localhost' && target.hostname !== '127.0.0.1') ||
+    !isAllowedHost ||
     databaseName !== 'mockshop_e2e'
   ) {
-    throw new Error('E2E HTTP serverはloopbackの専用DBだけを使用できます。')
+    throw new Error('E2E HTTP serverは許可した専用DBだけを使用できます。')
   }
 
   return true

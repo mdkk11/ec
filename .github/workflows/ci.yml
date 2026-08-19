@@ -114,6 +114,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.61.1-noble
+      options: --user 1001
     timeout-minutes: 20
     env:
       E2E_DATABASE_URL: postgresql://mockshop:mockshop_local@postgres:5432/mockshop_e2e
