@@ -25,6 +25,9 @@ describe('管理商品一覧・作成', () => {
 
     expect(await screen.findByRole('heading', { name: '商品管理' })).toBeVisible()
     expect(screen.getByText('管理テスト商品')).toBeVisible()
+    expect(
+      screen.getByRole('img', { name: '管理テスト商品' }),
+    ).toHaveAttribute('src', expect.stringContaining(product.imagePath))
     expect(screen.getByText(/在庫 8.*version 1/u)).toBeVisible()
     expect(screen.getByRole('link', { name: '編集する' })).toHaveAttribute(
       'href',

@@ -41,7 +41,7 @@ test('共通レイアウトをキーボードで利用でき、横方向に崩�
     'href',
     '/products',
   )
-  await expect(header.getByRole('link', { name: 'Login' })).toHaveAttribute(
+  await expect(header.getByRole('link', { name: 'ログイン' })).toHaveAttribute(
     'href',
     '/login',
   )
@@ -93,20 +93,38 @@ test('共通レイアウトをキーボードで利用でき、横方向に崩�
     await page.getByLabel('パスワード').fill('CustomerPass123!')
     await page.getByRole('button', { name: 'ログイン' }).click()
     await expect(page).toHaveURL('/')
-    await expect(page.getByRole('link', { name: 'Orders' })).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Cart' })).toBeVisible()
-    await expect(page.getByText('customer@example.test')).toBeHidden()
+    await expect(page.getByRole('link', { name: 'カート' })).toHaveAttribute(
+      'href',
+      '/cart',
+    )
+    const customerMenu = page.getByRole('button', { name: 'マイページ' })
+    await customerMenu.focus()
+    await page.keyboard.press('Enter')
+    await expect(page.getByText('customer@example.test')).toBeVisible()
+    await expect(page.getByRole('link', { name: 'オーダー' })).toHaveAttribute(
+      'href',
+      '/orders',
+    )
     await expectHeaderControlsNotToOverlap(page)
 
-    await page.getByRole('button', { name: 'Logout' }).click()
+    await page.getByRole('button', { name: 'ログアウト' }).click()
+    await expect(page.getByRole('link', { name: 'ログイン' })).toBeVisible()
     await page.goto('/login')
     await page.getByLabel('メールアドレス').fill('admin@example.test')
     await page.getByLabel('パスワード').fill('AdminPass123!')
     await page.getByRole('button', { name: 'ログイン' }).click()
     await expect(page).toHaveURL('/')
-    await expect(page.getByRole('link', { name: 'Products' })).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Orders' })).toBeVisible()
-    await expect(page.getByText('admin@example.test')).toBeHidden()
+    await page.getByRole('button', { name: 'マイページ' }).click()
+    await expect(page.getByText('admin@example.test')).toBeVisible()
+    await expect(page.getByRole('link', { name: '商品管理' })).toHaveAttribute(
+      'href',
+      '/admin/products',
+    )
+    await expect(page.getByRole('link', { name: 'オーダー' })).toHaveAttribute(
+      'href',
+      '/admin/orders',
+    )
+    await expect(page.getByRole('link', { name: 'カート' })).toHaveCount(0)
     await expectHeaderControlsNotToOverlap(page)
   }
 })

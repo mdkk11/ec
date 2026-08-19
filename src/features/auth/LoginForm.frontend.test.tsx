@@ -161,15 +161,17 @@ describe('ログインフォーム', () => {
       </SessionProvider>,
     )
 
-    expect(await screen.findByRole('link', { name: 'Login' })).toBeVisible()
+    expect(await screen.findByRole('link', { name: 'ログイン' })).toBeVisible()
     await fillCredentials(user)
     await user.click(screen.getByRole('button', { name: 'ログイン' }))
 
-    expect(await screen.findByText(authenticatedUser.email)).toBeVisible()
+    await user.click(await screen.findByRole('button', { name: 'マイページ' }))
+    expect(screen.getByText(authenticatedUser.email)).toBeVisible()
     expect(router.replace).toHaveBeenCalledWith('/')
   })
 
-  it('Server Componentから渡された認証状態を初期表示する', () => {
+  it('Server Componentから渡された購入者状態を開き、role別導線を表示する', async () => {
+    const user = userEvent.setup()
     render(
       <SessionProvider
         initialState={{ status: 'authenticated', user: authenticatedUser }}
@@ -178,14 +180,17 @@ describe('ログインフォーム', () => {
       </SessionProvider>,
     )
 
-    expect(screen.getByText(authenticatedUser.email)).toBeVisible()
     expect(screen.getByRole('link', { name: 'ALL ITEMS' })).toHaveAttribute('href', '/products')
-    expect(screen.getByRole('link', { name: 'Orders' })).toHaveAttribute('href', '/orders')
-    expect(screen.getByRole('link', { name: 'Cart' })).toHaveAttribute('href', '/cart')
-    expect(screen.getByRole('button', { name: 'Logout' })).toBeVisible()
+    expect(screen.getByRole('link', { name: 'カート' })).toHaveAttribute('href', '/cart')
+    const menu = screen.getByRole('button', { name: 'マイページ' })
+    await user.click(menu)
+    expect(screen.getByText(authenticatedUser.email)).toBeVisible()
+    expect(screen.getByRole('link', { name: 'オーダー' })).toHaveAttribute('href', '/orders')
+    expect(screen.getByRole('button', { name: 'ログアウト' })).toBeVisible()
   })
 
-  it('管理者向けの実在するナビゲーションだけを表示する', () => {
+  it('管理者メニューには管理導線だけを表示し、カートを表示しない', async () => {
+    const user = userEvent.setup()
     render(
       <SessionProvider initialState={{ status: 'authenticated', user: adminUser }}>
         <SiteHeader />
@@ -193,16 +198,18 @@ describe('ログインフォーム', () => {
     )
 
     expect(screen.getByRole('link', { name: 'ALL ITEMS' })).toHaveAttribute('href', '/products')
-    expect(screen.getByRole('link', { name: 'Products' })).toHaveAttribute(
+    await user.click(screen.getByRole('button', { name: 'マイページ' }))
+    expect(screen.getByText(adminUser.email)).toBeVisible()
+    expect(screen.getByRole('link', { name: '商品管理' })).toHaveAttribute(
       'href',
       '/admin/products',
     )
-    expect(screen.getByRole('link', { name: 'Orders' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'オーダー' })).toHaveAttribute(
       'href',
       '/admin/orders',
     )
-    expect(screen.getByRole('button', { name: 'Logout' })).toBeVisible()
-    expect(screen.queryByRole('link', { name: 'Cart' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'ログアウト' })).toBeVisible()
+    expect(screen.queryByRole('link', { name: 'カート' })).not.toBeInTheDocument()
   })
 
   it('logoutの500では認証表示を維持して再試行可能なerrorを表示する', async () => {
@@ -227,13 +234,48 @@ describe('ログインフォーム', () => {
       </SessionProvider>,
     )
 
-    expect(await screen.findByText(authenticatedUser.email)).toBeVisible()
-    await user.click(screen.getByRole('button', { name: 'Logout' }))
+    await user.click(screen.getByRole('button', { name: 'マイページ' }))
+    expect(screen.getByText(authenticatedUser.email)).toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'ログアウト' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       '失敗しました。再度お試しください。',
     )
     expect(screen.getByText(authenticatedUser.email)).toBeVisible()
-    expect(screen.getByRole('button', { name: 'Logout' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'ログアウト' })).toBeEnabled()
+  })
+
+  it('logout送信中は重複操作を防ぎ、支援技術へ状態を伝える', async () => {
+    let requestCount = 0
+    let release: (() => void) | undefined
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    server.use(
+      http.delete('/api/session', async () => {
+        requestCount += 1
+        await gate
+        return new HttpResponse(null, { status: 204 })
+      }),
+    )
+    const user = userEvent.setup()
+    render(
+      <SessionProvider
+        initialState={{ status: 'authenticated', user: authenticatedUser }}
+      >
+        <SiteHeader />
+      </SessionProvider>,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'マイページ' }))
+    const logout = screen.getByRole('button', { name: 'ログアウト' })
+    await user.dblClick(logout)
+
+    expect(
+      screen.getByRole('button', { name: 'ログアウト中…' }),
+    ).toBeDisabled()
+    expect(requestCount).toBe(1)
+    release?.()
+    expect(await screen.findByRole('link', { name: 'ログイン' })).toBeVisible()
   })
 })

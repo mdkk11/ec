@@ -5,6 +5,7 @@ type StoryCapture = {
   loadAllImages?: boolean
   name: string
   storyId: string
+  visibleText?: string
   width: number
 }
 
@@ -13,6 +14,9 @@ export async function captureStory(page: Page, story: StoryCapture) {
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto(`/iframe.html?id=${story.storyId}&viewMode=story`)
   await expect(page.locator('#storybook-root')).toBeVisible()
+  if (story.visibleText) {
+    await expect(page.getByText(story.visibleText, { exact: true })).toBeVisible()
+  }
   if (story.loadAllImages) {
     const images = page.locator('img')
     for (let index = 0; index < (await images.count()); index += 1) {

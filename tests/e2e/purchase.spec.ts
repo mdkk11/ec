@@ -30,6 +30,7 @@ test('E2E-001/COUPON-001: ログインからクーポン適用・注文・履歴
   await page.getByRole('button', { name: 'ログイン' }).click()
   expect((await loginResponse).ok()).toBe(true)
   await expect(page).toHaveURL('/')
+  await page.getByRole('button', { name: 'マイページ' }).click()
   await expect(page.getByText(fixture.email)).toBeVisible()
 
   await page.goto(`/products/${fixture.productId}`)
