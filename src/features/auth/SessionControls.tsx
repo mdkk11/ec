@@ -44,80 +44,95 @@ export function SessionControls() {
         className="inline-flex min-h-11 items-center text-[10px] font-semibold tracking-[0.04em] underline-offset-4 hover:underline sm:text-[11px] sm:tracking-[0.08em]"
         href="/login"
       >
-        Login
+        ログイン
       </Link>
     )
   }
 
+  const admin = state.user.role === 'admin'
+
   return (
-    <div className="flex items-center gap-1 whitespace-nowrap text-right sm:gap-3">
-      {state.user.role === 'customer' ? (
-        <>
-          <Link
-            className="inline-flex min-h-11 items-center text-[10px] font-semibold tracking-[0.02em] underline-offset-4 hover:underline sm:text-[11px] sm:tracking-[0.06em]"
-            href="/orders"
-          >
-            Orders
-          </Link>
-          <Link
-            className="inline-flex min-h-11 items-center text-[10px] font-semibold tracking-[0.02em] underline-offset-4 hover:underline sm:text-[11px] sm:tracking-[0.06em]"
-            href="/cart"
-          >
-            Cart
-          </Link>
-        </>
-      ) : (
-        <>
-          <Link
-            className="inline-flex min-h-11 items-center text-[10px] font-semibold tracking-[0.02em] underline-offset-4 hover:underline sm:text-[11px] sm:tracking-[0.06em]"
-            href="/admin/products"
-          >
-            Products
-          </Link>
-          <Link
-            className="inline-flex min-h-11 items-center text-[10px] font-semibold tracking-[0.02em] underline-offset-4 hover:underline sm:text-[11px] sm:tracking-[0.06em]"
-            href="/admin/orders"
-          >
-            Orders
-          </Link>
-        </>
-      )}
-      <div className="shrink-0">
-        <p
-          className="hidden max-w-40 truncate text-[10px] text-muted sm:block sm:text-[11px]"
-          title={state.user.email}
+    <div className="flex items-center gap-2 whitespace-nowrap text-right">
+      {!admin ? (
+        <Link
+          aria-label="カート"
+          className="inline-flex size-11 items-center justify-center"
+          href="/cart"
         >
-          {state.user.email}
-        </p>
-        <button
-          className="inline-flex min-h-11 items-center text-[10px] font-semibold tracking-[0.02em] underline underline-offset-4 disabled:cursor-wait disabled:opacity-60 sm:min-h-0 sm:tracking-[0.06em]"
-          disabled={isLoggingOut}
-          onClick={async () => {
-            if (isLoggingOut) return
-            setLogoutError(false)
-            setIsLoggingOut(true)
-            try {
-              await logout()
-            } catch {
-              setLogoutError(true)
-            } finally {
-              setIsLoggingOut(false)
-            }
-          }}
-          type="button"
-        >
-          {isLoggingOut ? 'ログアウト中…' : 'Logout'}
-        </button>
-        {logoutError ? (
-          <p
-            aria-live="assertive"
-            className="mt-1 text-[10px] text-red-700"
-            role="alert"
+          <svg
+            aria-hidden="true"
+            fill="none"
+            height="20"
+            viewBox="0 0 24 24"
+            width="20"
           >
-            失敗しました。再度お試しください。
-          </p>
-        ) : null}
-      </div>
+            <path
+              d="M3 4h2l2.1 10.1a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 2-1.6L20.5 7H6"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1.5"
+            />
+            <circle cx="10" cy="19" fill="currentColor" r="1" />
+            <circle cx="18" cy="19" fill="currentColor" r="1" />
+          </svg>
+        </Link>
+      ) : null}
+      <details className="relative">
+        <summary
+          className="flex min-h-11 cursor-pointer list-none items-center text-[10px] font-semibold tracking-[0.04em] underline-offset-4 hover:underline sm:text-[11px] sm:tracking-[0.08em]"
+          role="button"
+        >
+          マイページ
+        </summary>
+        <div className="absolute right-0 top-full z-50 mt-2 w-64 border border-line bg-surface p-4 text-left shadow-lg">
+          <p className="break-all text-xs text-muted">{state.user.email}</p>
+          <nav aria-label="マイページ" className="mt-4 grid gap-1">
+            {admin ? (
+              <Link
+                className="inline-flex min-h-11 items-center text-sm font-semibold underline-offset-4 hover:underline"
+                href="/admin/products"
+              >
+                商品管理
+              </Link>
+            ) : null}
+            <Link
+              className="inline-flex min-h-11 items-center text-sm font-semibold underline-offset-4 hover:underline"
+              href={admin ? '/admin/orders' : '/orders'}
+            >
+              オーダー
+            </Link>
+          </nav>
+          <button
+            className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold underline underline-offset-4 disabled:cursor-wait disabled:opacity-60"
+            disabled={isLoggingOut}
+            onClick={async () => {
+              if (isLoggingOut) return
+              setLogoutError(false)
+              setIsLoggingOut(true)
+              try {
+                await logout()
+              } catch {
+                setLogoutError(true)
+              } finally {
+                setIsLoggingOut(false)
+              }
+            }}
+            type="button"
+          >
+            {isLoggingOut ? 'ログアウト中…' : 'ログアウト'}
+          </button>
+          {logoutError ? (
+            <p
+              aria-live="assertive"
+              className="mt-1 text-xs text-red-700"
+              role="alert"
+            >
+              失敗しました。再度お試しください。
+            </p>
+          ) : null}
+        </div>
+      </details>
     </div>
   )
 }
