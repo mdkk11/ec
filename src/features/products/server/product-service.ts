@@ -1,7 +1,7 @@
 import { and, asc, desc, eq } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import type { ProductDto } from '@/contracts/product'
+import type { ProductDetailDto, ProductDto } from '@/contracts/product'
 import { categories, products } from '@/server/db/schema'
 
 type ProductDependencies = {
@@ -19,7 +19,7 @@ const publicProductSelection = {
   stock: products.stock,
 }
 
-function toProductDto(product: {
+type PublicProductRecord = {
   categoryName: string
   categorySlug: string
   description: string
@@ -28,7 +28,9 @@ function toProductDto(product: {
   name: string
   price: number
   stock: number
-}): ProductDto {
+}
+
+function toProductDto(product: PublicProductRecord): ProductDto {
   return {
     availability: product.stock > 0 ? 'in_stock' : 'out_of_stock',
     category: {
@@ -41,6 +43,12 @@ function toProductDto(product: {
     name: product.name,
     price: product.price,
   }
+}
+
+function toProductDetailDto(
+  product: PublicProductRecord,
+): ProductDetailDto {
+  return { ...toProductDto(product), stock: product.stock }
 }
 
 export class ProductServiceError extends Error {
@@ -99,5 +107,5 @@ export async function findPublishedProduct(
     )
     .limit(1)
 
-  return record ? toProductDto(record) : null
+  return record ? toProductDetailDto(record) : null
 }
