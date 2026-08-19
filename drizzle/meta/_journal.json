@@ -43,6 +43,13 @@
       "when": 1785339352074,
       "tag": "0005_slimy_malice",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1786550378255,
+      "tag": "0006_minor_aaron_stack",
+      "breakpoints": true
     }
   ]
 }

@@ -133,6 +133,44 @@ describe('管理商品編集・在庫', () => {
     expect(screen.getByText('version 2')).toBeVisible()
   })
 
+  it('カテゴリだけを変更し、競合時は入力を保持して最新カテゴリを提示する', async () => {
+    const selectedCategoryId = '40000000-0000-4000-8000-000000000002'
+    const latest = {
+      ...product,
+      categoryId: '40000000-0000-4000-8000-000000000003',
+      version: 2,
+    }
+    let requestBody: unknown
+    let listCount = 0
+    server.use(
+      http.get('/api/admin/products', () => {
+        listCount += 1
+        return listResponse(listCount === 1 ? [product] : [latest])
+      }),
+      http.patch('/api/admin/products/:productId', async ({ request }) => {
+        requestBody = await request.json()
+        return HttpResponse.json(
+          { code: 'VERSION_CONFLICT', message: '競合しました。' },
+          { status: 409 },
+        )
+      }),
+    )
+    const user = userEvent.setup()
+    renderWithProviders(<AdminProductEditPage productId={product.id} />)
+
+    const category = await screen.findByLabelText('カテゴリ')
+    await user.selectOptions(category, selectedCategoryId)
+    await user.click(screen.getByRole('button', { name: '商品情報を更新' }))
+
+    expect(requestBody).toEqual({ categoryId: selectedCategoryId, expectedVersion: 1 })
+    expect(await screen.findByText('最新の商品情報を確認してください')).toBeVisible()
+    expect(category).toHaveValue(selectedCategoryId)
+    expect(screen.getByRole('alert')).toHaveTextContent('シューズ')
+
+    await user.click(screen.getByRole('button', { name: '最新値をフォームへ反映' }))
+    expect(category).toHaveValue(latest.categoryId)
+  })
+
   it('在庫更新後のversionを共有し、未送信の商品情報を保持する', async () => {
     const stockUpdated = { ...product, stock: 10, version: 2 }
     const metadataUpdated = {

@@ -7,6 +7,7 @@ import {
 } from './AdminProductForm'
 
 const values: AdminProductFormValues = {
+  categoryId: adminProductFixture.categoryId,
   description: adminProductFixture.description,
   imagePath: adminProductFixture.imagePath,
   isPublished: adminProductFixture.isPublished,
@@ -48,11 +49,12 @@ export const Default: Story = { name: '通常' }
 export const InputError: Story = {
   args: {
     fieldErrors: {
+      categoryId: ['カテゴリを選択してください。'],
       name: ['商品名を入力してください。'],
       price: ['価格は0以上で入力してください。'],
       stock: ['在庫数は整数で入力してください。'],
     },
-    values: { ...values, name: '', price: '-1', stock: '1.5' },
+    values: { ...values, categoryId: '', name: '', price: '-1', stock: '1.5' },
   },
   name: '入力エラー',
 }
@@ -67,6 +69,7 @@ export const Conflict: Story = {
     blocked: true,
     conflictProduct: {
       ...adminProductFixture,
+      categoryId: '40000000-0000-4000-8000-000000000002',
       isPublished: false,
       price: 30_800,
       stock: 5,

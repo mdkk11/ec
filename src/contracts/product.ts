@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import { categoryIdSchema } from './category'
+
 export const productIdSchema = z.uuid()
 
 export const productAvailabilitySchema = z.enum([
@@ -45,6 +47,7 @@ const expectedVersionSchema = z
   .positive('versionは1以上で指定してください。')
 
 export const adminProductDtoSchema = productDtoSchema.extend({
+  categoryId: categoryIdSchema,
   isPublished: z.boolean(),
   stock: productStockSchema,
   version: expectedVersionSchema,
@@ -59,6 +62,7 @@ export const adminProductResponseSchema = z.object({
 })
 
 export const createAdminProductRequestSchema = z.object({
+  categoryId: categoryIdSchema,
   name: productNameSchema,
   description: productDescriptionSchema,
   price: productPriceSchema,
@@ -69,6 +73,7 @@ export const createAdminProductRequestSchema = z.object({
 
 export const updateAdminProductRequestSchema = z
   .object({
+    categoryId: categoryIdSchema.optional(),
     name: productNameSchema.optional(),
     description: productDescriptionSchema.optional(),
     price: productPriceSchema.optional(),
@@ -77,7 +82,8 @@ export const updateAdminProductRequestSchema = z
     expectedVersion: expectedVersionSchema,
   })
   .refine(
-    ({ name, description, price, imagePath, isPublished }) =>
+    ({ categoryId, name, description, price, imagePath, isPublished }) =>
+      categoryId !== undefined ||
       name !== undefined ||
       description !== undefined ||
       price !== undefined ||

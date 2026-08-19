@@ -34,6 +34,14 @@ export async function authorizeAdminProductRequest(
 
 export function adminProductRouteErrorResponse(error: unknown) {
   if (error instanceof AdminProductServiceError) {
+    if (error.code === 'INVALID_CATEGORY') {
+      return apiErrorResponse(
+        400,
+        'VALIDATION_ERROR',
+        error.message,
+        { categoryId: [error.message] },
+      )
+    }
     return apiErrorResponse(
       error.code === 'PRODUCT_NOT_FOUND' ? 404 : 409,
       error.code,

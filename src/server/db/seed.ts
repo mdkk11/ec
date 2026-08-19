@@ -1,8 +1,13 @@
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
+import {
+  categoryCatalog,
+  categoryIds,
+  type CategoryId,
+} from '@/features/categories/category-catalog'
 import { hashPassword } from '@/server/auth/password'
 
-import { coupons, orderItems, orders, products, users } from './schema'
+import { categories, coupons, orderItems, orders, products, users } from './schema'
 
 export const seedCredentials = {
   admin: {
@@ -425,13 +430,55 @@ const seedProducts = [
   },
 ] as const
 
+const seedProductCategoryIds: Record<
+  (typeof seedProducts)[number]['id'],
+  CategoryId
+> = {
+  '30000000-0000-4000-8000-000000000001': categoryIds.clothing,
+  '30000000-0000-4000-8000-000000000002': categoryIds['bags-accessories'],
+  '30000000-0000-4000-8000-000000000003': categoryIds.shoes,
+  '30000000-0000-4000-8000-000000000004': categoryIds.clothing,
+  '30000000-0000-4000-8000-000000000005': categoryIds.other,
+  '30000000-0000-4000-8000-000000000006': categoryIds.clothing,
+  '30000000-0000-4000-8000-000000000007': categoryIds.clothing,
+  '30000000-0000-4000-8000-000000000008': categoryIds['bags-accessories'],
+  '30000000-0000-4000-8000-000000000009': categoryIds['home-living'],
+  '30000000-0000-4000-8000-000000000010': categoryIds.clothing,
+  '30000000-0000-4000-8000-000000000011': categoryIds['bags-accessories'],
+  '30000000-0000-4000-8000-000000000012': categoryIds.clothing,
+  '30000000-0000-4000-8000-000000000013': categoryIds.clothing,
+  '30000000-0000-4000-8000-000000000014': categoryIds.clothing,
+  '30000000-0000-4000-8000-000000000015': categoryIds['bags-accessories'],
+  '30000000-0000-4000-8000-000000000016': categoryIds['bags-accessories'],
+  '30000000-0000-4000-8000-000000000017': categoryIds.shoes,
+  '30000000-0000-4000-8000-000000000018': categoryIds.shoes,
+  '30000000-0000-4000-8000-000000000019': categoryIds['home-living'],
+  '30000000-0000-4000-8000-000000000020': categoryIds['home-living'],
+  '30000000-0000-4000-8000-000000000021': categoryIds['home-living'],
+  '30000000-0000-4000-8000-000000000022': categoryIds['home-living'],
+  '30000000-0000-4000-8000-000000000023': categoryIds['home-living'],
+  '30000000-0000-4000-8000-000000000024': categoryIds['home-living'],
+  '30000000-0000-4000-8000-000000000025': categoryIds['home-living'],
+}
+
+export async function seedCategories(db: NodePgDatabase) {
+  for (const category of categoryCatalog) {
+    await db
+      .insert(categories)
+      .values(category)
+      .onConflictDoUpdate({ set: category, target: categories.id })
+  }
+}
+
 export async function seedCatalogProducts(db: NodePgDatabase) {
+  await seedCategories(db)
   for (const product of seedProducts) {
+    const value = { ...product, categoryId: seedProductCategoryIds[product.id] }
     await db
       .insert(products)
-      .values(product)
+      .values(value)
       .onConflictDoUpdate({
-        set: product,
+        set: value,
         target: products.id,
       })
   }
@@ -703,6 +750,7 @@ export async function seedE2EFixtures(db: NodePgDatabase) {
   ] as const
   for (const fixture of purchaseProducts) {
     const product = {
+      categoryId: categoryIds['bags-accessories'],
       createdAt: '2026-02-02T00:00:00Z',
       description: '購入E2E専用の固定商品です。',
       id: fixture.id,
@@ -760,6 +808,7 @@ export async function seedE2EFixtures(db: NodePgDatabase) {
 
   for (const [browser, fixture] of Object.entries(e2eAdminOrderFixtures)) {
     const product = {
+      categoryId: categoryIds.other,
       createdAt: '2026-02-03T00:00:00Z',
       description: '注文管理E2E専用の固定商品です。',
       id: fixture.productId,

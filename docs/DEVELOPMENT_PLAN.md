@@ -260,10 +260,19 @@ PRはレビュー可能な目的単位とし、実装だけ・テストだけに
 
 - 決済、配送、税、返金
 - OAuth、会員登録、パスワード再設定
-- 商品バリエーション、カテゴリ、検索、お気に入り
+- 商品バリエーション、検索、お気に入り
 - 複数クーポン、定額割引、利用回数制限
 - 在庫予約、監査ログ、通知
 - マイクロサービス、多言語、多通貨、リアルタイム更新
 - 本番インフラ、監視、負荷試験
 
 必要になった時点でPRODUCTとTEST_STRATEGYから変更し、既存フェーズへ暗黙に追加しない。
+
+## 7. Phase 9: 商品カテゴリ
+
+固定・単一・非階層のカテゴリを、既存フェーズへ暗黙に混ぜず2つのstacked PRで追加する。
+
+1. `feature/category-foundation`: 固定カテゴリmaster、商品への必須外部キー、既存商品のother backfill、seed、管理商品作成・編集の必須割り当て、DB・管理テストを実装する。公開商品DTOと公開一覧は変更しない。
+2. `feature/category-browsing`: 公開DTO、`GET /api/products` のcategory query、Server Component一覧・詳細、カテゴリnavigation、公開閲覧テストとVRTを親PRの上へ実装する。
+
+各PRはlint、typecheck、担当テスト、build、Storybook buildを通し、下位PR変更時は上位PRをrestackして検証し直す。

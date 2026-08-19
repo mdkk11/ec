@@ -103,6 +103,7 @@ describe('管理商品一覧・作成', () => {
     renderWithProviders(<AdminProductsPage />)
     await screen.findByText('商品はまだありません')
 
+    await user.selectOptions(screen.getByLabelText('カテゴリ'), product.categoryId)
     await user.type(screen.getByLabelText('商品名'), '入力エラー商品')
     await user.type(screen.getByLabelText('商品説明'), '入力エラーの確認です。')
     await user.clear(screen.getByLabelText('価格（円）'))
@@ -134,6 +135,7 @@ describe('管理商品一覧・作成', () => {
     renderWithProviders(<AdminProductsPage />)
     await screen.findByText('管理テスト商品')
 
+    await user.selectOptions(screen.getByLabelText('カテゴリ'), created.categoryId)
     await user.type(screen.getByLabelText('商品名'), created.name)
     await user.type(screen.getByLabelText('商品説明'), created.description)
     await user.clear(screen.getByLabelText('価格（円）'))
@@ -149,6 +151,28 @@ describe('管理商品一覧・作成', () => {
     expect(await screen.findByText('新しい管理商品')).toBeVisible()
     expect(screen.getByRole('status')).toHaveTextContent('作成しました')
     expect(requestCount).toBe(1)
+  })
+
+  it('カテゴリ未選択では送信せずselectへfocusする', async () => {
+    let requestCount = 0
+    server.use(
+      http.get('/api/admin/products', () => listResponse([])),
+      http.post('/api/admin/products', () => {
+        requestCount += 1
+        return HttpResponse.json({ product }, { status: 201 })
+      }),
+    )
+    const user = userEvent.setup()
+    renderWithProviders(<AdminProductsPage />)
+    await screen.findByText('商品はまだありません')
+
+    await user.type(screen.getByLabelText('商品名'), 'カテゴリ未選択商品')
+    await user.type(screen.getByLabelText('商品説明'), 'カテゴリ必須の確認です。')
+    await user.click(screen.getByRole('button', { name: '商品を作成' }))
+
+    expect(requestCount).toBe(0)
+    expect(screen.getByLabelText('カテゴリ')).toHaveFocus()
+    expect(screen.getByText('カテゴリを選択してください。')).toBeVisible()
   })
 
   it('未認証・customerでは管理APIを呼ばない', async () => {

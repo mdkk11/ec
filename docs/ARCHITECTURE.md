@@ -128,6 +128,7 @@ tests/
 | 列 | 概要 |
 | --- | --- |
 | `id` | UUID主キー |
+| `category_id` | 固定カテゴリへの外部キー、必須、削除制限 |
 | `name` | 商品名 |
 | `description` | 商品説明 |
 | `price` | 0以上の整数円 |
@@ -138,6 +139,17 @@ tests/
 | `created_at`, `updated_at` | 作成・更新日時 |
 
 DBのCHECK制約で `price >= 0`、`stock >= 0`、`version >= 1` を保証する。
+
+### `categories`
+
+| 列 | 概要 |
+| --- | --- |
+| `id` | 固定UUID主キー |
+| `name` | 日本語表示名、一意 |
+| `slug` | 英小文字kebab-case、一意 |
+| `display_order` | 正の整数、一意 |
+
+カテゴリは固定masterとし、display orderは `clothing=10`、`bags-accessories=20`、`shoes=30`、`home-living=40`、`other=90` とする。CRUD用のAPI/UIを設けない。商品は `category_id NOT NULL` で1カテゴリだけを参照し、外部キーは `ON DELETE RESTRICT` とする。トップページの編集テーマとは関連付けない。
 
 ### `carts`
 
@@ -298,6 +310,7 @@ type ProductDto = {
 }
 
 type AdminProductDto = ProductDto & {
+  categoryId: string
   isPublished: boolean
   stock: number
   version: number
@@ -387,13 +400,15 @@ type OrderDto = {
 | `GET /api/orders` | なし | `{ items: OrderDto[] }` |
 | `GET /api/orders/:id` | なし | `{ order: OrderDto }` |
 | `GET /api/admin/products` | なし | `{ items: AdminProductDto[] }` |
-| `POST /api/admin/products` | `{ name, description, price, imagePath, isPublished, stock }` | `{ product: AdminProductDto }` |
-| `PATCH /api/admin/products/:id` | `{ name?, description?, price?, imagePath?, isPublished?, expectedVersion }` | `{ product: AdminProductDto }` |
+| `POST /api/admin/products` | `{ categoryId, name, description, price, imagePath, isPublished, stock }` | `{ product: AdminProductDto }` |
+| `PATCH /api/admin/products/:id` | `{ categoryId?, name?, description?, price?, imagePath?, isPublished?, expectedVersion }` | `{ product: AdminProductDto }` |
 | `PATCH /api/admin/products/:id/stock` | `{ stock, expectedVersion }` | `{ product: AdminProductDto }` |
 | `GET /api/admin/orders` | なし | `{ items: OrderDto[] }` |
 | `PATCH /api/admin/orders/:id/status` | `{ status, expectedVersion }` | `{ order: OrderDto }` |
 
 商品PATCHは `expectedVersion` 以外に最低1フィールドを必須とする。公開APIの `ProductDto` は正確な在庫数やversionを公開しない。注文履歴は `createdAt DESC, id DESC` で返す。
+
+管理商品作成では `categoryId` を必須とし、metadata PATCHではカテゴリだけの更新も許可する。不明なcategory IDは400 `VALIDATION_ERROR` と `fieldErrors.categoryId` を返し、商品を変更しない。カテゴリ変更も商品versionを同じUPDATEで1増やす。
 
 ## 7. 入出力とエラー
 

@@ -4,9 +4,11 @@ import type { FormEvent } from 'react'
 
 import { Button } from '@/components/button/Button'
 import type { AdminProductDto } from '@/contracts/product'
+import { categoryCatalog } from '@/features/categories/category-catalog'
 import { formatPrice } from '@/features/products/format-price'
 
 export type AdminProductFormValues = {
+  categoryId: string
   description: string
   imagePath: string
   isPublished: boolean
@@ -82,6 +84,39 @@ export function AdminProductForm({
       onSubmit={onSubmit}
     >
       <div className="grid gap-6">
+        <div>
+          <label
+            className="text-sm font-semibold"
+            htmlFor={fieldId('categoryId')}
+          >
+            カテゴリ
+          </label>
+          <select
+            aria-describedby={
+              fieldErrors.categoryId ? errorId('categoryId') : undefined
+            }
+            aria-invalid={fieldErrors.categoryId ? true : undefined}
+            className={inputClassName}
+            disabled={disabled}
+            id={fieldId('categoryId')}
+            onChange={(event) => onChange('categoryId', event.target.value)}
+            value={values.categoryId}
+          >
+            <option disabled={mode === 'edit'} value="">
+              カテゴリを選択してください
+            </option>
+            {categoryCatalog.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+          <FieldError
+            errors={fieldErrors.categoryId}
+            id={errorId('categoryId')}
+          />
+        </div>
+
         <div>
           <label className="text-sm font-semibold" htmlFor={fieldId('name')}>
             商品名
@@ -216,6 +251,7 @@ export function AdminProductForm({
           </p>
           <dl className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
             <div><dt className="text-muted">商品名</dt><dd>{conflictProduct.name}</dd></div>
+            <div><dt className="text-muted">カテゴリ</dt><dd>{categoryCatalog.find(({ id }) => id === conflictProduct.categoryId)?.name}</dd></div>
             <div><dt className="text-muted">価格</dt><dd>{formatPrice(conflictProduct.price)}</dd></div>
             <div><dt className="text-muted">在庫</dt><dd>{conflictProduct.stock}</dd></div>
             <div><dt className="text-muted">公開状態</dt><dd>{conflictProduct.isPublished ? '公開' : '非公開'}</dd></div>

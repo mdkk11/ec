@@ -76,9 +76,35 @@ export const sessions = pgTable(
   ],
 )
 
+export const categories = pgTable(
+  'categories',
+  {
+    id: uuid('id').primaryKey(),
+    name: text('name').notNull(),
+    slug: text('slug').notNull(),
+    displayOrder: integer('display_order').notNull(),
+  },
+  (table) => [
+    uniqueIndex('categories_name_unique').on(table.name),
+    uniqueIndex('categories_slug_unique').on(table.slug),
+    uniqueIndex('categories_display_order_unique').on(table.displayOrder),
+    check(
+      'categories_slug_format_check',
+      sql`${table.slug} ~ '^[a-z]+(-[a-z]+)*$'`,
+    ),
+    check(
+      'categories_display_order_positive_check',
+      sql`${table.displayOrder} >= 1`,
+    ),
+  ],
+)
+
 export const products = pgTable(
   'products',
   {
+    categoryId: uuid('category_id')
+      .notNull()
+      .references(() => categories.id, { onDelete: 'restrict' }),
     id: uuid('id').primaryKey().defaultRandom(),
     name: text('name').notNull(),
     description: text('description').notNull(),
@@ -95,6 +121,7 @@ export const products = pgTable(
       .defaultNow(),
   },
   (table) => [
+    index('products_category_id_idx').on(table.categoryId),
     check('products_price_non_negative_check', sql`${table.price} >= 0`),
     check('products_stock_non_negative_check', sql`${table.stock} >= 0`),
     check('products_version_positive_check', sql`${table.version} >= 1`),
@@ -263,6 +290,7 @@ export const orderItems = pgTable(
 export type User = typeof users.$inferSelect
 export type UserRole = (typeof userRole.enumValues)[number]
 export type Product = typeof products.$inferSelect
+export type Category = typeof categories.$inferSelect
 export type Coupon = typeof coupons.$inferSelect
 export type Cart = typeof carts.$inferSelect
 export type CartItem = typeof cartItems.$inferSelect
