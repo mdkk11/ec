@@ -6,6 +6,7 @@ import { calculateCart, createCheckoutToken } from './cart-calculation'
 
 const firstItem = {
   id: '50000000-0000-4000-8000-000000000001',
+  imagePath: '/images/home/linen-overshirt.jpg',
   isPublished: true,
   name: 'テスト商品',
   productId: '30000000-0000-4000-8000-000000000001',
@@ -24,13 +25,17 @@ describe('カート計算', () => {
     }, createTestNow())
 
     expect(cart.items[0]?.lineTotal).toBe(3_600)
+    expect(cart.items[0]).toMatchObject({
+      availableStock: 5,
+      imagePath: '/images/home/linen-overshirt.jpg',
+    })
     expect(cart.subtotal).toBe(3_600)
     expect(cart.discountAmount).toBe(0)
     expect(cart.total).toBe(3_600)
     expect(cart.checkoutToken).toMatch(/^[0-9a-f]{64}$/u)
   })
 
-  it('商品ID順へ正規化し、item IDと在庫をtokenへ含めない', () => {
+  it('商品ID順へ正規化し、item ID・画像・在庫をtokenへ含めない', () => {
     const input = {
       discountAmount: 0,
       coupon: null,
@@ -51,7 +56,12 @@ describe('カート計算', () => {
       ...input,
       items: input.items
         .toReversed()
-        .map((item) => ({ ...item, id: crypto.randomUUID(), stock: 1_000 })),
+        .map((item) => ({
+          ...item,
+          id: crypto.randomUUID(),
+          imagePath: '/images/home/suede-sneakers.jpg',
+          stock: 1_000,
+        })),
     }
 
     expect(createCheckoutToken(input)).toBe(

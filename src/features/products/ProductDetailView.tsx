@@ -3,13 +3,13 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 
 import { Button } from '@/components/button/Button'
-import type { ProductDto } from '@/contracts/product'
+import type { ProductDetailDto } from '@/contracts/product'
 
 import { formatPrice } from './format-price'
 
 export type ProductDetailViewProps =
   | {
-      product: ProductDto
+      product: ProductDetailDto
       purchaseAction?: ReactNode
       status: 'success'
     }
@@ -25,7 +25,7 @@ export type ProductDetailViewProps =
       status: 'error'
     }
 
-function Breadcrumbs({ product }: { product?: ProductDto }) {
+function Breadcrumbs({ product }: { product?: ProductDetailDto }) {
   return (
     <nav aria-label="パンくずリスト" className="text-xs text-muted">
       <ol className="flex flex-wrap items-center gap-2">
@@ -125,8 +125,6 @@ export function ProductDetailView(props: ProductDetailViewProps) {
   }
 
   const { product } = props
-  const outOfStock = product.availability === 'out_of_stock'
-
   return (
     <section className="page-wrap py-12 sm:py-16 lg:py-20">
       <Breadcrumbs product={product} />
@@ -149,15 +147,7 @@ export function ProductDetailView(props: ProductDetailViewProps) {
           <p className="mt-5 text-lg tabular-nums">
             {formatPrice(product.price)}
           </p>
-          <p
-            className={`mt-7 inline-flex border px-4 py-2 text-xs font-semibold tracking-[0.08em] ${
-              outOfStock
-                ? 'border-line bg-line text-muted'
-                : 'border-sage bg-sage/25'
-            }`}
-          >
-            {outOfStock ? '在庫切れ' : '在庫あり'}
-          </p>
+          <p className="mt-7 text-sm text-muted">在庫 {product.stock}点</p>
           {props.purchaseAction}
           <div className="mt-9 border-t border-line pt-7">
             <h2 className="text-xs font-semibold tracking-[0.1em]">商品説明</h2>

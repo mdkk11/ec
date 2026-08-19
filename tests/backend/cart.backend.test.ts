@@ -101,6 +101,8 @@ describe('カートAPI', () => {
       discountAmount: 0,
       items: [
         {
+          availableStock: 8,
+          imagePath: '/images/home/linen-overshirt.jpg',
           productId,
           quantity: 1,
           unitPrice: 28_600,

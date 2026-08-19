@@ -128,7 +128,7 @@ test('E2E-007/PRODUCT-001/010/011/014/015: Server Componentの商品一覧から
     }),
   ).toBeVisible()
   await expect(page.getByText('¥28,600')).toBeVisible()
-  await expect(page.getByText('在庫あり')).toBeVisible()
+  await expect(page.getByText('在庫 8点')).toBeVisible()
   await expect(
     page.getByRole('img', { name: 'リネンブレンド オーバーシャツ' }),
   ).toBeVisible()

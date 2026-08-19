@@ -19,12 +19,16 @@ export const productDtoSchema = z.object({
   availability: productAvailabilitySchema,
 })
 
+export const productDetailDtoSchema = productDtoSchema.extend({
+  stock: z.number().int().nonnegative(),
+})
+
 export const productListResponseSchema = z.object({
   items: z.array(productDtoSchema),
 })
 
 export const productResponseSchema = z.object({
-  product: productDtoSchema,
+  product: productDetailDtoSchema,
 })
 
 const productNameSchema = z.string().min(1, '商品名を入力してください。')
@@ -99,6 +103,7 @@ export const updateAdminProductStockRequestSchema = z.object({
 })
 
 export type ProductDto = z.infer<typeof productDtoSchema>
+export type ProductDetailDto = z.infer<typeof productDetailDtoSchema>
 export type ProductListResponse = z.infer<typeof productListResponseSchema>
 export type ProductResponse = z.infer<typeof productResponseSchema>
 export type AdminProductDto = z.infer<typeof adminProductDtoSchema>

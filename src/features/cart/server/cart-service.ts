@@ -79,6 +79,7 @@ async function loadCart(
   const rows = await executor
     .select({
       id: cartItems.id,
+      imagePath: products.imagePath,
       isPublished: products.isPublished,
       name: products.name,
       productId: products.id,

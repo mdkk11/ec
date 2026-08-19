@@ -118,13 +118,7 @@ describe('クーポン操作', () => {
     const quantity = await screen.findByLabelText(
       'リネンブレンド オーバーシャツの数量',
     )
-    await user.clear(quantity)
-    await user.type(quantity, '3')
-    await user.click(
-      screen.getByRole('button', {
-        name: 'リネンブレンド オーバーシャツの数量を更新',
-      }),
-    )
+    await user.selectOptions(quantity, '3')
     await user.type(screen.getByLabelText('クーポンコード'), 'WELCOME15')
     await user.dblClick(
       screen.getByRole('button', { name: 'クーポンを適用' }),
@@ -168,35 +162,17 @@ describe('クーポン操作', () => {
     const firstQuantity = await screen.findByLabelText(
       `${firstItem.name}の数量`,
     )
-    await user.clear(firstQuantity)
-    await user.type(firstQuantity, '3')
-    await user.click(
-      screen.getByRole('button', {
-        name: `${firstItem.name}の数量を更新`,
-      }),
-    )
+    await user.selectOptions(firstQuantity, '3')
 
     const secondQuantity = screen.getByLabelText(
       `${secondItem.name}の数量`,
     )
-    await user.clear(secondQuantity)
-    await user.type(secondQuantity, '2')
-    await user.click(
-      screen.getByRole('button', {
-        name: `${secondItem.name}の数量を更新`,
-      }),
-    )
+    await user.selectOptions(secondQuantity, '2')
     await user.type(screen.getByLabelText('クーポンコード'), 'WELCOME15')
     await user.click(
       screen.getByRole('button', { name: 'クーポンを適用' }),
     )
-    await user.clear(secondQuantity)
-    await user.type(secondQuantity, '3')
-    await user.click(
-      screen.getByRole('button', {
-        name: `${secondItem.name}の数量を更新`,
-      }),
-    )
+    await user.selectOptions(secondQuantity, '3')
 
     expect(requestOrder).toEqual([
       `quantity:${firstItem.id}:3`,

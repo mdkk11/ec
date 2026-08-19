@@ -51,6 +51,7 @@ type OperationState = {
 }
 
 type CartOperationContextValue = {
+  dismissError: (operation: CartOperation) => void
   execute: (operation: CartOperation) => Promise<CartDto | null>
   state: OperationState
 }
@@ -336,9 +337,20 @@ export function CartOperationProvider({
     [customerId, processQueue],
   )
 
+  const dismissError = useCallback((operation: CartOperation) => {
+    const target = operationTarget(operation)
+    setState((current) => ({
+      ...current,
+      errors: current.errors.filter(
+        ({ operation: failedOperation }) =>
+          operationTarget(failedOperation) !== target,
+      ),
+    }))
+  }, [])
+
   const value = useMemo(
-    () => ({ execute, state }),
-    [execute, state],
+    () => ({ dismissError, execute, state }),
+    [dismissError, execute, state],
   )
 
   return (

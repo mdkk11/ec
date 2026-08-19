@@ -1,6 +1,6 @@
-import type { ProductDto } from '@/contracts/product'
+import type { ProductDetailDto, ProductDto } from '@/contracts/product'
 
-export const productFixture: ProductDto = {
+export const productFixture: ProductDetailDto = {
   availability: 'in_stock',
   category: { name: '衣類', slug: 'clothing' },
   description:
@@ -9,9 +9,10 @@ export const productFixture: ProductDto = {
   imagePath: '/images/home/linen-overshirt.jpg',
   name: 'リネンブレンド オーバーシャツ',
   price: 28_600,
+  stock: 8,
 }
 
-export const outOfStockProductFixture: ProductDto = {
+export const outOfStockProductFixture: ProductDetailDto = {
   availability: 'out_of_stock',
   category: { name: 'バッグ・服飾小物', slug: 'bags-accessories' },
   description:
@@ -20,9 +21,10 @@ export const outOfStockProductFixture: ProductDto = {
   imagePath: '/images/home/leather-day-bag.jpg',
   name: 'ソフトレザー デイバッグ',
   price: 39_600,
+  stock: 0,
 }
 
-export const longProductFixture: ProductDto = {
+export const longProductFixture: ProductDetailDto = {
   availability: 'in_stock',
   category: { name: '衣類', slug: 'clothing' },
   description:
@@ -31,6 +33,7 @@ export const longProductFixture: ProductDto = {
   imagePath: '/images/home/cotton-tshirt.jpg',
   name: '長い商品名でも読みやすさを保つドライタッチコットン オーバーサイズロングスリーブTシャツ',
   price: 18_700,
+  stock: 12,
 }
 
 export const productListFixture = [

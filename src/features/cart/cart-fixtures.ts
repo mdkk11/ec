@@ -9,7 +9,9 @@ export const cartFixture: CartDto = {
   items: [
     {
       availability: 'available',
+      availableStock: 8,
       id: '50000000-0000-4000-8000-000000000001',
+      imagePath: '/images/home/linen-overshirt.jpg',
       lineTotal: 57_200,
       name: 'リネンブレンド オーバーシャツ',
       productId: '30000000-0000-4000-8000-000000000001',
@@ -18,7 +20,9 @@ export const cartFixture: CartDto = {
     },
     {
       availability: 'available',
+      availableStock: 5,
       id: '50000000-0000-4000-8000-000000000002',
+      imagePath: '/images/home/suede-sneakers.jpg',
       lineTotal: 22_000,
       name: 'スエード コートスニーカー',
       productId: '30000000-0000-4000-8000-000000000003',
@@ -53,6 +57,7 @@ export const stockConflictCartFixture: CartDto = {
     {
       ...cartFixture.items[0]!,
       availability: 'available',
+      availableStock: 2,
       lineTotal: 85_800,
       quantity: 3,
     },

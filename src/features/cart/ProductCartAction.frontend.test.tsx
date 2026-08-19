@@ -54,6 +54,12 @@ describe('商品詳細のカート操作', () => {
       'href',
       '/cart',
     )
+    const addButton = screen.getByRole('button', {
+      name: '1点カートに追加',
+    })
+    expect(addButton).toBeEnabled()
+    await user.click(addButton)
+    await waitFor(() => expect(requestCount).toBe(2))
   })
 
   it('CART-015: 在庫0では追加操作を無効にしてAPIを送らない', async () => {

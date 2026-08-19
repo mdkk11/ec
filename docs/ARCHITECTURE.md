@@ -310,6 +310,10 @@ type ProductDto = {
   availability: 'in_stock' | 'out_of_stock'
 }
 
+type ProductDetailDto = ProductDto & {
+  stock: number
+}
+
 type AdminProductDto = ProductDto & {
   categoryId: string
   isPublished: boolean
@@ -321,8 +325,10 @@ type CartItemDto = {
   id: string
   productId: string
   name: string
+  imagePath: string
   unitPrice: number
   quantity: number
+  availableStock: number
   lineTotal: number
   availability: 'available' | 'out_of_stock' | 'unpublished'
 }
@@ -380,6 +386,10 @@ type OrderDto = {
 }
 ```
 
+`ProductDto` は公開一覧用の最小DTOとし、正確な在庫数を含めない。商品詳細だけが `ProductDetailDto.stock` を非負整数で返し、画面は `在庫 N点` と表示する。
+
+`CartItemDto.imagePath` は現在の商品画像、`availableStock` はカート取得時点の現在庫であり、保存数量とは別の値とする。カート取得は商品をjoinして両値をDTOへ写すが、どちらもcheckoutTokenの正規化材料には追加しない。
+
 `CartDto.checkoutToken` は、カートが空、利用不可商品を含む、数量が在庫を超える、クーポンが無効のいずれかなら `null` とする。クーポンissueは原因別codeを返す。画面は `issues` を解消し、最新のtokenを取得するまで注文を送信できない。商品が再公開された場合、次のカート取得で `PRODUCT_UNAVAILABLE` は解消する。
 
 各endpointのbodyと成功レスポンスは次へ固定する。
@@ -390,7 +400,7 @@ type OrderDto = {
 | `GET /api/session` | なし | `{ user: UserDto }` |
 | `DELETE /api/session` | なし | 204 bodyなし |
 | `GET /api/products?category=<slug>` | なし | `{ items: ProductDto[] }` |
-| `GET /api/products/:id` | なし | `{ product: ProductDto }` |
+| `GET /api/products/:id` | なし | `{ product: ProductDetailDto }` |
 | `GET /api/cart` | なし | `{ cart: CartDto }` |
 | `POST /api/cart/items` | `{ productId, quantity }` | `{ cart: CartDto }` |
 | `PATCH /api/cart/items/:id` | `{ quantity }` | `{ cart: CartDto }` |
@@ -407,7 +417,7 @@ type OrderDto = {
 | `GET /api/admin/orders` | なし | `{ items: OrderDto[] }` |
 | `PATCH /api/admin/orders/:id/status` | `{ status, expectedVersion }` | `{ order: OrderDto }` |
 
-商品PATCHは `expectedVersion` 以外に最低1フィールドを必須とする。公開APIの `ProductDto` はcategoryのname/slugを含むが、category ID、正確な在庫数、versionを公開しない。注文履歴は `createdAt DESC, id DESC` で返す。
+商品PATCHは `expectedVersion` 以外に最低1フィールドを必須とする。公開一覧APIの `ProductDto` はcategoryのname/slugを含むが、category ID、正確な在庫数、versionを公開しない。公開詳細APIの `ProductDetailDto` だけが正確な在庫数を返す。注文履歴は `createdAt DESC, id DESC` で返す。
 
 管理商品作成では `categoryId` を必須とし、metadata PATCHではカテゴリだけの更新も許可する。不明なcategory IDは400 `VALIDATION_ERROR` と `fieldErrors.categoryId` を返し、商品を変更しない。カテゴリ変更も商品versionを同じUPDATEで1増やす。
 
@@ -446,6 +456,10 @@ type OrderDto = {
 クーポンコードは前後空白を除去して大文字へ正規化する。新しいコードの適用に失敗した場合は現在の `coupon_id`、cart version、計算結果を変更しない。同じ有効クーポンの再適用は200で現在のカートを返すno-opとする。空カートも小計0円として通常条件を評価する。
 
 カート追加・数量更新時に現在庫を超える数量は400 `QUANTITY_EXCEEDS_STOCK` とする。非公開・未存在商品を追加した場合は404 `PRODUCT_NOT_FOUND`、存在しない、または他利用者が所有するcart itemの更新・削除は404 `CART_ITEM_NOT_FOUND` とする。409 `STOCK_CONFLICT` は、確認後に在庫が変化した注文確定時の競合へ限定する。
+
+カート画面は `availableStock` から `1..availableStock` のnative selectを作り、選択時に `PATCH /api/cart/items/:id` を即時送信する。保存数量が上限を超える場合は現在値を選択不可の `N点（在庫超過）` として残し、在庫0または非公開ではselectを無効化する。自動補正やクライアントだけの合計更新は行わない。
+
+数量更新の400 `QUANTITY_EXCEEDS_STOCK` ではdraftと確定済みのカートを保持し、利用者が明示的に `GET /api/cart` を再取得した後で選択肢を作り直す。500またはnetwork errorではdraftと確定済みのカートを保持し、失敗した希望数量を再送できるようにする。同一明細の更新中に別数量が選ばれた場合は最新の未実行操作へ置き換え、古い応答で新しいdraftやerror状態を上書きしない。同じ商品追加または同じ数量更新の保留中操作は重複送信せず、完了後の再操作は許可する。
 
 他利用者が所有する注文への `GET /api/orders/:id` は、存在情報を漏らさないため404 `ORDER_NOT_FOUND` とする。管理機能へのロール不足は403 `FORBIDDEN` とする。
 

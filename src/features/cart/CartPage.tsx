@@ -158,6 +158,17 @@ function CustomerCartPage({ customerId }: { customerId: string }) {
           ? error.message
           : '更新できませんでした。もう一度お試しください。',
       operation,
+      recovery:
+        operation.kind !== 'update'
+          ? undefined
+          : error instanceof ApiClientError &&
+              error.code === 'QUANTITY_EXCEEDS_STOCK'
+            ? ('refresh' as const)
+            : error instanceof ApiClientError &&
+                (error.kind === 'network' ||
+                  (error.status !== undefined && error.status >= 500))
+              ? ('retry' as const)
+              : undefined,
     })),
     pending: operations.state.pending.map(({ operation }) => operation),
   }
@@ -185,6 +196,31 @@ function CustomerCartPage({ customerId }: { customerId: string }) {
       checkoutFeedbackAfterRefresh(current, result.isError),
     )
     setCheckoutRefreshPending(false)
+  }
+
+  const refreshCartAfterUpdateError = async (
+    operation: Extract<
+      Parameters<typeof operations.execute>[0],
+      { kind: 'update' }
+    >,
+  ) => {
+    const result = await query.refetch()
+    if (!mountedRef.current) return false
+
+    if (
+      result.error instanceof ApiClientError &&
+      result.error.status === 401
+    ) {
+      queryClient.removeQueries({
+        queryKey: cartQueryKey(customerId),
+      })
+      setAnonymous()
+      return false
+    }
+    if (result.isError) return false
+
+    operations.dismissError(operation)
+    return true
   }
 
   const handleCheckout = async (checkoutToken: string) => {
@@ -255,6 +291,7 @@ function CustomerCartPage({ customerId }: { customerId: string }) {
         void operations.execute({ itemId, kind: 'delete' })
       }}
       onRefreshCart={refreshCartAfterCheckoutError}
+      onRefreshAfterUpdateError={refreshCartAfterUpdateError}
       onRemoveCoupon={() => {
         clearCheckoutFeedback()
         return operations.execute({ kind: 'remove-coupon' })
