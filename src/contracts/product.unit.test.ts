@@ -5,6 +5,7 @@ import {
   adminProductListResponseSchema,
   adminProductResponseSchema,
   createAdminProductRequestSchema,
+  productDetailDtoSchema,
   productDtoSchema,
   productIdSchema,
   productListResponseSchema,
@@ -26,12 +27,25 @@ const product = {
 } as const
 
 describe('product contract', () => {
-  it('公開商品DTOと一覧・詳細envelopeを受け入れる', () => {
+  it('公開一覧DTOはstockなし、詳細DTOはstock付きで受け入れる', () => {
+    const detailProduct = { ...product, stock: 8 }
+
     expect(productDtoSchema.parse(product)).toEqual(product)
     expect(productListResponseSchema.parse({ items: [product] })).toEqual({
       items: [product],
     })
-    expect(productResponseSchema.parse({ product })).toEqual({ product })
+    expect(productDtoSchema.parse(detailProduct)).toEqual(product)
+    expect(productDetailDtoSchema.parse(detailProduct)).toEqual(detailProduct)
+    expect(productResponseSchema.parse({ product: detailProduct })).toEqual({
+      product: detailProduct,
+    })
+    expect(productResponseSchema.safeParse({ product }).success).toBe(false)
+  })
+
+  it.each([0, -1, 1.5])('詳細DTOのstock %sを検証する', (stock) => {
+    expect(
+      productDetailDtoSchema.safeParse({ ...product, stock }).success,
+    ).toBe(stock === 0)
   })
 
   it('UUID形式、必須field、整数かつ非負の価格を検証する', () => {

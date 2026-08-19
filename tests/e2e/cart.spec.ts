@@ -32,17 +32,21 @@ test('CART-001/005/014: 商品詳細から追加し、カートで数量変更�
       name: 'リネンブレンド オーバーシャツ',
     }),
   ).toBeVisible()
+  await expect(
+    page.getByRole('img', { name: 'リネンブレンド オーバーシャツ' }),
+  ).toHaveAttribute('src', /linen-overshirt/u)
 
-  const quantityInput = page.getByRole('spinbutton', {
+  const quantityInput = page.getByRole('combobox', {
     exact: true,
     name: 'リネンブレンド オーバーシャツの数量',
   })
-  await quantityInput.fill('2')
-  await page
-    .getByRole('button', {
-      name: 'リネンブレンド オーバーシャツの数量を更新',
-    })
-    .click()
+  const updateResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'PATCH' &&
+      new URL(response.url()).pathname.startsWith('/api/cart/items/'),
+  )
+  await quantityInput.selectOption('2')
+  await updateResponse
   await expect(quantityInput).toHaveValue('2')
   await expect(page.getByText('¥57,200').first()).toBeVisible()
 

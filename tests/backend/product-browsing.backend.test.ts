@@ -155,7 +155,7 @@ describe('公開商品API', () => {
     }
   })
 
-  it('公開商品詳細をproduct envelopeで返し、管理用fieldを含めない', async () => {
+  it('公開商品詳細を現在庫付きで返し、その他の管理用fieldを含めない', async () => {
     const id = await insertProduct({ stock: 0 })
 
     const response = await productRequest(id)
@@ -169,9 +169,9 @@ describe('公開商品API', () => {
         category: { name: 'その他', slug: 'other' },
         id,
         price: 12_100,
+        stock: 0,
       },
     })
-    expect(body.product).not.toHaveProperty('stock')
     expect(body.product).not.toHaveProperty('version')
     expect(body.product).not.toHaveProperty('isPublished')
     expect(body.product).not.toHaveProperty('categoryId')

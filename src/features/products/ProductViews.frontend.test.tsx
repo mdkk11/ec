@@ -164,14 +164,14 @@ describe('商品一覧', () => {
 })
 
 describe('商品詳細', () => {
-  it('PRODUCT-011: 商品情報と在庫あり表示を表示する', () => {
+  it('PRODUCT-011: 商品情報と正確な在庫数を表示する', () => {
     render(<ProductDetailView product={productFixture} status="success" />)
 
     expect(
       screen.getByRole('heading', { name: productFixture.name }),
     ).toBeVisible()
     expect(screen.getByText('¥28,600')).toBeVisible()
-    expect(screen.getByText('在庫あり')).toBeVisible()
+    expect(screen.getByText('在庫 8点')).toBeVisible()
     expect(screen.getByText(productFixture.description)).toBeVisible()
     expect(
       screen.getByRole('img', { name: productFixture.name }),
@@ -185,7 +185,7 @@ describe('商品詳細', () => {
       .toHaveAttribute('href', '/products?category=clothing')
   })
 
-  it('PRODUCT-008: 在庫0の商品は在庫切れと表示する', () => {
+  it('PRODUCT-008: 在庫0の商品は在庫0点と表示する', () => {
     render(
       <ProductDetailView
         product={outOfStockProductFixture}
@@ -193,7 +193,7 @@ describe('商品詳細', () => {
       />,
     )
 
-    expect(screen.getByText('在庫切れ')).toBeVisible()
+    expect(screen.getByText('在庫 0点')).toBeVisible()
     expect(
       screen.queryByRole('button', { name: /カート/u }),
     ).not.toBeInTheDocument()
