@@ -234,10 +234,10 @@ DBのCHECK制約で `price >= 0`、`stock >= 0`、`version >= 1` を保証する
 
 | Method | Path | 認証 | 概要 |
 | --- | --- | --- | --- |
-| `GET` | `/api/products` | 不要 | 公開商品一覧 |
+| `GET` | `/api/products?category=<slug>` | 不要 | 公開商品一覧。query省略は全件、指定時はカテゴリ別 |
 | `GET` | `/api/products/:productId` | 不要 | 公開商品詳細 |
 
-公開商品一覧は `created_at DESC, id ASC` の固定順で返す。利用者が指定する並び替えparameterは設けない。
+公開商品一覧は `created_at DESC, id ASC` の固定順で返す。実在する空categoryは200と空配列、不明slugは404 `CATEGORY_NOT_FOUND`、空・重複category queryは400 `VALIDATION_ERROR` とする。利用者が指定する並び替えparameterは設けない。Server Componentは同じquery schemaとserver-only facadeを使い、このRoute HandlerをHTTP呼び出ししない。
 
 ### カートとクーポン
 
@@ -301,6 +301,7 @@ type UserDto = {
 }
 
 type ProductDto = {
+  category: { name: string; slug: string }
   id: string
   name: string
   description: string
@@ -388,7 +389,7 @@ type OrderDto = {
 | `POST /api/session` | `{ email, password }` | `{ user: UserDto }` |
 | `GET /api/session` | なし | `{ user: UserDto }` |
 | `DELETE /api/session` | なし | 204 bodyなし |
-| `GET /api/products` | なし | `{ items: ProductDto[] }` |
+| `GET /api/products?category=<slug>` | なし | `{ items: ProductDto[] }` |
 | `GET /api/products/:id` | なし | `{ product: ProductDto }` |
 | `GET /api/cart` | なし | `{ cart: CartDto }` |
 | `POST /api/cart/items` | `{ productId, quantity }` | `{ cart: CartDto }` |
@@ -406,7 +407,7 @@ type OrderDto = {
 | `GET /api/admin/orders` | なし | `{ items: OrderDto[] }` |
 | `PATCH /api/admin/orders/:id/status` | `{ status, expectedVersion }` | `{ order: OrderDto }` |
 
-商品PATCHは `expectedVersion` 以外に最低1フィールドを必須とする。公開APIの `ProductDto` は正確な在庫数やversionを公開しない。注文履歴は `createdAt DESC, id DESC` で返す。
+商品PATCHは `expectedVersion` 以外に最低1フィールドを必須とする。公開APIの `ProductDto` はcategoryのname/slugを含むが、category ID、正確な在庫数、versionを公開しない。注文履歴は `createdAt DESC, id DESC` で返す。
 
 管理商品作成では `categoryId` を必須とし、metadata PATCHではカテゴリだけの更新も許可する。不明なcategory IDは400 `VALIDATION_ERROR` と `fieldErrors.categoryId` を返し、商品を変更しない。カテゴリ変更も商品versionを同じUPDATEで1増やす。
 
@@ -434,7 +435,7 @@ type OrderDto = {
 | 400 | JSON/Zod入力不正、カート数量超過、空カート、クーポン適用時の条件不成立 | `VALIDATION_ERROR`, `QUANTITY_EXCEEDS_STOCK`, `EMPTY_CART`, `COUPON_INACTIVE`, `COUPON_NOT_STARTED`, `COUPON_EXPIRED`, `COUPON_MINIMUM_NOT_MET` |
 | 401 | 未認証、認証失敗、セッション失効 | `UNAUTHENTICATED`, `INVALID_CREDENTIALS` |
 | 403 | ロール不足 | `FORBIDDEN` |
-| 404 | 商品・カート明細・注文・クーポンが存在しない、または所有対象でない | `PRODUCT_NOT_FOUND`, `CART_ITEM_NOT_FOUND`, `ORDER_NOT_FOUND`, `COUPON_NOT_FOUND` |
+| 404 | 商品・カート明細・注文・クーポン・カテゴリが存在しない、または所有対象でない | `PRODUCT_NOT_FOUND`, `CART_ITEM_NOT_FOUND`, `ORDER_NOT_FOUND`, `COUPON_NOT_FOUND`, `CATEGORY_NOT_FOUND` |
 | 409 | 注文内容・在庫・バージョン・注文状態の競合 | `CHECKOUT_CHANGED`, `STOCK_CONFLICT`, `VERSION_CONFLICT`, `INVALID_STATUS_TRANSITION` |
 | 500 | 想定外のサーバーエラー | `INTERNAL_ERROR` |
 

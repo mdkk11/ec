@@ -57,6 +57,17 @@ test('E2E-003: 管理者が商品を作成し、在庫変更後に非公開化�
   await page.getByRole('button', { name: '在庫を更新' }).click()
   await expect(page.getByRole('status')).toContainText('在庫数を更新しました')
 
+  await page.getByLabel('カテゴリ').selectOption({ label: '衣類' })
+  await page.getByRole('button', { name: '商品情報を更新' }).click()
+  await expect(page.getByRole('status')).toContainText('商品情報を更新しました')
+  const editUrl = page.url()
+
+  await page.goto('/products?category=other')
+  await expect(page.getByText(admin.productName)).toHaveCount(0)
+  await page.goto('/products?category=clothing')
+  await expect(page.getByText(admin.productName)).toBeVisible()
+
+  await page.goto(editUrl)
   await page.getByLabel('購入者へ公開する').uncheck()
   await page.getByRole('button', { name: '商品情報を更新' }).click()
   await expect(page.getByRole('status')).toContainText('商品情報を更新しました')

@@ -25,7 +25,7 @@ export type ProductDetailViewProps =
       status: 'error'
     }
 
-function Breadcrumbs({ productName }: { productName?: string }) {
+function Breadcrumbs({ product }: { product?: ProductDto }) {
   return (
     <nav aria-label="パンくずリスト" className="text-xs text-muted">
       <ol className="flex flex-wrap items-center gap-2">
@@ -43,10 +43,19 @@ function Breadcrumbs({ productName }: { productName?: string }) {
             ALL ITEMS
           </Link>
         </li>
-        {productName ? (
+        {product ? (
           <>
             <li aria-hidden="true">/</li>
-            <li aria-current="page">{productName}</li>
+            <li>
+              <Link
+                className="underline-offset-4 hover:underline"
+                href={`/products?category=${product.category.slug}`}
+              >
+                {product.category.name}
+              </Link>
+            </li>
+            <li aria-hidden="true">/</li>
+            <li aria-current="page">{product.name}</li>
           </>
         ) : null}
       </ol>
@@ -120,7 +129,7 @@ export function ProductDetailView(props: ProductDetailViewProps) {
 
   return (
     <section className="page-wrap py-12 sm:py-16 lg:py-20">
-      <Breadcrumbs productName={product.name} />
+      <Breadcrumbs product={product} />
       <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,2fr)_minmax(20rem,1fr)] lg:gap-14">
         <div className="relative aspect-[3/4] overflow-hidden bg-[#ebeae6]">
           <Image
@@ -158,9 +167,9 @@ export function ProductDetailView(props: ProductDetailViewProps) {
           </div>
           <Link
             className="mt-9 inline-block text-sm underline underline-offset-4"
-            href="/products"
+            href={`/products?category=${product.category.slug}`}
           >
-            商品一覧へ戻る
+            {product.category.name}の商品一覧へ戻る
           </Link>
         </div>
       </div>

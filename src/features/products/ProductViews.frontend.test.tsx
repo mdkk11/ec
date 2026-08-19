@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -7,6 +7,8 @@ import ProductDetailLoading from '@/app/products/[productId]/loading'
 import ProductDetailNotFound from '@/app/products/[productId]/not-found'
 import ProductListError from '@/app/products/error'
 import ProductListLoading from '@/app/products/loading'
+import ProductListNotFound from '@/app/products/not-found'
+import { publicCategoryCatalog } from '@/features/categories/category-catalog'
 
 import { ProductDetailView } from './ProductDetailView'
 import { ProductListView } from './ProductListView'
@@ -19,7 +21,14 @@ import {
 describe('商品一覧', () => {
   it('PRODUCT-010: 商品名・価格・在庫状態とキーボードで使える詳細導線を表示する', async () => {
     const user = userEvent.setup()
-    render(<ProductListView items={productListFixture} status="success" />)
+    render(
+      <ProductListView
+        categories={publicCategoryCatalog}
+        items={productListFixture}
+        selectedCategory={null}
+        status="success"
+      />,
+    )
 
     const detailLink = screen.getByRole('link', {
       name: `${productFixture.name}の詳細を見る`,
@@ -32,10 +41,24 @@ describe('商品一覧', () => {
     expect(screen.getByText('¥28,600')).toBeVisible()
     expect(screen.getByText('在庫切れ')).toBeVisible()
 
-    await user.tab()
-    expect(screen.getByRole('link', { name: 'ホーム' })).toHaveFocus()
-    await user.tab()
-    expect(detailLink).toHaveFocus()
+    const categoryNavigation = screen.getByRole('navigation', {
+      name: '商品カテゴリ',
+    })
+    const categoryLinks = within(categoryNavigation).getAllByRole('link')
+    expect(categoryLinks.map((link) => link.textContent)).toEqual([
+      'ALL ITEMS',
+      ...publicCategoryCatalog.map(({ name }) => name),
+    ])
+    expect(categoryLinks[0]).toHaveAttribute('aria-current', 'page')
+
+    for (const link of [
+      screen.getByRole('link', { name: 'ホーム' }),
+      ...categoryLinks,
+      detailLink,
+    ]) {
+      await user.tab()
+      expect(link).toHaveFocus()
+    }
 
     const onNavigate = vi.fn()
     detailLink.addEventListener('click', (event) => {
@@ -44,6 +67,30 @@ describe('商品一覧', () => {
     })
     await user.keyboard('{Enter}')
     expect(onNavigate).toHaveBeenCalledOnce()
+  })
+
+  it('PRODUCT-015: カテゴリ選択中はURL・見出し・パンくず・currentを同期する', () => {
+    const selectedCategory = publicCategoryCatalog[0]
+    render(
+      <ProductListView
+        categories={publicCategoryCatalog}
+        items={[productFixture]}
+        selectedCategory={selectedCategory}
+        status="success"
+      />,
+    )
+
+    expect(
+      screen.getByRole('heading', { level: 1, name: selectedCategory.name }),
+    ).toBeVisible()
+    expect(screen.getByText('1点')).toBeVisible()
+    expect(
+      within(screen.getByRole('navigation', { name: 'パンくずリスト' }))
+        .getByRole('link', { name: 'ALL ITEMS' }),
+    ).toHaveAttribute('href', '/products')
+    expect(
+      screen.getByRole('link', { name: selectedCategory.name, current: 'page' }),
+    ).toHaveAttribute('href', '/products?category=clothing')
   })
 
   it('PRODUCT-002: 商品0件では空状態と待つ説明を表示する', () => {
@@ -58,6 +105,26 @@ describe('商品一覧', () => {
     expect(screen.getByText('0点')).toBeVisible()
   })
 
+  it('PRODUCT-016: 実在する空カテゴリは全件0件と異なる空状態を表示する', () => {
+    const selectedCategory = publicCategoryCatalog[3]
+    render(
+      <ProductListView
+        categories={publicCategoryCatalog}
+        items={[]}
+        selectedCategory={selectedCategory}
+        status="success"
+      />,
+    )
+
+    expect(
+      screen.getByRole('heading', {
+        name: `「${selectedCategory.name}」の商品はまだありません`,
+      }),
+    ).toBeVisible()
+    expect(screen.getByText('別のカテゴリもご覧ください。')).toBeVisible()
+    expect(screen.queryByText(/もうしばらくお待ち/u)).not.toBeInTheDocument()
+  })
+
   it('PRODUCT-003: route loadingを支援技術へ通知する', () => {
     render(<ProductListLoading />)
 
@@ -65,11 +132,13 @@ describe('商品一覧', () => {
       '商品を読み込んでいます',
     )
     expect(screen.getByRole('status')).toHaveAttribute('aria-live', 'polite')
+    expect(screen.queryByRole('link', { current: 'page' })).not.toBeInTheDocument()
   })
 
   it('PRODUCT-004/005: route errorで再試行操作を表示してresetする', async () => {
     const user = userEvent.setup()
     const reset = vi.fn()
+    window.history.replaceState(null, '', '/products?category=clothing')
     render(<ProductListError error={new Error('DB error')} reset={reset} />)
 
     expect(screen.getByRole('alert')).toHaveTextContent(
@@ -77,6 +146,20 @@ describe('商品一覧', () => {
     )
     await user.click(screen.getByRole('button', { name: '再試行' }))
     expect(reset).toHaveBeenCalledOnce()
+    expect(`${window.location.pathname}${window.location.search}`)
+      .toBe('/products?category=clothing')
+    expect(screen.queryByRole('link', { current: 'page' })).not.toBeInTheDocument()
+    window.history.replaceState(null, '', '/')
+  })
+
+  it('PRODUCT-017: 不正・不明categoryのnot-foundからALL ITEMSへ戻れる', () => {
+    render(<ProductListNotFound />)
+
+    expect(
+      screen.getByRole('heading', { name: 'カテゴリが見つかりませんでした' }),
+    ).toBeVisible()
+    expect(screen.getByRole('link', { name: 'ALL ITEMSへ戻る' }))
+      .toHaveAttribute('href', '/products')
   })
 })
 
@@ -96,6 +179,10 @@ describe('商品詳細', () => {
     expect(
       screen.queryByRole('button', { name: /カート/u }),
     ).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: '衣類' }))
+      .toHaveAttribute('href', '/products?category=clothing')
+    expect(screen.getByRole('link', { name: '衣類の商品一覧へ戻る' }))
+      .toHaveAttribute('href', '/products?category=clothing')
   })
 
   it('PRODUCT-008: 在庫0の商品は在庫切れと表示する', () => {

@@ -19,6 +19,7 @@ const adminState: SessionState = { status: 'authenticated', user: admin }
 
 export const product: AdminProductDto = {
   availability: 'in_stock',
+  category: { name: '衣類', slug: 'clothing' },
   categoryId: '40000000-0000-4000-8000-000000000001',
   description: '管理画面テスト用の商品です。',
   id: '30000000-0000-4000-8000-000000000001',

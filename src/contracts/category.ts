@@ -13,4 +13,15 @@ export const categoryDtoSchema = z.object({
   slug: categorySlugSchema,
 })
 
+export const publicCategoryDtoSchema = categoryDtoSchema.pick({
+  name: true,
+  slug: true,
+})
+
+export const productCategoryQuerySchema = z.object({
+  category: categorySlugSchema.optional(),
+})
+
 export type CategoryDto = z.infer<typeof categoryDtoSchema>
+export type PublicCategoryDto = z.infer<typeof publicCategoryDtoSchema>
+export type ProductCategoryQuery = z.infer<typeof productCategoryQuerySchema>

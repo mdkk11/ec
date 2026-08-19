@@ -137,6 +137,7 @@ describe('管理商品編集・在庫', () => {
     const selectedCategoryId = '40000000-0000-4000-8000-000000000002'
     const latest = {
       ...product,
+      category: { name: 'シューズ', slug: 'shoes' } as const,
       categoryId: '40000000-0000-4000-8000-000000000003',
       version: 2,
     }

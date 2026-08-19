@@ -2,13 +2,15 @@ import { and, asc, desc, eq } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
 import type { ProductDto } from '@/contracts/product'
-import { products } from '@/server/db/schema'
+import { categories, products } from '@/server/db/schema'
 
 type ProductDependencies = {
   db: NodePgDatabase
 }
 
 const publicProductSelection = {
+  categoryName: categories.name,
+  categorySlug: categories.slug,
   description: products.description,
   id: products.id,
   imagePath: products.imagePath,
@@ -18,6 +20,8 @@ const publicProductSelection = {
 }
 
 function toProductDto(product: {
+  categoryName: string
+  categorySlug: string
   description: string
   id: string
   imagePath: string
@@ -27,6 +31,10 @@ function toProductDto(product: {
 }): ProductDto {
   return {
     availability: product.stock > 0 ? 'in_stock' : 'out_of_stock',
+    category: {
+      name: product.categoryName,
+      slug: product.categorySlug,
+    },
     description: product.description,
     id: product.id,
     imagePath: product.imagePath,
@@ -35,11 +43,41 @@ function toProductDto(product: {
   }
 }
 
-export async function listPublishedProducts({ db }: ProductDependencies) {
+export class ProductServiceError extends Error {
+  readonly code = 'CATEGORY_NOT_FOUND'
+
+  constructor() {
+    super('カテゴリが見つかりませんでした。')
+    this.name = 'ProductServiceError'
+  }
+}
+
+export async function listPublishedProducts(
+  { categorySlug, db }: ProductDependencies & { categorySlug?: string },
+) {
+  let categoryId: string | undefined
+  if (categorySlug) {
+    const [category] = await db
+      .select({ id: categories.id })
+      .from(categories)
+      .where(eq(categories.slug, categorySlug))
+      .limit(1)
+    if (!category) throw new ProductServiceError()
+    categoryId = category.id
+  }
+
   const records = await db
     .select(publicProductSelection)
     .from(products)
-    .where(eq(products.isPublished, true))
+    .innerJoin(categories, eq(products.categoryId, categories.id))
+    .where(
+      categoryId
+        ? and(
+            eq(products.isPublished, true),
+            eq(products.categoryId, categoryId),
+          )
+        : eq(products.isPublished, true),
+    )
     .orderBy(desc(products.createdAt), asc(products.id))
 
   return records.map(toProductDto)
@@ -52,6 +90,7 @@ export async function findPublishedProduct(
   const [record] = await db
     .select(publicProductSelection)
     .from(products)
+    .innerJoin(categories, eq(products.categoryId, categories.id))
     .where(
       and(
         eq(products.id, productId),

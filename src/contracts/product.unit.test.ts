@@ -17,6 +17,7 @@ const categoryId = '40000000-0000-4000-8000-000000000001'
 
 const product = {
   availability: 'in_stock',
+  category: { name: '衣類', slug: 'clothing' },
   description: '軽やかな素材の商品です。',
   id: '30000000-0000-4000-8000-000000000001',
   imagePath: '/images/fixtures/product-placeholder.svg',
@@ -61,10 +62,14 @@ describe('product contract', () => {
     ).toBe(false)
   })
 
-  it('公開DTOから管理用fieldを除外する', () => {
+  it('公開DTOはcategory name/slugを必須とし、管理用fieldを除外する', () => {
+    expect(
+      productDtoSchema.safeParse({ ...product, category: undefined }).success,
+    ).toBe(false)
     expect(
       productDtoSchema.parse({
         ...product,
+        categoryId,
         isPublished: true,
         stock: 10,
         version: 1,

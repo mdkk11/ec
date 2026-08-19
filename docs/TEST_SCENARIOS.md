@@ -17,7 +17,7 @@
 | セッション・ロール・所有権 | △ | ○ | ◎ | ○ | - |
 | 商品画面の表示状態 | ○ | ◎ | ○ | ○ | ○ |
 | 商品公開条件・DB制約 | ○ | ○ | ◎ | ○ | - |
-| 商品カテゴリmaster・管理割り当て | ○ | ◎ | ◎ | ○ | ○ |
+| 商品カテゴリmaster・公開閲覧・管理割り当て | ○ | ◎ | ◎ | ○ | ○ |
 | カート画面の操作・状態 | ○ | ◎ | ○ | ○ | ○ |
 | カート永続化・競合 | ○ | ○ | ◎ | ○ | - |
 | クーポン計算・境界 | ◎ | ○ | ○ | ○ | - |
@@ -45,7 +45,7 @@
 | `UNIT-CART-001` | 単価1,200円の商品を数量3 | 行小計と商品小計を計算 | 3,600円 |
 | `UNIT-CART-002` | 数量0、負数、小数 | 数量schemaで検証 | すべて拒否 |
 | `UNIT-PRODUCT-001` | 価格・在庫・versionの境界値 | 管理入力schemaで検証 | 価格・在庫は0を許可、version/expectedVersionは1以上の整数だけ許可 |
-| `UNIT-CATEGORY-001` | 固定5カテゴリと管理商品入力 | category ID・slug・必須選択をschemaで検証 | 固定値を受け入れ、不正slug・ID・未選択を拒否し、categoryだけのPATCHを許可 |
+| `UNIT-CATEGORY-001` | 固定5カテゴリ、category query、管理商品入力 | category ID・slug・query件数・必須選択をschemaで検証 | 固定値とquery省略・正しい1件を受け入れ、不正slug・ID・空・重複query・未選択を拒否し、categoryだけのPATCHを許可 |
 | `UNIT-ORDER-001` | 各注文状態 | 次状態を判定 | PRODUCTで定義した5遷移だけ許可 |
 | `UNIT-ORDER-002` | 同一状態、逆方向、取消後 | 次状態を判定 | `INVALID_STATUS_TRANSITION` |
 | `UNIT-API-001` | 各domain error | API errorへ変換 | 規定のHTTP statusとcodeになる |
@@ -99,6 +99,10 @@
 | `PRODUCT-011` | 公開・在庫ありの商品 | 商品詳細を表示 | 商品情報と在庫ありであることを表示 | Front結合 | E2E |
 | `PRODUCT-012` | 商品詳細のServer Componentが描画中 | 商品詳細を開く | route loading状態を表示 | Front結合 | VRT |
 | `PRODUCT-013` | 商品詳細のserver取得が失敗 | 商品詳細を開く | error boundaryに再試行と一覧への導線を表示 | Front結合 | - |
+| `PRODUCT-014` | 公開商品が複数categoryに存在 | category queryで一覧を取得 | 該当categoryの公開商品だけを既存の固定順で返す | Backend結合 | E2E |
+| `PRODUCT-015` | 実在categoryを選択 | category一覧を表示 | navigation・見出し・件数・`aria-current`を選択状態に同期 | Front結合 | E2E / VRT |
+| `PRODUCT-016` | 実在categoryの公開商品が0件 | category一覧を表示 | 全件0件と異なるカテゴリ専用の空状態 | Front結合 | Backend結合 / VRT |
+| `PRODUCT-017` | 不明slugまたは空・重複category query | API・画面を開く | 不明slugはAPI/Screenで404、空・重複はAPI400/Screen 404 | Backend結合 | Front結合 / E2E |
 
 ## 7. カート
 
@@ -180,11 +184,11 @@
 | --- | --- | --- | --- |
 | `E2E-001` | 購入者の正常導線 | ログイン→一覧→詳細→カート→クーポン→注文→履歴 | Chromium / Firefox / WebKit |
 | `E2E-002` | 在庫変更 | カート表示後にfixture在庫を変更→注文失敗→カート再読込 | Chromium |
-| `E2E-003` | 商品・在庫管理 | 管理者ログイン→カテゴリを明示して商品作成→在庫変更→非公開化 | Chromium / Firefox / WebKit |
+| `E2E-003` | 商品・在庫管理 | 管理者ログイン→カテゴリを明示して商品作成→在庫・カテゴリ変更→公開一覧の所属確認→非公開化 | Chromium / Firefox / WebKit |
 | `E2E-004` | ロール制御 | 購入者で管理URLへ移動→アクセス拒否 | Chromium / Firefox / WebKit |
 | `E2E-005` | モバイル購入 | モバイルviewportで一覧→詳細→カート→注文 | Mobile Chromium |
 | `E2E-006` | 注文状態管理 | 管理者ログイン→受付注文を処理中へ更新→表示確認 | Chromium / Firefox / WebKit |
-| `E2E-007` | 商品閲覧 | TOPの新着8商品の実在確認・代表商品の詳細遷移、`ALL ITEMS` のServer Component一覧→キーボードで詳細→一覧へ戻る | Chromium |
+| `E2E-007` | 商品閲覧 | TOPの新着8商品の実在確認、`ALL ITEMS` →代表category→該当商品だけの一覧→詳細→同categoryへ戻る | Chromium |
 
 `E2E-002` の途中状態はテスト専用HTTP APIで作らず、テストプロセスから専用fixture更新スクリプトを実行する。ビジネスルールの全境界値やDB同時接続はE2Eへ持ち込まない。
 
@@ -193,8 +197,8 @@
 | ID | Story | 状態 | Viewport |
 | --- | --- | --- | --- |
 | `VRT-001` | ProductCard | 通常、在庫切れ、長い名前 | 375 / 1440 |
-| `VRT-002` | ProductList | 通常、空、ローディング、エラー | 375 / 768 / 1440 |
-| `VRT-003` | ProductDetail | 通常、在庫切れ、長い商品名・説明 | 375 / 1440 |
+| `VRT-002` | ProductList | 通常、全件空、カテゴリ選択、カテゴリ空、ローディング、エラー | 375 / 768 / 1440 |
+| `VRT-003` | ProductDetail | categoryパンくず・戻り導線を含む通常、在庫切れ、長い商品名・説明 | 375 / 1440 |
 | `VRT-004` | Cart | 通常、空、更新中、在庫競合 | 375 / 1440 |
 | `VRT-005` | CouponForm | 適用前、適用済み、入力エラー、期限切れ | 375 / 1440 |
 | `VRT-006` | OrderHistory | 通常、空、ローディング、エラー | 375 / 1440 |
