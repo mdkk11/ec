@@ -178,6 +178,7 @@ async function lockCheckoutState(
   const productRows = await tx
     .select({
       id: products.id,
+      imagePath: products.imagePath,
       isPublished: products.isPublished,
       name: products.name,
       price: products.price,
@@ -224,6 +225,7 @@ async function lockCheckoutState(
     if (!item) throw new Error('カート明細を取得できませんでした。')
     return {
       id: item.id,
+      imagePath: product.imagePath,
       isPublished: product.isPublished,
       name: product.name,
       productId: product.id,

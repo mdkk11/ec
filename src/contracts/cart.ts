@@ -13,6 +13,8 @@ export const cartItemAvailabilitySchema = z.enum([
 ])
 
 export const cartItemSchema = z.object({
+  availableStock: z.number().int().nonnegative(),
+  imagePath: z.string().startsWith('/images/'),
   id: z.uuid(),
   productId: z.uuid(),
   name: z.string().min(1),

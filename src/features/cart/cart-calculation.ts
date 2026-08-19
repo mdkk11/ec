@@ -27,6 +27,7 @@ export type CartRecord = {
   coupon: CartCouponRecord | null
   items: Array<{
     id: string
+    imagePath: string
     productId: string
     name: string
     unitPrice: number
@@ -83,7 +84,9 @@ export function calculateCart(
   )
   const items: CartItemDto[] = sortedItems.map((item) => ({
     availability: availabilityFor(item),
+    availableStock: item.stock,
     id: item.id,
+    imagePath: item.imagePath,
     lineTotal: multiplyMoney(item.unitPrice, item.quantity),
     name: item.name,
     productId: item.productId,

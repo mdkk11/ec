@@ -14,7 +14,11 @@ import type {
 } from './CartOperationProvider'
 
 export type CartViewOperationState = {
-  errors: Array<{ message: string; operation: CartOperation }>
+  errors: Array<{
+    message: string
+    operation: CartOperation
+    recovery?: 'refresh' | 'retry'
+  }>
   pending: CartOperation[]
 }
 
@@ -32,6 +36,9 @@ type CartViewProps = {
   onDelete: (itemId: string) => void
   onApplyCoupon: (code: string) => Promise<unknown> | void
   onCheckout: (checkoutToken: string) => Promise<unknown> | void
+  onRefreshAfterUpdateError?: (
+    operation: Extract<CartOperation, { kind: 'update' }>,
+  ) => Promise<boolean>
   onRefreshCart?: () => Promise<unknown> | void
   onRemoveCoupon: () => Promise<unknown> | void
   onUpdate: (
@@ -57,6 +64,7 @@ function CartLine({
   item,
   onDelete,
   onUpdate,
+  onRefreshAfterUpdateError,
   operationState,
   interactionDisabled,
 }: {
@@ -64,34 +72,49 @@ function CartLine({
   item: CartItemDto
   onDelete: CartViewProps['onDelete']
   onUpdate: CartViewProps['onUpdate']
+  onRefreshAfterUpdateError: CartViewProps['onRefreshAfterUpdateError']
   operationState: CartViewOperationState
   interactionDisabled: boolean
 }) {
-  const [quantityDraft, setQuantityDraft] = useState<string | null>(
-    null,
-  )
-  const quantity = quantityDraft ?? String(item.quantity)
-  const parsedQuantity = Number(quantity)
-  const validQuantity =
-    Number.isInteger(parsedQuantity) && parsedQuantity >= 1
+  const [quantityDraft, setQuantityDraft] = useState<number | null>(null)
+  const [refreshFailed, setRefreshFailed] = useState(false)
+  const [refreshPending, setRefreshPending] = useState(false)
+  const quantity = quantityDraft ?? item.quantity
   const pendingOperations = operationState.pending.filter(
     (operation) =>
       (operation.kind === 'delete' || operation.kind === 'update') &&
       operation.itemId === item.id,
   )
   const updating = pendingOperations.length > 0
-  const sameUpdatePending = pendingOperations.some(
-    (operation) =>
-      operation.kind === 'update' &&
-      operation.quantity === parsedQuantity,
-  )
   const operationError =
     operationState.errors.find(
       ({ operation }) =>
         (operation.kind === 'delete' || operation.kind === 'update') &&
         operation.itemId === item.id,
-    )?.message ?? null
+    ) ?? null
+  const updateError =
+    operationError?.operation.kind === 'update'
+      ? { ...operationError, operation: operationError.operation }
+      : null
   const issue = issueMessage(cart, item)
+  const quantityOptions = Array.from(
+    { length: item.availableStock },
+    (_, index) => index + 1,
+  )
+  const savedQuantityExceedsStock = item.quantity > item.availableStock
+  const quantityDisabled =
+    interactionDisabled ||
+    item.availability !== 'available' ||
+    item.availableStock === 0
+
+  const updateQuantity = async (nextQuantity: number) => {
+    const result = await onUpdate(item.id, nextQuantity)
+    if (result) {
+      setQuantityDraft((current) =>
+        current === nextQuantity ? null : current,
+      )
+    }
+  }
 
   return (
     <li
@@ -100,11 +123,11 @@ function CartLine({
     >
       <div className="relative aspect-[3/4] overflow-hidden bg-[#ebeae6]">
         <Image
-          alt=""
+          alt={item.name}
           className="object-cover"
           fill
           sizes="128px"
-          src="/images/fixtures/product-placeholder.svg"
+          src={item.imagePath}
         />
       </div>
       <div className="flex min-w-0 flex-col">
@@ -135,36 +158,33 @@ function CartLine({
             htmlFor={`quantity-${item.id}`}
           >
             数量
-            <input
+            <select
               aria-label={`${item.name}の数量`}
-              className="h-12 w-24 border border-line bg-surface px-3 text-base tabular-nums"
-              disabled={interactionDisabled}
+              className={`h-12 border border-line bg-surface px-3 text-base tabular-nums ${
+                savedQuantityExceedsStock ? 'w-44' : 'w-24'
+              }`}
+              disabled={quantityDisabled}
               id={`quantity-${item.id}`}
-              inputMode="numeric"
-              min={1}
-              onChange={(event) => setQuantityDraft(event.target.value)}
-              step={1}
-              type="number"
+              onChange={(event) => {
+                const nextQuantity = Number(event.target.value)
+                setQuantityDraft(nextQuantity)
+                setRefreshFailed(false)
+                void updateQuantity(nextQuantity)
+              }}
               value={quantity}
-            />
+            >
+              {savedQuantityExceedsStock ? (
+                <option disabled value={item.quantity}>
+                  {item.quantity}点（在庫超過）
+                </option>
+              ) : null}
+              {quantityOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}点
+                </option>
+              ))}
+            </select>
           </label>
-          <Button
-            aria-label={`${item.name}の数量を更新`}
-            disabled={
-              interactionDisabled || !validQuantity || sameUpdatePending
-            }
-            onClick={async () => {
-              const result = await onUpdate(item.id, parsedQuantity)
-              if (result) {
-                setQuantityDraft((current) =>
-                  current === String(parsedQuantity) ? null : current,
-                )
-              }
-            }}
-            variant="secondary"
-          >
-            {updating ? '更新中…' : '数量を更新'}
-          </Button>
           <Button
             aria-label={`${item.name}を削除`}
             disabled={interactionDisabled || updating}
@@ -174,14 +194,48 @@ function CartLine({
             削除
           </Button>
         </div>
-        {!validQuantity ? (
-          <p className="mt-2 text-sm text-accent" role="alert">
-            数量は1以上の整数で入力してください。
-          </p>
-        ) : null}
         {operationError ? (
+          <div className="mt-3 text-sm text-accent">
+            <p role="alert">{operationError.message}</p>
+            {updateError?.recovery === 'refresh' &&
+            onRefreshAfterUpdateError ? (
+              <Button
+                className="mt-3"
+                disabled={refreshPending}
+                onClick={async () => {
+                  setRefreshPending(true)
+                  setRefreshFailed(false)
+                  const refreshed = await onRefreshAfterUpdateError(
+                    updateError.operation,
+                  )
+                  setRefreshPending(false)
+                  if (refreshed) setQuantityDraft(null)
+                  else setRefreshFailed(true)
+                }}
+                variant="secondary"
+              >
+                {refreshPending
+                  ? '再取得しています…'
+                  : '最新のカートを再取得'}
+              </Button>
+            ) : null}
+            {updateError?.recovery === 'retry' ? (
+              <Button
+                className="mt-3"
+                disabled={updating}
+                onClick={() =>
+                  void updateQuantity(updateError.operation.quantity)
+                }
+                variant="secondary"
+              >
+                再試行
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
+        {refreshFailed ? (
           <p className="mt-2 text-sm text-accent" role="alert">
-            {operationError}
+            最新のカートを取得できませんでした。もう一度お試しください。
           </p>
         ) : null}
         {updating ? (
@@ -200,6 +254,7 @@ export function CartView({
   onApplyCoupon,
   onCheckout,
   onDelete,
+  onRefreshAfterUpdateError,
   onRefreshCart,
   onRemoveCoupon,
   onUpdate,
@@ -215,15 +270,14 @@ export function CartView({
           <p className="mt-4 text-sm leading-7 text-muted">
             商品一覧から、気になる商品をカートへ追加してください。
           </p>
-          <Link className="button-primary mt-8" href="/products">
-            商品一覧を見る
-          </Link>
-          <Link
-            className="button-secondary mt-3"
-            href="/orders"
-          >
-            注文履歴を見る
-          </Link>
+          <div className="mt-8 flex flex-col items-center gap-4">
+            <Link className="button-primary" href="/products">
+              商品一覧を見る
+            </Link>
+            <Link className="button-secondary" href="/orders">
+              注文履歴を見る
+            </Link>
+          </div>
         </div>
       </section>
     )
@@ -260,6 +314,7 @@ export function CartView({
               item={item}
               key={item.id}
               onDelete={onDelete}
+              onRefreshAfterUpdateError={onRefreshAfterUpdateError}
               onUpdate={onUpdate}
               operationState={operationState}
               interactionDisabled={interactionDisabled}
