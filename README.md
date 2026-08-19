@@ -140,7 +140,7 @@ pnpm test:backend
 
 `db:prepare:test` は `NODE_ENV=test`、DB名、開発DBとの接続先分離、実際の接続先を検証してからテストDBだけを初期化します。`TEST_DATABASE_URL` がない場合に `DATABASE_URL` へフォールバックしません。
 
-E2EはPlaywrightのglobal setupから専用DBをresetし、migrationと固定seedを適用します。実行中の開発serverを再利用せず、`NEXT_DIST_DIR=.next-e2e`へbuildしてから`localhost:3105`でE2E専用serverを起動します。ローカルHTTPでCookieを検証するためのSecure解除は、専用dist、loopback上の `mockshop_e2e`、同一の `DATABASE_URL` / `E2E_DATABASE_URL` がコード上ですべて確認できる場合だけ許可されます。
+E2EはPlaywrightのglobal setupから専用DBをresetし、migrationと固定seedを適用します。実行中の開発serverを再利用せず、`NEXT_DIST_DIR=.next-e2e`へbuildしてから`localhost:3105`でE2E専用serverを起動します。HTTPでCookieを検証するためのSecure解除は、専用dist、`mockshop_e2e`、同一の `DATABASE_URL` / `E2E_DATABASE_URL` がコード上ですべて確認でき、DB接続先がローカルのloopback、またはGitHub Actions内の固定service名 `postgres` の場合だけ許可されます。
 
 ```bash
 pnpm db:prepare:e2e

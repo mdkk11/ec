@@ -112,9 +112,12 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.61.1-noble
+      options: --user 1001
     timeout-minutes: 20
     env:
-      E2E_DATABASE_URL: postgresql://mockshop:mockshop_local@localhost:5432/mockshop_e2e
+      E2E_DATABASE_URL: postgresql://mockshop:mockshop_local@postgres:5432/mockshop_e2e
       NODE_ENV: test
     services:
       postgres:
@@ -145,8 +148,6 @@ jobs:
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Install browsers
-        run: pnpm exec playwright install --with-deps chromium firefox webkit
       - name: E2E
         run: pnpm test:e2e
       - name: Upload E2E artifacts

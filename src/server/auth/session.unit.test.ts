@@ -47,7 +47,7 @@ describe('session tokenとCookie', () => {
     expect(createExpiredSessionCookieOptions('production').maxAge).toBe(0)
   })
 
-  it('専用dist・loopback E2E DBが一致するHTTP serverだけSecureを解除する', () => {
+  it('専用dist・許可したE2E DBが一致するHTTP serverだけSecureを解除する', () => {
     const e2eDatabaseUrl =
       'postgresql://mockshop:mockshop@127.0.0.1:5434/mockshop_e2e'
 
@@ -59,18 +59,26 @@ describe('session tokenとCookie', () => {
         NEXT_DIST_DIR: '.next-e2e',
       }).secure,
     ).toBe(false)
+    const ciDatabaseUrl =
+      'postgresql://mockshop:mockshop@postgres:5432/mockshop_e2e'
+    expect(
+      createSessionCookieOptions('production', {
+        DATABASE_URL: ciDatabaseUrl,
+        E2E_DATABASE_URL: ciDatabaseUrl,
+        E2E_HTTP_SERVER: 'true',
+        GITHUB_ACTIONS: 'true',
+        NEXT_DIST_DIR: '.next-e2e',
+      }).secure,
+    ).toBe(false)
     expect(() =>
       createSessionCookieOptions('production', {
-        DATABASE_URL:
-          'postgresql://mockshop:mockshop@db.example.test:5432/mockshop',
-        E2E_DATABASE_URL:
-          'postgresql://mockshop:mockshop@db.example.test:5432/mockshop',
+        DATABASE_URL: ciDatabaseUrl,
+        E2E_DATABASE_URL: ciDatabaseUrl,
         E2E_HTTP_SERVER: 'true',
         NEXT_DIST_DIR: '.next-e2e',
       }),
-    ).toThrow('loopbackの専用DB')
+    ).toThrow('許可した専用DB')
   })
-
 })
 
 describe('role helper', () => {

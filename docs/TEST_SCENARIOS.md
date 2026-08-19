@@ -81,6 +81,7 @@
 | `AUTH-010` | 管理者でログイン | カートAPIへアクセス | 403 `FORBIDDEN` | Backend結合 | - |
 | `AUTH-011` | ログインAPIが500 | フォームを送信 | 入力を保持し、再試行可能なエラーを表示 | Front結合 | - |
 | `AUTH-012` | 正しい認証情報を返すMSW handler | ログインフォームを送信 | トップへ遷移し、headerにログイン状態を表示 | Front結合 | E2E |
+| `AUTH-013` | 匿名・購入者・管理者のheader | マイページをkeyboardで開きrole別導線を確認 | 匿名はログイン、購入者はカートと注文履歴、管理者は商品管理と注文履歴を利用でき、logout中・失敗も通知する | Front結合 | E2E / VRT |
 
 ## 6. 商品一覧・詳細
 
@@ -180,6 +181,7 @@
 | `ADMIN-012` | 管理者が商品versionを取得後、customerが注文 | 古いexpectedVersionで在庫更新 | 注文減算を上書きせず409 `VERSION_CONFLICT` | Backend結合 | - |
 | `ADMIN-013` | 管理者が商品versionを取得後、別管理者が注文取消 | 古いexpectedVersionで在庫更新 | 在庫復元を上書きせず409 `VERSION_CONFLICT` | Backend結合 | - |
 | `ADMIN-014` | 管理商品作成・編集画面 | カテゴリを明示して作成し、categoryだけを更新 | categoryを保存してversionを進め、不明IDはfield error、409時は入力を保持 | Backend結合 | Front結合 / E2E |
+| `ADMIN-015` | 管理商品一覧に商品あり | 一覧を表示 | 管理DTOの実商品画像を商品名altで表示し、既存metadataと編集導線を維持 | Front結合 | VRT |
 
 ## 11. E2Eシナリオ
 
@@ -207,7 +209,8 @@
 | `VRT-006` | OrderHistory | 通常、空、ローディング、エラー | 375 / 1440 |
 | `VRT-007` | AdminProductForm | category選択を含む通常、入力エラー、更新中、競合 | 768 / 1440 |
 | `VRT-008` | AdminOrderTable | 通常、空、更新中、競合 | 768 / 1440 |
-| `VRT-009` | StorefrontShell | 匿名状態のトップ、ヘッダー、フッター | 375 / 768 / 1440 |
+| `VRT-009` | StorefrontShell | 匿名、購入者メニューopen、管理者メニューopenのトップ・ヘッダー・フッター | 375 / 768 / 1440 |
+| `VRT-010` | AdminProductList | 実画像を含む通常、空 | 375 / 1440 |
 
 同一コンポーネントの全順列は撮らず、レイアウトまたは視覚表現が変わる状態だけを対象にする。
 

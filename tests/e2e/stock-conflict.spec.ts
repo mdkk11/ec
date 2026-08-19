@@ -20,6 +20,7 @@ test('E2E-002: 確認後の在庫変更で注文を止め、最新cartを表示�
   await page.getByRole('button', { name: 'ログイン' }).click()
   expect((await loginResponse).ok()).toBe(true)
   await expect(page).toHaveURL('/')
+  await page.getByRole('button', { name: 'マイページ' }).click()
   await expect(page.getByText(fixture.email)).toBeVisible()
 
   await page.goto(`/products/${fixture.productId}`)

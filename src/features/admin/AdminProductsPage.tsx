@@ -1,7 +1,6 @@
 'use client'
 
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import Link from 'next/link'
 import { type FormEvent, useEffect, useState } from 'react'
 
 import {
@@ -9,7 +8,6 @@ import {
   type CreateAdminProductRequest,
 } from '@/contracts/product'
 import { useSession } from '@/features/auth/SessionProvider'
-import { formatPrice } from '@/features/products/format-price'
 import {
   createAdminProduct,
   getAdminProducts,
@@ -22,6 +20,7 @@ import {
   type AdminProductFormField,
   type AdminProductFormValues,
 } from './AdminProductForm'
+import { AdminProductList } from './AdminProductList'
 import {
   AdminLoginRequired,
   AdminProductStatusPage,
@@ -187,41 +186,7 @@ export function AdminProductsPage() {
       </p>
 
       <div className="mt-10 grid gap-10 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,32rem)]">
-        <section>
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <h2 className="font-serif text-3xl">商品一覧</h2>
-              <p className="mt-2 text-sm text-muted">{query.data.length}件</p>
-            </div>
-          </div>
-          {query.data.length === 0 ? (
-            <div className="mt-6 border border-line bg-surface p-8 text-center">
-              <h3 className="font-serif text-2xl">商品はまだありません</h3>
-              <p className="mt-3 text-sm text-muted">右のフォームから最初の商品を作成してください。</p>
-            </div>
-          ) : (
-            <ul className="mt-6 divide-y divide-line border-y border-line">
-              {query.data.map((product) => (
-                <li className="grid gap-3 py-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center" key={product.id}>
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-serif text-2xl">{product.name}</h3>
-                      <span className={`text-xs font-semibold ${product.isPublished ? 'text-ink' : 'text-accent'}`}>
-                        {product.isPublished ? '公開' : '非公開'}
-                      </span>
-                    </div>
-                    <p className="mt-2 text-sm text-muted">
-                      {formatPrice(product.price)} / 在庫 {product.stock} / version {product.version}
-                    </p>
-                  </div>
-                  <Link className="button-secondary" href={`/admin/products/${product.id}`}>
-                    編集する
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+        <AdminProductList items={query.data} />
 
         <section>
           <h2 className="font-serif text-3xl">新しい商品</h2>
