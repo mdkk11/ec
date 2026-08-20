@@ -225,6 +225,15 @@ Phase 1のトップページにある静的な商品プレビューは編集表�
 - focus ringは `2px`、`ink`、offset `3px`
 - hoverだけに意味を持たせない
 
+### Skeleton Loading
+
+- 初回読み込みは完成画面と同じgrid、画像比率、カード、form、tableの幅と高さを先に確保する
+- 画面名、固定navigation、パンくず、field labelなど取得前に確定している情報は実テキストで残し、未取得値だけを `line` 色のSkeletonで示す
+- 共通componentは色、控えめなopacity pulse、`aria-hidden`だけを担い、画面ごとの形状は各featureで構成する
+- Skeletonを含む視覚領域は `aria-busy="true"`、読み込み文言はその領域の兄弟にある1つのpolite statusで通知する
+- shimmerは使わず、`prefers-reduced-motion: reduce` ではpulseを停止する
+- 初回読み込み中は未確定のbutton、input、selectを操作要素として作らない。既存内容を維持できる更新・送信中はSkeletonへ置き換えない
+
 ## 8. レスポンシブ
 
 Tailwindの標準breakpointを基本にします。

@@ -19,12 +19,31 @@ const customer = {
 }
 
 describe('管理商品一覧・作成', () => {
+  it('AUTH-014: 認証待機中は商品管理の構造と認証状態を通知する', () => {
+    renderWithProviders(<AdminProductsPage />, { status: 'loading' })
+
+    const status = screen.getByRole('status')
+    const busyRegion = document.querySelector('[aria-busy="true"]')
+    expect(status).toHaveTextContent(
+      '認証状態を確認しています。しばらくお待ちください。',
+    )
+    expect(status).toHaveAttribute('aria-live', 'polite')
+    expect(busyRegion).not.toBeNull()
+    expect(busyRegion).not.toContainElement(status)
+    expect(screen.getByRole('heading', { name: '商品管理' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: '商品一覧' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: '新しい商品' })).toBeVisible()
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+  })
+
   it('管理者へ公開・非公開を含む一覧と編集導線を表示する', async () => {
     server.use(http.get('/api/admin/products', () => listResponse([product])))
     renderWithProviders(<AdminProductsPage />)
 
-    expect(await screen.findByRole('heading', { name: '商品管理' })).toBeVisible()
-    expect(screen.getByText('管理テスト商品')).toBeVisible()
+    expect(screen.getByRole('heading', { name: '商品管理' })).toBeVisible()
+    expect(await screen.findByText('管理テスト商品')).toBeVisible()
     expect(
       screen.getByRole('img', { name: '管理テスト商品' }),
     ).toHaveAttribute('src', expect.stringContaining(product.imagePath))
@@ -43,7 +62,7 @@ describe('管理商品一覧・作成', () => {
     expect(screen.getByRole('button', { name: '商品を作成' })).toBeEnabled()
   })
 
-  it('一覧取得中は支援技術へloading状態を伝える', async () => {
+  it('ADMIN-016: 一覧取得中は商品管理の構造とloading状態を伝える', async () => {
     let release: (() => void) | undefined
     const gate = new Promise<void>((resolve) => { release = resolve })
     server.use(
@@ -54,7 +73,16 @@ describe('管理商品一覧・作成', () => {
     )
     renderWithProviders(<AdminProductsPage />)
 
-    expect(screen.getByRole('status')).toHaveTextContent('商品を読み込んでいます')
+    const status = screen.getByRole('status')
+    const busyRegion = document.querySelector('[aria-busy="true"]')
+    expect(status).toHaveTextContent(
+      '商品を読み込んでいます。しばらくお待ちください。',
+    )
+    expect(busyRegion).not.toBeNull()
+    expect(busyRegion).not.toContainElement(status)
+    expect(screen.getByRole('heading', { name: '商品管理' })).toBeVisible()
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
     release?.()
     expect(await screen.findByText('商品はまだありません')).toBeVisible()
   })

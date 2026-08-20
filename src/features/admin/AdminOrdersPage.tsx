@@ -146,9 +146,19 @@ export function AdminOrdersPage() {
 
   if (sessionState.status === 'loading') {
     return (
-      <AdminProductStatusPage role="status" title="認証状態を確認しています">
-        しばらくお待ちください。
-      </AdminProductStatusPage>
+      <section className="page-wrap py-12 sm:py-16 lg:py-20">
+        <p className="label text-accent">ADMINISTRATION</p>
+        <h1 className="mt-4 font-serif text-4xl sm:text-5xl">注文管理</h1>
+        <p className="mt-4 max-w-2xl text-sm leading-7 text-muted">
+          注文状態を確認し、受付から順方向へ更新します。受付中または処理中の注文は取消できます。
+        </p>
+        <div className="mt-10">
+          <AdminOrderTable
+            status="loading"
+            statusMessage="認証状態を確認しています。しばらくお待ちください。"
+          />
+        </div>
+      </section>
     )
   }
   if (sessionState.status === 'error') {
@@ -218,6 +228,7 @@ export function AdminOrdersPage() {
           pendingOrderId={pendingOrderId}
           selectedStatuses={selectedStatuses}
           status={tableStatus}
+          statusMessage="注文一覧を読み込んでいます。しばらくお待ちください。"
         />
       </div>
     </section>

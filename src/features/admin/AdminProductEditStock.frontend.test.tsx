@@ -17,6 +17,60 @@ import {
 import { adminProductsQueryKey } from './admin-product-query'
 
 describe('管理商品編集・在庫', () => {
+  it('AUTH-014: 認証待機中は商品編集の構造と認証状態を通知する', () => {
+    renderWithProviders(
+      <AdminProductEditPage productId={product.id} />,
+      { status: 'loading' },
+    )
+
+    const status = screen.getByRole('status')
+    const busyRegion = document.querySelector('[aria-busy="true"]')
+    expect(status).toHaveTextContent(
+      '認証状態を確認しています。しばらくお待ちください。',
+    )
+    expect(busyRegion).not.toBeNull()
+    expect(busyRegion).not.toContainElement(status)
+    expect(
+      screen.getByRole('heading', { name: '商品情報と公開状態' }),
+    ).toBeVisible()
+    expect(screen.getByRole('heading', { name: '在庫' })).toBeVisible()
+    expect(screen.getByRole('link', { name: '商品管理へ戻る' }))
+      .toHaveAttribute('href', '/admin/products')
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+  })
+
+  it('ADMIN-016: 商品取得中は編集構造を表示し、取得後にフォームへ切り替える', async () => {
+    let release: (() => void) | undefined
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    server.use(
+      http.get('/api/admin/products', async () => {
+        await gate
+        return listResponse([product])
+      }),
+    )
+    renderWithProviders(<AdminProductEditPage productId={product.id} />)
+
+    const status = screen.getByRole('status')
+    const busyRegion = document.querySelector('[aria-busy="true"]')
+    expect(status).toHaveTextContent(
+      '商品を読み込んでいます。しばらくお待ちください。',
+    )
+    expect(busyRegion).not.toBeNull()
+    expect(busyRegion).not.toContainElement(status)
+    expect(
+      screen.getByRole('heading', { name: '商品情報と公開状態' }),
+    ).toBeVisible()
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+
+    release?.()
+    expect(await screen.findByLabelText('商品名')).toHaveValue(product.name)
+  })
+
   it('商品IDを切り替えた場合だけ編集内容を新しい商品で初期化する', async () => {
     const anotherProduct = {
       ...product,

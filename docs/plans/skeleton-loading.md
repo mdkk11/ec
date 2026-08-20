@@ -323,13 +323,13 @@ docker run --rm --ipc=host \
 ## Ship状態
 
 ```text
-Phase: plan-review
+Phase: local-verification
 Task class: medium
 Spec: 2026-08-20の会話でQ1〜Q5を推奨どおり承認
 Plan: docs/plans/skeleton-loading.md
 Stack: main <- feature/skeleton-loading（1層、PR未作成）
-Verification: 実装前のため未実施。Storybook実画面を375/1440で調査し、独立計画レビューの全6指摘を反映済み
+Verification: lint、typecheck、unit 99件、Frontend結合112件、build、Storybook buildが成功。固定LinuxでVRT baseline更新後に95件を再実行して成功
 Requested milestone: human-review-ready
-Evidence: origin/main 86dd9e7、計画作成承認、実画面計測、repository docs/code調査
-Blockers: レビュー済み計画へのユーザー承認
+Evidence: origin/main 86dd9e7、計画作成承認、375/768/1440のVRT画像目視、独立計画レビュー、全ローカル検証成功
+Blockers: なし（2026-08-20にユーザーが実装開始を承認）
 ```
