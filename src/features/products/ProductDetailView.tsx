@@ -3,6 +3,7 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 
 import { Button } from '@/components/button/Button'
+import { Skeleton } from '@/components/skeleton/Skeleton'
 import type { ProductDetailDto } from '@/contracts/product'
 
 import { formatPrice } from './format-price'
@@ -66,16 +67,39 @@ function Breadcrumbs({ product }: { product?: ProductDetailDto }) {
 export function ProductDetailView(props: ProductDetailViewProps) {
   if (props.status === 'loading') {
     return (
-      <section className="page-wrap py-12 sm:py-16">
-        <Breadcrumbs />
-        <div
-          aria-live="polite"
-          className="py-24 text-center text-sm text-muted"
-          role="status"
-        >
+      <>
+        <p aria-live="polite" className="sr-only" role="status">
           商品を読み込んでいます…
-        </div>
-      </section>
+        </p>
+        <section
+          aria-busy="true"
+          className="page-wrap py-12 sm:py-16 lg:py-20"
+        >
+          <Breadcrumbs />
+          <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,2fr)_minmax(20rem,1fr)] lg:gap-14">
+            <Skeleton className="aspect-[3/4] w-full" />
+            <div className="self-start lg:sticky lg:top-8">
+              <p className="label text-accent">PRODUCT</p>
+              <Skeleton className="mt-4 h-11 w-full sm:h-12" />
+              <Skeleton className="mt-3 h-11 w-3/4 sm:h-12" />
+              <Skeleton className="mt-5 h-7 w-28" />
+              <Skeleton className="mt-7 h-5 w-20" />
+              <Skeleton className="mt-7 h-12 w-full" />
+              <div className="mt-9 border-t border-line pt-7">
+                <h2 className="text-xs font-semibold tracking-[0.1em]">
+                  商品説明
+                </h2>
+                <div className="mt-4 space-y-3">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-4/5" />
+                </div>
+              </div>
+              <Skeleton className="mt-9 h-5 w-44" />
+            </div>
+          </div>
+        </section>
+      </>
     )
   }
 

@@ -5,7 +5,7 @@ import {
   emptyCartFixture,
   stockConflictCartFixture,
 } from './cart-fixtures'
-import { CartView } from './CartView'
+import { CartLoadingView, CartView } from './CartView'
 
 const meta = {
   component: CartView,
@@ -34,6 +34,14 @@ export const Default: Story = {
 export const Empty: Story = {
   args: { cart: emptyCartFixture, ...handlers },
   name: '空のカート',
+}
+
+export const Loading: Story = {
+  args: { cart: cartFixture, ...handlers },
+  name: '読み込み中',
+  render: () => (
+    <CartLoadingView statusMessage="カートを読み込んでいます。しばらくお待ちください。" />
+  ),
 }
 
 export const Updating: Story = {
