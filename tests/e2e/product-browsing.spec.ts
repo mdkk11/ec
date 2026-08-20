@@ -39,6 +39,34 @@ test('E2E-007: トップの新着8商品から実在する詳細へ移動する'
   ).toBeVisible()
 })
 
+test('E2E-008: 商品一覧の下部から詳細へ移動するとページ先頭を表示する', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 960, height: 720 })
+  await page.goto('/products')
+
+  const productLink = page.getByRole('link', {
+    name: 'コンパクトウール ブルゾンの詳細を見る',
+  })
+  await expect(productLink).toBeVisible()
+  await page.evaluate(() => window.scrollTo(0, 1_700))
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(1_700)
+  await expect(productLink).toBeInViewport()
+
+  await productLink.click()
+  await expect(page).toHaveURL(
+    '/products/30000000-0000-4000-8000-000000000010',
+  )
+  await expect(
+    page.getByRole('heading', {
+      level: 1,
+      name: 'コンパクトウール ブルゾン',
+    }),
+  ).toBeVisible()
+  await page.waitForLoadState('networkidle')
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0)
+})
+
 test('E2E-007/PRODUCT-001/010/011/014/015: Server Componentの商品一覧からカテゴリ別の詳細へ移動して戻る', async ({
   page,
 }) => {
