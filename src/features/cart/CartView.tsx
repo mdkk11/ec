@@ -90,11 +90,12 @@ export function CartLoadingView({ statusMessage }: { statusMessage: string }) {
           </ul>
           <aside className="h-fit border border-line bg-surface p-6 lg:sticky lg:top-8">
             <h2 className="font-serif text-2xl">合計</h2>
-            <div className="mt-6 border-t border-line pt-6">
-              <p className="text-sm font-semibold">クーポンコード</p>
+            <section className="mt-6 border-t border-line pt-6">
+              <h3 className="text-sm font-semibold">クーポン</h3>
+              <p className="mt-3 text-xs font-semibold">クーポンコード</p>
               <Skeleton className="mt-2 h-12 w-full" />
               <Skeleton className="mt-3 h-12 w-full" />
-            </div>
+            </section>
             <dl className="mt-6 space-y-4 text-sm">
               <div className="flex justify-between gap-4">
                 <dt className="text-muted">商品小計</dt>
@@ -106,6 +107,12 @@ export function CartLoadingView({ statusMessage }: { statusMessage: string }) {
               </div>
             </dl>
             <Skeleton className="mt-6 h-12 w-full" />
+            <Link
+              className="mt-6 inline-block text-sm underline underline-offset-4"
+              href="/products"
+            >
+              買い物を続ける
+            </Link>
           </aside>
         </div>
       </section>

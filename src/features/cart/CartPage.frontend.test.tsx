@@ -39,12 +39,15 @@ describe('カート画面', () => {
     )
     expect(busyRegion).not.toContainElement(status)
     expect(screen.getByRole('heading', { name: 'カート' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'クーポン' })).toBeVisible()
     expect(
       container.querySelectorAll('div[aria-hidden="true"]'),
     ).not.toHaveLength(0)
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: '買い物を続ける' }))
+      .toHaveAttribute('href', '/products')
   })
 
   it('CART-019: カート取得中は実画面の構造を表示し、完了後に切り替える', async () => {
@@ -67,12 +70,15 @@ describe('カート画面', () => {
     )
     expect(busyRegion).not.toContainElement(status)
     expect(screen.getByRole('heading', { name: 'カート' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'クーポン' })).toBeVisible()
     expect(
       container.querySelectorAll('div[aria-hidden="true"]'),
     ).not.toHaveLength(0)
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: '買い物を続ける' }))
+      .toHaveAttribute('href', '/products')
 
     release?.()
     expect(

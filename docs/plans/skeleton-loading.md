@@ -63,7 +63,7 @@
 ### 商品画面
 
 - `ProductListView status="loading"` はパンくず、カテゴリnavigation、`CATALOG`、`ALL ITEMS`、説明を維持し、動的な件数だけをSkeletonにする。
-- 商品gridは成功時と同じ列数・gapを使い、既存Default Storyと同じ4件のplaceholderを表示する。各placeholderは3:4画像、商品名2行相当、価格、在庫状態の短い行で構成し、375pxでは2行、1440pxでは1行のgrid占有高を成功Storyと一致させる。
+- 商品gridは成功時と同じ列数・gapを使い、既存Default Storyと同じ4件のplaceholderを表示する。各placeholderは3:4画像、商品名2行相当、価格の短い行で構成し、375pxでは2行、1440pxでは1行のgrid占有高を成功Storyと一致させる。
 - `ProductDetailView status="loading"` はホームと `ALL ITEMS` のパンくず、`PRODUCT`、`商品説明` を実テキストで維持し、成功時と同じ3:4画像と2:1 responsive gridを使う。動的な商品名・価格・在庫・説明本文・購入操作・カテゴリ戻り導線だけをSkeletonにする。
 
 ### 注文画面
@@ -320,16 +320,28 @@ docker run --rm --ipc=host \
 
 拒否した指摘はない。1PR境界、最小primitive、mutation/API/DB/E2Eを非目標にする境界、reduced-motionと固定Linux VRT、1PR revert方針は妥当と確認された。
 
+## 13. 独立最終監査
+
+Draft PR #34のhead `793d741` を固定して別エージェントが最終監査し、3件の指摘を受け入れた。
+
+| 指摘 | disposition | 反映内容 |
+| --- | --- | --- |
+| カートloadingで既知の「クーポン」見出しと「買い物を続ける」導線が欠ける | 受け入れ | 固定見出しと実リンクを追加し、AUTH-014/CART-019のassertionと375/1440 baselineを更新 |
+| Ship状態がPR作成前のまま | 受け入れ | phaseとstackをstabilization・Draft PR #34へ更新 |
+| 商品一覧shapeの計画に、成功画面にない在庫状態行が残る | 受け入れ | 実装と成功画面に合わせて商品名・価格の行へ訂正 |
+
+修正後のPR head、CI、完了条件、非目標について再監査する。
+
 ## Ship状態
 
 ```text
-Phase: local-verification
+Phase: stabilization
 Task class: medium
 Spec: 2026-08-20の会話でQ1〜Q5を推奨どおり承認
 Plan: docs/plans/skeleton-loading.md
-Stack: main <- feature/skeleton-loading（1層、PR未作成）
+Stack: main <- feature/skeleton-loading（1層、Draft PR #34）
 Verification: lint、typecheck、unit 99件、Frontend結合112件、build、Storybook buildが成功。固定LinuxでVRT baseline更新後に95件を再実行して成功
 Requested milestone: human-review-ready
-Evidence: origin/main 86dd9e7、計画作成承認、375/768/1440のVRT画像目視、独立計画レビュー、全ローカル検証成功
+Evidence: origin/main 86dd9e7、計画作成承認、375/768/1440のVRT画像目視、独立計画レビュー、全ローカル検証成功、独立最終監査を実施中
 Blockers: なし（2026-08-20にユーザーが実装開始を承認）
 ```
