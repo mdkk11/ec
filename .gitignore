@@ -6,6 +6,7 @@ playwright-report
 test-results
 coverage
 .review
+.impact
 .agents/skills/explained-code-review-workspace/
 *.tsbuildinfo
 next-env.d.ts

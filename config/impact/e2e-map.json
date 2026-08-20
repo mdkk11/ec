@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "smokeSpec": "tests/e2e/app-shell.spec.ts",
+  "highRiskPaths": [
+    ".dependency-cruiser.cjs",
+    ".github/workflows/**",
+    ".node-version",
+    "config/impact/**",
+    "drizzle/**",
+    "next.config.ts",
+    "package.json",
+    "playwright.config.ts",
+    "pnpm-lock.yaml",
+    "pnpm-workspace.yaml",
+    "postcss.config.mjs",
+    "public/**",
+    "scripts/db/**",
+    "scripts/impact/**",
+    "src/app/globals.css",
+    "src/app/layout.tsx",
+    "src/app/providers.tsx",
+    "src/components/layout/**",
+    "src/contracts/**",
+    "src/server/db/**",
+    "tests/e2e/global-setup.ts",
+    "tests/e2e/update-product-stock.ts",
+    "tsconfig.json"
+  ],
+  "specs": [
+    {
+      "spec": "tests/e2e/admin-orders.spec.ts",
+      "roots": ["src/app/login/**", "src/app/admin/orders/**", "src/app/api/session/**", "src/app/api/admin/orders/**", "src/features/admin/**", "src/features/auth/**", "src/features/orders/**"]
+    },
+    {
+      "spec": "tests/e2e/admin-products.spec.ts",
+      "roots": ["src/app/login/**", "src/app/admin/products/**", "src/app/products/**", "src/app/api/session/**", "src/app/api/admin/products/**", "src/features/admin/**", "src/features/auth/**", "src/features/categories/**", "src/features/products/**"]
+    },
+    {
+      "spec": "tests/e2e/app-shell.spec.ts",
+      "roots": ["src/app/page.tsx", "src/app/login/**", "src/app/api/session/**", "src/features/auth/**", "src/features/home/**"]
+    },
+    {
+      "spec": "tests/e2e/authentication.spec.ts",
+      "roots": ["src/app/login/**", "src/app/api/session/**", "src/features/auth/**"]
+    },
+    {
+      "spec": "tests/e2e/cart.spec.ts",
+      "roots": ["src/app/login/**", "src/app/cart/**", "src/app/products/[productId]/**", "src/app/api/session/**", "src/app/api/cart/**", "src/features/auth/**", "src/features/cart/**", "src/features/products/**"]
+    },
+    {
+      "spec": "tests/e2e/mobile-purchase.spec.ts",
+      "roots": ["src/app/login/**", "src/app/products/**", "src/app/cart/**", "src/app/orders/**", "src/app/api/session/**", "src/app/api/cart/**", "src/app/api/orders/route.ts", "src/features/auth/**", "src/features/cart/**", "src/features/orders/**", "src/features/products/**"]
+    },
+    {
+      "spec": "tests/e2e/product-browsing.spec.ts",
+      "roots": ["src/app/page.tsx", "src/app/products/**", "src/features/categories/**", "src/features/home/**", "src/features/products/**"]
+    },
+    {
+      "spec": "tests/e2e/purchase.spec.ts",
+      "roots": ["src/app/login/**", "src/app/products/[productId]/**", "src/app/cart/**", "src/app/orders/**", "src/app/api/session/**", "src/app/api/cart/**", "src/app/api/orders/route.ts", "src/features/auth/**", "src/features/cart/**", "src/features/coupons/**", "src/features/orders/**", "src/features/products/**"]
+    },
+    {
+      "spec": "tests/e2e/stock-conflict.spec.ts",
+      "roots": ["src/app/login/**", "src/app/products/[productId]/**", "src/app/cart/**", "src/app/api/session/**", "src/app/api/cart/**", "src/app/api/orders/route.ts", "src/features/auth/**", "src/features/cart/**", "src/features/orders/**", "src/features/products/**"]
+    }
+  ]
+}

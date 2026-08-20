@@ -233,6 +233,10 @@ Storybook上の決定的なfixtureを使い、意図しない見た目の変化�
 
 GitHub Actionsでは次のジョブへ分け、失敗した責任範囲を判別できるようにする。
 
+PRでは固定したbase/head SHAのthree-dot diffから先行 `changes` jobが責任範囲を判定する。required jobは明示的な `false` の場合だけskipし、出力欠落・不正値・判定失敗では実行する。`main` push、共通設定、分類不能pathは4ジョブすべてを実行する。job-level skipはGitHub上のrequired checkをSuccessとして扱えるため、workflow-level path filterは使用しない。
+
+E2Eは選択対象job内でdependency-cruiserの逆依存closureと `config/impact/e2e-map.json` のHTTP・feature境界を組み合わせ、app-shell smokeと影響specを実行する。共通layout、DB、asset、契約、設定、map漏れ、未解決internal import、解析失敗では全specへフォールバックする。selector自体が異常終了した場合も全E2Eを実行し、その後CIをfailureにして選択機構の破損を隠さない。
+
 全ジョブは独立runnerで動く前提とし、checkout、pnpm setup、Node.js setup、pnpm cache、`pnpm install --frozen-lockfile` をそれぞれ実行する。PostgreSQL serviceを使うジョブはhealth check完了後にmigrationを実行する。
 
 1. `static-and-unit`
@@ -268,13 +272,15 @@ pnpm test:unit
 pnpm test:frontend
 pnpm test:backend
 pnpm test:e2e
+pnpm test:e2e:selected
 pnpm test:vrt
 pnpm test:vrt:update
 pnpm build
 pnpm build-storybook
+pnpm ci:impact:select
 ```
 
-各ジョブは `DEVELOPMENT_PLAN.md` の該当フェーズで導入し、導入後は通常PRの必須checkとする。Phase 8完了後は4ジョブすべてを必須にする。基準画像更新を伴うPRでもVRTをskipしない。
+各ジョブは `DEVELOPMENT_PLAN.md` の該当フェーズで導入し、導入後は通常PRの必須checkとする。Phase 8完了後は4ジョブすべてを必須にする。選択器が不要と明示したjobはSuccess扱いでskipできるが、基準画像・story・UI・共通assetの変更ではVRTをskipしない。
 
 ## 10. カバレッジと品質判断
 

@@ -10,7 +10,38 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      static_and_unit: ${{ steps.select.outputs.static_and_unit }}
+      backend_integration: ${{ steps.select.outputs.backend_integration }}
+      storybook_vrt: ${{ steps.select.outputs.storybook_vrt }}
+      e2e: ${{ steps.select.outputs.e2e }}
+      e2e_mode: ${{ steps.select.outputs.e2e_mode }}
+      e2e_reason: ${{ steps.select.outputs.e2e_reason }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      - name: Test CI job selector
+        run: node --test scripts/impact/select-ci-jobs.test.mjs
+      - name: Select CI jobs
+        id: select
+        env:
+          IMPACT_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          IMPACT_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          IMPACT_FULL_RUN: ${{ github.event_name == 'push' }}
+        run: node scripts/impact/select-ci-jobs.mjs
+
   static-and-unit:
+    needs: changes
+    if: ${{ always() && !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.static_and_unit != 'false') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -28,6 +59,8 @@ jobs:
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Test impact selectors
+        run: node --test scripts/impact/*.test.mjs
       - name: Lint
         run: pnpm lint
       - name: Typecheck
@@ -38,6 +71,8 @@ jobs:
         run: pnpm test:frontend
 
   backend-integration:
+    needs: changes
+    if: ${{ always() && !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.backend_integration != 'false') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -78,6 +113,8 @@ jobs:
         run: pnpm test:backend
 
   storybook-vrt:
+    needs: changes
+    if: ${{ always() && !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.storybook_vrt != 'false') }}
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.61.1-noble
@@ -111,6 +148,8 @@ jobs:
           if-no-files-found: warn
 
   e2e:
+    needs: changes
+    if: ${{ always() && !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.e2e != 'false') }}
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.61.1-noble
@@ -136,6 +175,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
         with:
@@ -148,8 +189,31 @@ jobs:
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: E2E
+      - name: Select affected E2E specs
+        id: e2e-impact
+        if: ${{ github.event_name == 'pull_request' && needs.changes.outputs.e2e_mode == 'select' }}
+        continue-on-error: true
+        env:
+          IMPACT_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          IMPACT_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: pnpm ci:impact:select
+      - name: Full E2E
+        if: ${{ github.event_name != 'pull_request' || needs.changes.outputs.e2e_mode != 'select' || steps.e2e-impact.outcome != 'success' }}
         run: pnpm test:e2e
+      - name: Selected E2E
+        if: ${{ github.event_name == 'pull_request' && needs.changes.outputs.e2e_mode == 'select' && steps.e2e-impact.outcome == 'success' }}
+        run: pnpm test:e2e:selected
+      - name: Fail when E2E impact selection crashed
+        if: ${{ steps.e2e-impact.outcome == 'failure' }}
+        run: exit 1
+      - name: Upload E2E impact selection
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-impact-${{ github.run_attempt }}
+          path: .impact
+          retention-days: 7
+          if-no-files-found: warn
       - name: Upload E2E artifacts
         if: failure()
         uses: actions/upload-artifact@v7
