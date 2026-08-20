@@ -82,6 +82,7 @@
 | `AUTH-011` | ログインAPIが500 | フォームを送信 | 入力を保持し、再試行可能なエラーを表示 | Front結合 | - |
 | `AUTH-012` | 正しい認証情報を返すMSW handler | ログインフォームを送信 | トップへ遷移し、headerにログイン状態を表示 | Front結合 | E2E |
 | `AUTH-013` | 匿名・購入者・管理者のheader | マイページをkeyboardで開きrole別導線を確認 | 匿名はログイン、購入者はカートと注文履歴、管理者は商品管理と注文履歴を利用でき、logout中・失敗も通知する | Front結合 | E2E / VRT |
+| `AUTH-014` | カートまたは管理画面で現在セッションAPIが保留中 | 初回画面を表示 | 認証確認中の通知と、画面構造に沿った非操作のSkeletonを表示 | Front結合 | VRT |
 
 ## 6. 商品一覧・詳細
 
@@ -89,7 +90,7 @@
 | --- | --- | --- | --- | --- | --- |
 | `PRODUCT-001` | 公開商品が複数存在 | 商品一覧を取得 | 公開商品だけを `created_at` 降順、同時刻は `id` 昇順で表示 | Backend結合 | E2E |
 | `PRODUCT-002` | 公開商品が0件 | 商品一覧を表示 | 空状態と商品が追加されるまで待つ説明を表示 | Front結合 | VRT |
-| `PRODUCT-003` | 商品一覧のServer Componentが描画中 | 商品一覧を開く | route loading状態を表示 | Front結合 | VRT |
+| `PRODUCT-003` | 商品一覧のServer Componentが描画中 | 商品一覧を開く | 既知のnavigationと見出しを保ち、一覧gridに沿ったroute loading Skeletonを表示 | Front結合 | VRT |
 | `PRODUCT-004` | 商品一覧のserver取得が失敗 | 商品一覧を開く | error boundaryと再試行操作を表示 | Front結合 | VRT |
 | `PRODUCT-005` | 商品一覧のerror boundaryを表示中 | 再試行 | `reset()`でserver segmentの再描画を要求 | Front結合 | - |
 | `PRODUCT-006` | 非公開商品が存在 | 購入者が詳細APIへアクセス | 404 `PRODUCT_NOT_FOUND` | Backend結合 | - |
@@ -98,7 +99,7 @@
 | `PRODUCT-009` | 長い商品名・説明 | 各viewportでstoryを表示 | 文字切れや操作重なりがない | VRT | - |
 | `PRODUCT-010` | 公開商品DTOが存在 | 商品一覧を表示 | 商品名・価格・在庫状態と詳細導線を表示 | Front結合 | E2E |
 | `PRODUCT-011` | 公開・在庫8の商品 | 商品詳細を取得・表示 | 詳細DTOだけが `stock: 8` を返して `在庫 8点` と表示し、一覧DTOは正確な在庫数を持たない | Front結合 | Backend結合 / E2E |
-| `PRODUCT-012` | 商品詳細のServer Componentが描画中 | 商品詳細を開く | route loading状態を表示 | Front結合 | VRT |
+| `PRODUCT-012` | 商品詳細のServer Componentが描画中 | 商品詳細を開く | 既知のパンくずと見出しを保ち、画像・商品情報の比率に沿ったroute loading Skeletonを表示 | Front結合 | VRT |
 | `PRODUCT-013` | 商品詳細のserver取得が失敗 | 商品詳細を開く | error boundaryに再試行と一覧への導線を表示 | Front結合 | - |
 | `PRODUCT-014` | 公開商品が複数categoryに存在 | category queryで一覧を取得 | 該当categoryの公開商品だけを既存の固定順で返す | Backend結合 | E2E |
 | `PRODUCT-015` | 実在categoryを選択 | category一覧を表示 | navigation・見出し・件数・`aria-current`を選択状態に同期 | Front結合 | E2E / VRT |
@@ -127,6 +128,7 @@
 | `CART-016` | 実画像と現在庫3を持つカート明細 | カートを取得・表示 | DTOが `imagePath` と `availableStock: 3` を返し、商品名altの実画像と1〜3の選択肢を表示 | Front結合 | Backend結合 / E2E / VRT |
 | `CART-017` | 保存数量3、現在庫2 | カートを表示 | `3点（在庫超過）` を選択不可の現在値とし、1〜2だけを変更先に示して自動補正しない | Front結合 | VRT |
 | `CART-018` | 現在庫0または商品非公開の明細 | カートを表示 | 数量selectを無効化し、削除操作だけを利用可能にする | Front結合 | - |
+| `CART-019` | 認証済みでカートAPIが保留中 | カート画面を表示 | 読み込み通知と、2明細・合計欄の画面構造に沿った非操作のSkeletonを表示 | Front結合 | VRT |
 
 ## 8. クーポン
 
@@ -158,10 +160,11 @@
 | `ORDER-008` | 注文成功済み | 商品名・価格を管理変更 | 注文履歴は注文時スナップショットを表示 | Backend結合 | Front結合 |
 | `ORDER-009` | 注文履歴あり、同時刻の注文あり | 履歴を取得 | 自分の注文だけをcreatedAt降順、同時刻はid降順で表示 | Backend結合 | E2E |
 | `ORDER-010` | 注文履歴なし | 履歴画面を表示 | 空状態と商品一覧への導線 | Front結合 | VRT |
-| `ORDER-011` | 注文履歴のServer Componentが描画中、またはserver取得が失敗 | 履歴画面を表示 | route loading状態、または`reset()`で再試行できるerror boundary | Front結合 | VRT |
+| `ORDER-011` | 注文履歴のServer Componentが描画中、またはserver取得が失敗 | 履歴画面を表示 | 見出しと注文カード構造を保つroute loading Skeleton、または`reset()`で再試行できるerror boundary | Front結合 | VRT |
 | `ORDER-012` | 同じcustomer・同じカート、在庫は十分 | 別DB接続から同時に同じcheckoutTokenで確定 | 注文・在庫減算は1回、後続は400 `EMPTY_CART` | Backend結合 | - |
 | `ORDER-013` | 確認後に同額の商品構成へカートを変更 | 古いcheckoutTokenで注文確定 | 合計が同じでも409 `CHECKOUT_CHANGED`、注文なし | Backend結合 | Front結合 |
 | `ORDER-014` | 確認後に商品を非公開化 | 古いcheckoutTokenで注文確定 | 409 `CHECKOUT_CHANGED`、カート明細を保持 | Backend結合 | Front結合 |
+| `ORDER-015` | 注文詳細のServer Componentが描画中 | 注文詳細を開く | 既知の見出し・戻り導線と、2明細・確定内容の画面構造に沿ったroute loading Skeletonを表示 | Front結合 | VRT |
 
 ## 10. 管理機能・楽観ロック・注文状態
 
@@ -177,11 +180,12 @@
 | `ADMIN-008` | 完了・取消・逆方向など | 禁止遷移を実行 | 409、状態・version・在庫不変 | Backend結合 | Front結合 |
 | `ADMIN-009` | `received`注文 | 取消 | 状態を取消へ変更し全明細の在庫を1度戻す | Backend結合 | E2E |
 | `ADMIN-010` | 同じ注文を2画面で表示 | 同時に取消 | 1件成功、1件409、在庫復元は1回 | Backend結合 | - |
-| `ADMIN-011` | 管理一覧APIが空・保留・失敗 | 各状態を表示 | 専用の空・ローディング・エラー表示 | Front結合 | VRT |
+| `ADMIN-011` | 管理注文一覧APIが空・保留・失敗 | 各状態を表示 | 専用の空・エラー表示と、table header・行構造に沿ったloading Skeletonを表示 | Front結合 | VRT |
 | `ADMIN-012` | 管理者が商品versionを取得後、customerが注文 | 古いexpectedVersionで在庫更新 | 注文減算を上書きせず409 `VERSION_CONFLICT` | Backend結合 | - |
 | `ADMIN-013` | 管理者が商品versionを取得後、別管理者が注文取消 | 古いexpectedVersionで在庫更新 | 在庫復元を上書きせず409 `VERSION_CONFLICT` | Backend結合 | - |
 | `ADMIN-014` | 管理商品作成・編集画面 | カテゴリを明示して作成し、categoryだけを更新 | categoryを保存してversionを進め、不明IDはfield error、409時は入力を保持 | Backend結合 | Front結合 / E2E |
 | `ADMIN-015` | 管理商品一覧に商品あり | 一覧を表示 | 管理DTOの実商品画像を商品名altで表示し、既存metadataと編集導線を維持 | Front結合 | VRT |
+| `ADMIN-016` | 管理商品一覧または編集の商品APIが保留中 | 初回画面を表示 | 固定見出し・field labelを保ち、一覧・作成formまたは編集form・在庫欄に沿った非操作のSkeletonを表示 | Front結合 | VRT |
 
 ## 11. E2Eシナリオ
 
@@ -203,14 +207,16 @@
 | --- | --- | --- | --- |
 | `VRT-001` | ProductCard | 通常、在庫切れ、長い名前 | 375 / 1440 |
 | `VRT-002` | ProductList | 通常、全件空、カテゴリ選択、カテゴリ空、ローディング、エラー | 375 / 768 / 1440 |
-| `VRT-003` | ProductDetail | categoryパンくず・戻り導線と現在庫数を含む通常、在庫0、長い商品名・説明 | 375 / 1440 |
-| `VRT-004` | Cart | 実商品画像・数量selectを含む通常、縦並び導線の空、更新中、在庫超過 | 375 / 1440 |
+| `VRT-003` | ProductDetail | categoryパンくず・戻り導線と現在庫数を含む通常、在庫0、長い商品名・説明、ローディング | 375 / 1440 |
+| `VRT-004` | Cart | 実商品画像・数量selectを含む通常、縦並び導線の空、ローディング、更新中、在庫超過 | 375 / 1440 |
 | `VRT-005` | CouponForm | 適用前、適用済み、入力エラー、期限切れ | 375 / 1440 |
 | `VRT-006` | OrderHistory | 通常、空、ローディング、エラー | 375 / 1440 |
 | `VRT-007` | AdminProductForm | category選択を含む通常、入力エラー、更新中、競合 | 768 / 1440 |
-| `VRT-008` | AdminOrderTable | 通常、空、更新中、競合 | 768 / 1440 |
+| `VRT-008` | AdminOrderTable | 通常、空、ローディング、更新中、競合 | 768 / 1440 |
 | `VRT-009` | StorefrontShell | 匿名、購入者メニューopen、管理者メニューopenのトップ・ヘッダー・フッター | 375 / 768 / 1440 |
 | `VRT-010` | AdminProductList | 実画像を含む通常、空 | 375 / 1440 |
+| `VRT-011` | OrderDetailLoading | 明細2件と22rem確定内容を含むローディング | 375 / 1440 |
+| `VRT-012` | AdminProductLoading | 商品一覧・作成formのローディング、商品編集・在庫formのローディング | 一覧 375 / 1440、編集 768 / 1440 |
 
 同一コンポーネントの全順列は撮らず、レイアウトまたは視覚表現が変わる状態だけを対象にする。
 

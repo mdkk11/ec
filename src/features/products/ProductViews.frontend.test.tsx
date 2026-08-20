@@ -126,12 +126,25 @@ describe('商品一覧', () => {
   })
 
   it('PRODUCT-003: route loadingを支援技術へ通知する', () => {
-    render(<ProductListLoading />)
+    const { container } = render(<ProductListLoading />)
 
-    expect(screen.getByRole('status')).toHaveTextContent(
+    const status = screen.getByRole('status')
+    const busyRegion = container.querySelector('[aria-busy="true"]')
+    expect(status).toHaveTextContent(
       '商品を読み込んでいます',
     )
-    expect(screen.getByRole('status')).toHaveAttribute('aria-live', 'polite')
+    expect(status).toHaveAttribute('aria-live', 'polite')
+    expect(busyRegion).not.toContainElement(status)
+    expect(screen.getByRole('heading', { name: 'ALL ITEMS' })).toBeVisible()
+    expect(
+      screen.getByRole('navigation', { name: '商品カテゴリ' }),
+    ).toBeVisible()
+    expect(
+      container.querySelectorAll('div[aria-hidden="true"]'),
+    ).not.toHaveLength(0)
+    expect(
+      screen.queryByRole('link', { name: /の詳細を見る/u }),
+    ).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { current: 'page' })).not.toBeInTheDocument()
   })
 
@@ -200,12 +213,21 @@ describe('商品詳細', () => {
   })
 
   it('PRODUCT-012: route loadingを支援技術へ通知する', () => {
-    render(<ProductDetailLoading />)
+    const { container } = render(<ProductDetailLoading />)
 
-    expect(screen.getByRole('status')).toHaveTextContent(
+    const status = screen.getByRole('status')
+    const busyRegion = container.querySelector('[aria-busy="true"]')
+    expect(status).toHaveTextContent(
       '商品を読み込んでいます',
     )
-    expect(screen.getByRole('status')).toHaveAttribute('aria-live', 'polite')
+    expect(status).toHaveAttribute('aria-live', 'polite')
+    expect(busyRegion).not.toContainElement(status)
+    expect(screen.getByText('PRODUCT')).toBeVisible()
+    expect(screen.getByRole('heading', { name: '商品説明' })).toBeVisible()
+    expect(
+      container.querySelectorAll('div[aria-hidden="true"]'),
+    ).not.toHaveLength(0)
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })
 
   it('PRODUCT-007: not-foundではキーボードで一覧へ戻れる', async () => {

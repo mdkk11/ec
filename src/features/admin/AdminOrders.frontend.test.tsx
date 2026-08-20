@@ -55,6 +55,23 @@ function listResponse(items: OrderDto[]) {
 }
 
 describe('管理注文一覧', () => {
+  it('AUTH-014: 認証待機中は注文管理の構造と認証状態を通知する', () => {
+    renderWithProviders(<AdminOrdersPage />, { status: 'loading' })
+
+    const status = screen.getByRole('status')
+    const busyRegion = document.querySelector('[aria-busy="true"]')
+    expect(status).toHaveTextContent(
+      '認証状態を確認しています。しばらくお待ちください。',
+    )
+    expect(busyRegion).not.toBeNull()
+    expect(busyRegion).not.toContainElement(status)
+    expect(screen.getByRole('heading', { name: '注文管理' })).toBeVisible()
+    expect(screen.getByRole('columnheader', { name: '注文' })).toBeVisible()
+    expect(screen.getByRole('columnheader', { name: '状態を更新' })).toBeVisible()
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+  })
+
   it('ADMIN-006: 状態と許可された変更先を表示し更新できる', async () => {
     let updateCount = 0
     const updated = { ...adminOrderFixture, status: 'processing' as const, version: 2 }
@@ -101,9 +118,17 @@ describe('管理注文一覧', () => {
     )
     renderWithProviders(<AdminOrdersPage />)
 
-    expect(screen.getByRole('status')).toHaveTextContent(
-      '注文一覧を読み込んでいます',
+    const status = screen.getByRole('status')
+    const busyRegion = document.querySelector('[aria-busy="true"]')
+    expect(status).toHaveTextContent(
+      '注文一覧を読み込んでいます。しばらくお待ちください。',
     )
+    expect(busyRegion).not.toBeNull()
+    expect(busyRegion).not.toContainElement(status)
+    expect(screen.getByRole('heading', { name: '注文管理' })).toBeVisible()
+    expect(screen.getByRole('columnheader', { name: '注文' })).toBeVisible()
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
     release?.()
     expect(await screen.findByText('注文はまだありません')).toBeVisible()
   })

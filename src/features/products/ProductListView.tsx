@@ -1,6 +1,7 @@
 import Link from 'next/link'
 
 import { Button } from '@/components/button/Button'
+import { Skeleton } from '@/components/skeleton/Skeleton'
 import type { PublicCategoryDto } from '@/contracts/category'
 import type { ProductDto } from '@/contracts/product'
 import { publicCategoryCatalog } from '@/features/categories/category-catalog'
@@ -39,7 +40,16 @@ export function ProductListView(props: ProductListViewProps) {
   const heading = selectedCategory?.name ?? 'ALL ITEMS'
 
   return (
-    <section className="page-wrap py-12 sm:py-16 lg:py-20">
+    <>
+      {props.status === 'loading' ? (
+        <p aria-live="polite" className="sr-only" role="status">
+          商品を読み込んでいます…
+        </p>
+      ) : null}
+      <section
+        aria-busy={props.status === 'loading' ? true : undefined}
+        className="page-wrap py-12 sm:py-16 lg:py-20"
+      >
       <nav aria-label="パンくずリスト" className="text-xs text-muted">
         <ol className="flex items-center gap-2">
           <li>
@@ -115,16 +125,23 @@ export function ProductListView(props: ProductListViewProps) {
           <p className="mt-5 shrink-0 text-xs font-semibold tracking-[0.08em] text-muted sm:mt-0">
             {props.items.length}点
           </p>
+        ) : props.status === 'loading' ? (
+          <Skeleton className="mt-5 h-4 w-10 shrink-0 sm:mt-0" />
         ) : null}
       </div>
 
       {props.status === 'loading' ? (
-        <div
-          aria-live="polite"
-          className="py-24 text-center text-sm text-muted"
-          role="status"
-        >
-          商品を読み込んでいます…
+        <div className="mt-8 grid grid-cols-2 gap-x-3 gap-y-10 sm:grid-cols-3 sm:gap-x-5 lg:grid-cols-4 lg:gap-y-14">
+          {Array.from({ length: 4 }, (_, index) => (
+            <div key={index}>
+              <Skeleton className="aspect-[3/4] w-full" />
+              <div className="pt-4">
+                <Skeleton className="h-4 w-4/5" />
+                <Skeleton className="mt-2 h-4 w-3/5" />
+                <Skeleton className="mt-3 h-4 w-2/5" />
+              </div>
+            </div>
+          ))}
         </div>
       ) : null}
 
@@ -180,6 +197,7 @@ export function ProductListView(props: ProductListViewProps) {
           ))}
         </div>
       ) : null}
-    </section>
+      </section>
+    </>
   )
 }

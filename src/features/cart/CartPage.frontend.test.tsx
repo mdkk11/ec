@@ -26,6 +26,69 @@ vi.mock('next/navigation', () => ({
 }))
 
 describe('カート画面', () => {
+  it('AUTH-014: 認証確認中はカートの構造だけを表示する', () => {
+    const { container } = renderWithProviders(
+      <CartPage />,
+      { status: 'loading' },
+    )
+
+    const status = screen.getByRole('status')
+    const busyRegion = container.querySelector('[aria-busy="true"]')
+    expect(status).toHaveTextContent(
+      '認証状態を確認しています。しばらくお待ちください。',
+    )
+    expect(busyRegion).not.toContainElement(status)
+    expect(screen.getByRole('heading', { name: 'カート' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'クーポン' })).toBeVisible()
+    expect(
+      container.querySelectorAll('div[aria-hidden="true"]'),
+    ).not.toHaveLength(0)
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: '買い物を続ける' }))
+      .toHaveAttribute('href', '/products')
+  })
+
+  it('CART-019: カート取得中は実画面の構造を表示し、完了後に切り替える', async () => {
+    let release: (() => void) | undefined
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    server.use(
+      http.get('/api/cart', async () => {
+        await gate
+        return cartResponse(cartFixture)
+      }),
+    )
+    const { container } = renderWithProviders(<CartPage />)
+
+    const status = screen.getByRole('status')
+    const busyRegion = container.querySelector('[aria-busy="true"]')
+    expect(status).toHaveTextContent(
+      'カートを読み込んでいます。しばらくお待ちください。',
+    )
+    expect(busyRegion).not.toContainElement(status)
+    expect(screen.getByRole('heading', { name: 'カート' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'クーポン' })).toBeVisible()
+    expect(
+      container.querySelectorAll('div[aria-hidden="true"]'),
+    ).not.toHaveLength(0)
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: '買い物を続ける' }))
+      .toHaveAttribute('href', '/products')
+
+    release?.()
+    expect(
+      await screen.findByText('リネンブレンド オーバーシャツ'),
+    ).toBeVisible()
+    expect(
+      screen.queryByText(/カートを読み込んでいます/u),
+    ).not.toBeInTheDocument()
+  })
+
   it('API-002: network errorを表示し、明示的な再試行後にカートを表示する', async () => {
     server.use(http.get('/api/cart', () => HttpResponse.error()))
     renderWithProviders(<CartPage />)

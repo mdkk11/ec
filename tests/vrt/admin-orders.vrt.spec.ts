@@ -2,7 +2,7 @@ import { test } from '@playwright/test'
 
 import { captureStory } from './capture-story'
 
-for (const story of ['default', 'empty', 'updating', 'conflict']) {
+for (const story of ['default', 'empty', 'loading', 'updating', 'conflict']) {
   for (const width of [768, 1440]) {
     test(`VRT-008-admin-order-table-${story}-${width}`, async ({ page }) => {
       await captureStory(page, {

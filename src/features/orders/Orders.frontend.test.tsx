@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 import OrderError from '@/app/orders/error'
 import OrderLoading from '@/app/orders/loading'
 import OrderDetailError from '@/app/orders/[orderId]/error'
+import OrderDetailLoading from '@/app/orders/[orderId]/loading'
 import OrderCompleteError from '@/app/orders/[orderId]/complete/error'
 
 import { OrderAccessView } from './OrderAccessView'
@@ -23,11 +24,19 @@ describe('注文履歴', () => {
   })
 
   it('ORDER-011: loading状態を支援技術へ通知する', () => {
-    render(<OrderLoading />)
+    const { container } = render(<OrderLoading />)
 
-    expect(screen.getByRole('status')).toHaveTextContent(
+    const status = screen.getByRole('status')
+    const busyRegion = container.querySelector('[aria-busy="true"]')
+    expect(status).toHaveTextContent(
       '注文履歴を読み込んでいます',
     )
+    expect(busyRegion).not.toContainElement(status)
+    expect(screen.getByRole('heading', { name: '注文履歴' })).toBeVisible()
+    expect(
+      container.querySelectorAll('div[aria-hidden="true"]'),
+    ).not.toHaveLength(0)
+    expect(screen.queryByRole('link')).not.toBeInTheDocument()
   })
 
   it('ORDER-011: error境界からresetを実行できる', async () => {
@@ -53,6 +62,25 @@ describe('注文履歴', () => {
 })
 
 describe('注文詳細と完了', () => {
+  it('ORDER-015: 注文詳細loadingを実画面の構造で表示する', () => {
+    const { container } = render(<OrderDetailLoading />)
+
+    const status = screen.getByRole('status')
+    const busyRegion = container.querySelector('[aria-busy="true"]')
+    expect(status).toHaveTextContent(
+      '注文詳細を読み込んでいます。しばらくお待ちください。',
+    )
+    expect(busyRegion).not.toContainElement(status)
+    expect(screen.getByRole('heading', { name: '注文詳細' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: '確定内容' })).toBeVisible()
+    expect(
+      container.querySelectorAll('div[aria-hidden="true"]'),
+    ).not.toHaveLength(0)
+    expect(screen.getByRole('link', { name: '注文履歴を見る' }))
+      .toHaveAttribute('href', '/orders')
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+  })
+
   it('ORDER-008: 現在の商品ではなく注文時snapshotを表示する', () => {
     render(<OrderDetailView order={orderFixture} />)
 

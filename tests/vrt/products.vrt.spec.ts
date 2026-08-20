@@ -33,7 +33,7 @@ const cases: VrtCase[] = [
       width,
     })),
   ),
-  ...['default', 'out-of-stock', 'long-content'].flatMap((story) =>
+  ...['default', 'loading', 'out-of-stock', 'long-content'].flatMap((story) =>
     [375, 1440].map((width) => ({
       height: width === 375 ? 812 : 1000,
       name: `VRT-003-product-detail-${story}-${width}`,

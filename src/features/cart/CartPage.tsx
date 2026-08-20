@@ -24,6 +24,7 @@ import {
   useCartOperations,
 } from './CartOperationProvider'
 import {
+  CartLoadingView,
   CartView,
   type CartCheckoutState,
   type CartViewOperationState,
@@ -124,9 +125,7 @@ function CustomerCartPage({ customerId }: { customerId: string }) {
 
   if (query.isPending) {
     return (
-      <StatusPage role="status" title="カートを読み込んでいます">
-        しばらくお待ちください。
-      </StatusPage>
+      <CartLoadingView statusMessage="カートを読み込んでいます。しばらくお待ちください。" />
     )
   }
   if (!query.data) {
@@ -310,9 +309,7 @@ export function CartPage() {
 
   if (sessionState.status === 'loading') {
     return (
-      <StatusPage role="status" title="認証状態を確認しています">
-        しばらくお待ちください。
-      </StatusPage>
+      <CartLoadingView statusMessage="認証状態を確認しています。しばらくお待ちください。" />
     )
   }
   if (sessionState.status === 'error') {

@@ -4,6 +4,7 @@ import type { OrderDto, OrderStatus } from '@/contracts/order'
 import { formatPrice } from '@/features/products/format-price'
 
 import { Button } from '@/components/button/Button'
+import { Skeleton } from '@/components/skeleton/Skeleton'
 import {
   formatOrderDate,
   orderStatusLabel,
@@ -22,6 +23,7 @@ type AdminOrderTableProps = {
   pendingOrderId?: string | null
   selectedStatuses?: Record<string, OrderStatus | undefined>
   status: 'error' | 'loading' | 'success'
+  statusMessage?: string
 }
 
 export function AdminOrderTable({
@@ -36,15 +38,52 @@ export function AdminOrderTable({
   pendingOrderId,
   selectedStatuses = {},
   status,
+  statusMessage = '注文一覧を読み込んでいます。しばらくお待ちください。',
 }: AdminOrderTableProps) {
   if (status === 'loading') {
     return (
-      <section className="border border-line bg-surface p-10 text-center">
-        <div aria-live="polite" className="text-center" role="status">
-          <h2 className="font-serif text-3xl">注文一覧を読み込んでいます</h2>
-          <p className="mt-4 text-sm text-muted">しばらくお待ちください。</p>
-        </div>
-      </section>
+      <>
+        <p aria-live="polite" className="sr-only" role="status">
+          {statusMessage}
+        </p>
+        <section
+          aria-busy="true"
+          className="overflow-x-auto border border-line bg-surface"
+        >
+          <table className="w-full min-w-[48rem] text-left text-sm">
+            <caption className="sr-only">管理注文一覧</caption>
+            <thead className="border-b border-line bg-canvas text-xs font-semibold tracking-[0.08em]">
+              <tr>
+                <th className="px-5 py-4" scope="col">注文</th>
+                <th className="px-5 py-4" scope="col">状態</th>
+                <th className="px-5 py-4" scope="col">合計</th>
+                <th className="px-5 py-4" scope="col">状態を更新</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="px-5 py-5 align-top">
+                  <Skeleton className="h-4 w-56" />
+                  <Skeleton className="mt-2 h-4 w-40" />
+                </td>
+                <td className="px-5 py-5 align-top">
+                  <Skeleton className="h-5 w-16" />
+                  <Skeleton className="mt-2 h-4 w-20" />
+                </td>
+                <td className="px-5 py-5 align-top">
+                  <Skeleton className="h-5 w-24" />
+                </td>
+                <td className="px-5 py-5 align-top">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-12 w-40" />
+                    <Skeleton className="h-12 w-24" />
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+      </>
     )
   }
 

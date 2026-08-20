@@ -29,6 +29,7 @@ import {
   AdminLoginRequired,
   AdminProductStatusPage,
 } from './AdminProductStatusPage'
+import { AdminProductEditLoadingView } from './AdminProductLoadingViews'
 import {
   adminProductsQueryKey,
   replaceAdminProduct,
@@ -440,7 +441,9 @@ export function AdminProductEditPage({ productId }: { productId: string }) {
   }, [query.error, setAnonymous])
 
   if (sessionState.status === 'loading') {
-    return <AdminProductStatusPage role="status" title="認証状態を確認しています">しばらくお待ちください。</AdminProductStatusPage>
+    return (
+      <AdminProductEditLoadingView statusMessage="認証状態を確認しています。しばらくお待ちください。" />
+    )
   }
   if (sessionState.status === 'error') {
     return <AdminProductStatusPage action={() => window.location.reload()} role="alert" title="認証状態を確認できませんでした">時間をおいてもう一度お試しください。</AdminProductStatusPage>
@@ -450,7 +453,9 @@ export function AdminProductEditPage({ productId }: { productId: string }) {
     return <AdminProductStatusPage title="商品管理を利用できません">この画面は管理者専用です。</AdminProductStatusPage>
   }
   if (query.isPending) {
-    return <AdminProductStatusPage role="status" title="商品を読み込んでいます">しばらくお待ちください。</AdminProductStatusPage>
+    return (
+      <AdminProductEditLoadingView statusMessage="商品を読み込んでいます。しばらくお待ちください。" />
+    )
   }
   if (!query.data) {
     return <AdminProductStatusPage action={() => void query.refetch()} role="alert" title="商品を読み込めませんでした">時間をおいてもう一度お試しください。</AdminProductStatusPage>

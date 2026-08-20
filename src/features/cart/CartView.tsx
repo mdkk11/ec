@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 
 import { Button } from '@/components/button/Button'
+import { Skeleton } from '@/components/skeleton/Skeleton'
 import type { CartDto, CartItemDto } from '@/contracts/cart'
 import { CouponForm } from '@/features/coupons/CouponForm'
 import { formatPrice } from '@/features/products/format-price'
@@ -46,6 +47,77 @@ type CartViewProps = {
     quantity: number,
   ) => Promise<unknown> | void
   operationState?: CartViewOperationState
+}
+
+export function CartLoadingView({ statusMessage }: { statusMessage: string }) {
+  return (
+    <>
+      <p aria-live="polite" className="sr-only" role="status">
+        {statusMessage}
+      </p>
+      <section
+        aria-busy="true"
+        className="page-wrap py-12 sm:py-16 lg:py-20"
+      >
+        <p className="label text-accent">SHOPPING CART</p>
+        <h1 className="mt-4 font-serif text-4xl sm:text-5xl">カート</h1>
+        <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-14">
+          <ul>
+            {Array.from({ length: 2 }, (_, index) => (
+              <li
+                className="grid gap-5 border-b border-line py-6 sm:grid-cols-[8rem_minmax(0,1fr)]"
+                key={index}
+              >
+                <Skeleton className="aspect-[3/4] w-full" />
+                <div className="flex min-w-0 flex-col">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-52 flex-1">
+                      <Skeleton className="h-8 w-4/5 max-w-96" />
+                      <Skeleton className="mt-2 h-5 w-32" />
+                    </div>
+                    <Skeleton className="h-6 w-24" />
+                  </div>
+                  <div className="mt-auto flex items-end gap-3 pt-6">
+                    <div>
+                      <span className="text-xs font-semibold">数量</span>
+                      <Skeleton className="mt-2 h-12 w-24" />
+                    </div>
+                    <Skeleton className="h-5 w-10" />
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <aside className="h-fit border border-line bg-surface p-6 lg:sticky lg:top-8">
+            <h2 className="font-serif text-2xl">合計</h2>
+            <section className="mt-6 border-t border-line pt-6">
+              <h3 className="text-sm font-semibold">クーポン</h3>
+              <p className="mt-3 text-xs font-semibold">クーポンコード</p>
+              <Skeleton className="mt-2 h-12 w-full" />
+              <Skeleton className="mt-3 h-12 w-full" />
+            </section>
+            <dl className="mt-6 space-y-4 text-sm">
+              <div className="flex justify-between gap-4">
+                <dt className="text-muted">商品小計</dt>
+                <dd><Skeleton className="h-5 w-20" /></dd>
+              </div>
+              <div className="flex justify-between gap-4 border-t border-line pt-4 text-base font-semibold">
+                <dt>合計</dt>
+                <dd><Skeleton className="h-6 w-24" /></dd>
+              </div>
+            </dl>
+            <Skeleton className="mt-6 h-12 w-full" />
+            <Link
+              className="mt-6 inline-block text-sm underline underline-offset-4"
+              href="/products"
+            >
+              買い物を続ける
+            </Link>
+          </aside>
+        </div>
+      </section>
+    </>
+  )
 }
 
 function issueMessage(cart: CartDto, item: CartItemDto) {

@@ -3,6 +3,7 @@
 import Link from 'next/link'
 
 import { Button } from '@/components/button/Button'
+import { Skeleton } from '@/components/skeleton/Skeleton'
 import type { OrderDto } from '@/contracts/order'
 import { formatPrice } from '@/features/products/format-price'
 
@@ -19,14 +20,37 @@ type OrderHistoryViewProps =
 export function OrderHistoryView(props: OrderHistoryViewProps) {
   if (props.status === 'loading') {
     return (
-      <section className="page-wrap py-16 sm:py-24">
-        <div aria-live="polite" className="text-center" role="status">
-          <h1 className="font-serif text-4xl sm:text-5xl">
-            注文履歴を読み込んでいます
-          </h1>
-          <p className="mt-5 text-sm text-muted">しばらくお待ちください。</p>
-        </div>
-      </section>
+      <>
+        <p aria-live="polite" className="sr-only" role="status">
+          注文履歴を読み込んでいます。しばらくお待ちください。
+        </p>
+        <section
+          aria-busy="true"
+          className="page-wrap py-12 sm:py-16 lg:py-20"
+        >
+          <p className="label text-accent">ORDER HISTORY</p>
+          <h1 className="mt-4 font-serif text-4xl sm:text-5xl">注文履歴</h1>
+          <ol className="mt-10 space-y-5">
+            <li className="border border-line bg-surface p-6">
+              <div className="flex flex-col items-start gap-5 sm:flex-row sm:justify-between">
+                <div className="w-full sm:w-auto">
+                  <p className="text-xs font-semibold tracking-[0.08em] text-muted">
+                    注文番号
+                  </p>
+                  <Skeleton className="mt-2 h-5 w-full max-w-72" />
+                  <Skeleton className="mt-3 h-5 w-40" />
+                </div>
+                <div className="w-full sm:w-32 sm:text-right">
+                  <Skeleton className="h-5 w-14 sm:ml-auto" />
+                  <Skeleton className="mt-2 h-7 w-24 sm:ml-auto" />
+                </div>
+              </div>
+              <Skeleton className="mt-5 h-5 w-24" />
+              <Skeleton className="mt-5 h-5 w-28" />
+            </li>
+          </ol>
+        </section>
+      </>
     )
   }
 

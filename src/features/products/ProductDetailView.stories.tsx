@@ -31,6 +31,13 @@ export const Default: Story = {
   name: '通常',
 }
 
+export const Loading: Story = {
+  args: {
+    status: 'loading',
+  },
+  name: '読み込み中',
+}
+
 export const OutOfStock: Story = {
   args: {
     product: outOfStockProductFixture,
