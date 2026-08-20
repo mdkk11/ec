@@ -64,7 +64,7 @@
 
 - `ProductListView status="loading"` はパンくず、カテゴリnavigation、`CATALOG`、`ALL ITEMS`、説明を維持し、動的な件数だけをSkeletonにする。
 - 商品gridは成功時と同じ列数・gapを使い、既存Default Storyと同じ4件のplaceholderを表示する。各placeholderは3:4画像、商品名2行相当、価格の短い行で構成し、375pxでは2行、1440pxでは1行のgrid占有高を成功Storyと一致させる。
-- `ProductDetailView status="loading"` はホームと `ALL ITEMS` のパンくず、`PRODUCT`、`商品説明` を実テキストで維持し、成功時と同じ3:4画像と2:1 responsive gridを使う。動的な商品名・価格・在庫・説明本文・購入操作・カテゴリ戻り導線だけをSkeletonにする。
+- `ProductDetailView status="loading"` はホームと `ALL ITEMS` のパンくず、`PRODUCT`、`商品説明` を実テキストで維持し、成功時と同じ3:4画像と5:6 responsive gridを使う。動的な商品名・価格・在庫・説明本文・購入操作・カテゴリ戻り導線だけをSkeletonにする。
 
 ### 注文画面
 
@@ -205,7 +205,7 @@ commit 2/3はそれぞれUI、意味テスト、視覚baselineを同じcommitへ
 | View / Story | 成功画面から再利用する構造 | 固定shape | 対象viewportと占有高の基準 |
 | --- | --- | --- | --- |
 | ProductList Loading | `grid-cols-2 sm:grid-cols-3 lg:grid-cols-4`、既存gap、3:4画像 | Default Storyと同じ4商品 | 375では2列×2行、768では3列×2行、1440では4列×1行 |
-| ProductDetail Loading | `lg:grid-cols-[minmax(0,2fr)_minmax(20rem,1fr)]`、3:4画像 | 画像1、商品名2行、price/stock、48px購入shape、説明本文3行 | 375縦積み、1440で880px画像＋440px情報列 |
+| ProductDetail Loading | `lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]`、3:4画像 | 画像1、商品名2行、price/stock、48px購入shape、説明本文3行 | 375縦積み、1440で600px画像＋720px情報列 |
 | OrderHistory Loading | `space-y-5`、card内 `sm:flex-row` | Default Storyと同じ1注文 | 375で約343×303px、1440で約1376×207pxの成功cardと比較 |
 | OrderDetail Loading | `lg:grid-cols-[minmax(0,1fr)_22rem]` | order fixtureと同じ2明細、注文番号/date、summaryの状態＋金額3行 | 375縦積み、1440で22rem summary |
 | Cart Loading | `lg:grid-cols-[minmax(0,1fr)_22rem]`、明細 `sm:grid-cols-[8rem_minmax(0,1fr)]` | cart fixtureと同じ2明細、coupon field、金額2行、48px注文shape | 375で3:4画像を縦積み、1440で128px画像＋22rem summary |

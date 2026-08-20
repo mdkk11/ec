@@ -76,7 +76,7 @@ export function ProductDetailView(props: ProductDetailViewProps) {
           className="page-wrap py-12 sm:py-16 lg:py-20"
         >
           <Breadcrumbs />
-          <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,2fr)_minmax(20rem,1fr)] lg:gap-14">
+          <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-14">
             <Skeleton className="aspect-[3/4] w-full" />
             <div className="self-start lg:sticky lg:top-8">
               <p className="label text-accent">PRODUCT</p>
@@ -152,14 +152,14 @@ export function ProductDetailView(props: ProductDetailViewProps) {
   return (
     <section className="page-wrap py-12 sm:py-16 lg:py-20">
       <Breadcrumbs product={product} />
-      <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,2fr)_minmax(20rem,1fr)] lg:gap-14">
+      <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-14">
         <div className="relative aspect-[3/4] overflow-hidden bg-[#ebeae6]">
           <Image
             alt={product.name}
             className="object-cover"
             fill
             priority
-            sizes="(min-width: 1024px) 66vw, 100vw"
+            sizes="(min-width: 1024px) 45vw, 100vw"
             src={product.imagePath}
           />
         </div>
