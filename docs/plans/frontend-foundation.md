@@ -36,7 +36,7 @@
 | 対象 | 候補 | 公開日 |
 | --- | --- | --- |
 | Node.js 24 LTS | `24.19.0` | 2026-08-03 |
-| pnpm 11 | `11.22.0` | 2026-08-15 |
+| pnpm 11 | `11.23.0` | 2026-08-23 |
 | Oxlint | `1.79.0` | 2026-08-18 |
 | Oxfmt | `0.64.0` | 2026-08-18 |
 | `oxlint-tsgolint` | `7.0.2001` | 2026-07-21 |
@@ -309,7 +309,7 @@
 - `pnpm --version` が `packageManager` のexact versionと一致する。
 - pnpm script内の `process.version`、lockfileのNode runtime、全CI setup-nodeの解決versionが一致する。
 - pnpm script内の `realpath(process.execPath)` がsystem `node` のrealpathと異なり、project-local runtimeを使っていることを確認する。
-- `.node-version` とその参照が `rg` で0件になる。
+- activeな設定・script・利用手順に `.node-version` 参照が残らない。
 - `node --test scripts/tooling/tooling-policy.test.mjs` を実行し、repository内のversion・7日待機・allowBuilds・Node runtime lockを決定的に検査する。このtestはCIでも実行する。
 - registryを使う一回限りのprobeでは、実行時点で公開168時間未満のstable package/versionと公開時刻を出力し、`mkdtemp` fixture内だけで通常解決の拒否、version限定excludeの通過、`pnpm remove/update` 後のexclude pruneを確認する。時間経過や `pnpm install` だけでpruneされるとはみなさない。
 - 一回限りのprobe前後の `git status --short` が同一であり、temporary fixtureがrepository内へ残らないことを確認する。
@@ -367,7 +367,7 @@ Storybook JS pluginはalphaでtype-aware ruleを実行できない。実測gap�
 
 ### 9.5 Strict TypeScriptとtyped routes
 
-既存diagnostic修正が広がる可能性がある。castやignoreで型安全性を落とさず、option別commitで原因を追跡する。runtime behaviorを変える必要が判明した場合は実装を止め、仕様を再確認する。
+既存diagnostic修正が広がる可能性がある。castやignoreで型安全性を落とさず、optionごとに原因を追跡する。runtime behaviorを変える必要が判明した場合は実装を止め、仕様を再確認する。
 
 ### 9.6 Knip false positive
 
