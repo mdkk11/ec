@@ -10,9 +10,11 @@ const DOCUMENTATION_PATHS = ['AGENTS.md', 'CONTEXT.md', 'DESIGN.md', 'README.md'
 
 const FULL_RUN_PATHS = [
   '.dependency-cruiser.cjs',
+  '.editorconfig',
   '.env.example',
   '.github/dependabot.yml',
   '.github/workflows/',
+  '.oxfmtrc.json',
   'compose.override.yaml',
   'compose.yaml',
   'config/impact/',

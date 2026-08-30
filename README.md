@@ -29,6 +29,8 @@ pnpm dev
 
 ```bash
 pnpm dev
+pnpm format
+pnpm format:fix
 pnpm lint
 pnpm typecheck
 pnpm test:unit

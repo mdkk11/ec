@@ -3,8 +3,10 @@
   "smokeSpec": "tests/e2e/app-shell.spec.ts",
   "highRiskPaths": [
     ".dependency-cruiser.cjs",
+    ".editorconfig",
     ".github/dependabot.yml",
     ".github/workflows/**",
+    ".oxfmtrc.json",
     "config/impact/**",
     "drizzle/**",
     "next.config.ts",
