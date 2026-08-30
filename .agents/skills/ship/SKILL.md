@@ -47,7 +47,7 @@ Delegate:
 
 ## State reporting
 
-Maintain a compact state record in the conversation and, when repository convention requires it, in the approved plan document:
+Maintain a compact operational state record in the conversation. Persist it only when repository convention explicitly requires a dedicated workflow-state artifact; do not put it in specifications or implementation plans:
 
 ```text
 Phase: triage | specification | planning | plan-review | implementation | submit | stabilize | explain | final-audit | human-review-ready
@@ -62,6 +62,8 @@ Blockers: <missing dependency, approval, CI, or review item>
 ```
 
 Update this record after every phase transition, lower-stack change, or blocker. A completed phase becomes stale when its inputs change; rerun it instead of preserving a false green state.
+
+Keep specifications and plans focused on the problem, relevant evidence, constraints, decisions, implementation, and verification. Exclude workflow narration such as fetched refs, worktree cleanliness, branch or stack setup, commit and PR identifiers, approval history, phase transitions, and conversation history unless a fact materially changes the technical solution or the repository's required document template explicitly asks for it.
 
 An explicit earlier milestone such as plan completion, implementation completion, or draft PR creation is a checkpoint, not successful completion of the full workflow. Stop there when requested, record every deferred phase, and resume from that evidence on the next `$ship` invocation.
 
