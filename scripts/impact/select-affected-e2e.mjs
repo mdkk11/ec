@@ -1,19 +1,10 @@
 import { spawnSync } from 'node:child_process'
-import {
-  appendFileSync,
-  mkdirSync,
-  readFileSync,
-  readdirSync,
-  writeFileSync,
-} from 'node:fs'
+import { appendFileSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
-import {
-  getChangedFiles,
-  normalizeChangedFiles,
-} from './select-ci-jobs.mjs'
+import { getChangedFiles, normalizeChangedFiles } from './select-ci-jobs.mjs'
 
 const DEFAULT_MAP = 'config/impact/e2e-map.json'
 const DEFAULT_OUTPUT = '.impact/e2e-selection.json'
@@ -53,9 +44,7 @@ function listProductionFiles(cwd) {
 }
 
 export function validateCollectedSpecs(specs, output) {
-  const missing = specs.filter(
-    (spec) => !output.includes(`› ${path.basename(spec)}:`),
-  )
+  const missing = specs.filter((spec) => !output.includes(`› ${path.basename(spec)}:`))
   if (missing.length > 0) {
     throw new Error(`Playwright did not collect mapped specs: ${missing.join(', ')}`)
   }
@@ -94,9 +83,7 @@ export function validateMap(map, { cwd = process.cwd() } = {}) {
 }
 
 function isInternalDependency(dependency) {
-  return (
-    dependency.module.startsWith('@/') || dependency.module.startsWith('.')
-  )
+  return dependency.module.startsWith('@/') || dependency.module.startsWith('.')
 }
 
 export function validateGraph(graph) {
@@ -130,9 +117,7 @@ export function validateGraph(graph) {
         !dependency.resolved.endsWith('.css') &&
         !sourceSet.has(dependency.resolved)
       ) {
-        throw new Error(
-          `dependency graph is missing a module: ${dependency.resolved}`,
-        )
+        throw new Error(`dependency graph is missing a module: ${dependency.resolved}`)
       }
     }
   }
@@ -185,9 +170,7 @@ export function selectAffectedE2e({ map, graph, changedFiles }) {
   if (normalized.length === 0) {
     return fullSelection(map, normalized, 'empty change set')
   }
-  const highRisk = normalized.find((filePath) =>
-    matchesAny(filePath, map.highRiskPaths),
-  )
+  const highRisk = normalized.find((filePath) => matchesAny(filePath, map.highRiskPaths))
   if (highRisk) return fullSelection(map, normalized, `high-risk path: ${highRisk}`)
 
   const moduleSources = new Set(graph.modules.map(({ source }) => source))
@@ -205,19 +188,11 @@ export function selectAffectedE2e({ map, graph, changedFiles }) {
 
   const runtimeChanges = normalized.filter((filePath) => !isSafeIgnore(filePath))
   const impactedFiles = reverseClosure(graph, runtimeChanges)
-  const impactedHighRisk = impactedFiles.find((filePath) =>
-    matchesAny(filePath, map.highRiskPaths),
-  )
+  const impactedHighRisk = impactedFiles.find((filePath) => matchesAny(filePath, map.highRiskPaths))
   if (impactedHighRisk) {
-    return fullSelection(
-      map,
-      normalized,
-      `dependency reaches high-risk path: ${impactedHighRisk}`,
-    )
+    return fullSelection(map, normalized, `dependency reaches high-risk path: ${impactedHighRisk}`)
   }
-  const selected = new Set(
-    normalized.filter((filePath) => filePath.endsWith('.spec.ts')),
-  )
+  const selected = new Set(normalized.filter((filePath) => filePath.endsWith('.spec.ts')))
   for (const entry of map.specs) {
     if (impactedFiles.some((filePath) => matchesAny(filePath, entry.roots))) {
       selected.add(entry.spec)
@@ -315,9 +290,7 @@ export function runCli(env = process.env) {
   let selection
   try {
     map = validateMap(
-      JSON.parse(
-        readFileSync(path.join(cwd, env.IMPACT_MAP ?? DEFAULT_MAP), 'utf8'),
-      ),
+      JSON.parse(readFileSync(path.join(cwd, env.IMPACT_MAP ?? DEFAULT_MAP), 'utf8')),
       { cwd },
     )
     changedFiles = env.IMPACT_CHANGED_FILES
@@ -344,10 +317,7 @@ export function runCli(env = process.env) {
   writeFileSync(outputPath, `${JSON.stringify(selection, null, 2)}\n`)
   if (env.GITHUB_ENV) {
     appendFileSync(env.GITHUB_ENV, `IMPACT_E2E_MODE=${selection.mode}\n`)
-    appendFileSync(
-      env.GITHUB_ENV,
-      `IMPACT_E2E_SELECTION=${path.relative(cwd, outputPath)}\n`,
-    )
+    appendFileSync(env.GITHUB_ENV, `IMPACT_E2E_SELECTION=${path.relative(cwd, outputPath)}\n`)
   }
   writeSummary(selection, env.GITHUB_STEP_SUMMARY)
   process.stdout.write(`${JSON.stringify(selection, null, 2)}\n`)
@@ -355,6 +325,5 @@ export function runCli(env = process.env) {
 }
 
 const isMain =
-  process.argv[1] &&
-  path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))
+  process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))
 if (isMain) runCli()

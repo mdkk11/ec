@@ -17,14 +17,10 @@ export function updateAdminOrderStatus(
   input: UpdateAdminOrderStatusRequest,
   signal?: AbortSignal,
 ) {
-  return requestJson(
-    `/api/admin/orders/${orderId}/status`,
-    orderResponseSchema,
-    {
-      body: JSON.stringify(input),
-      headers: jsonHeaders,
-      method: 'PATCH',
-      signal,
-    },
-  )
+  return requestJson(`/api/admin/orders/${orderId}/status`, orderResponseSchema, {
+    body: JSON.stringify(input),
+    headers: jsonHeaders,
+    method: 'PATCH',
+    signal,
+  })
 }

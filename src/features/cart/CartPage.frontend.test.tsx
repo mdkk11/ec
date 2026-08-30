@@ -6,16 +6,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { server } from '@/test/msw/server'
 
 import { CartPage } from './CartPage'
-import {
-  cartFixture,
-  emptyCartFixture,
-  stockConflictCartFixture,
-} from './cart-fixtures'
-import {
-  cartResponse,
-  customer,
-  renderWithProviders,
-} from './cart-frontend-test-helpers'
+import { cartFixture, emptyCartFixture, stockConflictCartFixture } from './cart-fixtures'
+import { cartResponse, customer, renderWithProviders } from './cart-frontend-test-helpers'
 
 const router = vi.hoisted(() => ({
   push: vi.fn(),
@@ -27,27 +19,22 @@ vi.mock('next/navigation', () => ({
 
 describe('カート画面', () => {
   it('AUTH-014: 認証確認中はカートの構造だけを表示する', () => {
-    const { container } = renderWithProviders(
-      <CartPage />,
-      { status: 'loading' },
-    )
+    const { container } = renderWithProviders(<CartPage />, { status: 'loading' })
 
     const status = screen.getByRole('status')
     const busyRegion = container.querySelector('[aria-busy="true"]')
-    expect(status).toHaveTextContent(
-      '認証状態を確認しています。しばらくお待ちください。',
-    )
+    expect(status).toHaveTextContent('認証状態を確認しています。しばらくお待ちください。')
     expect(busyRegion).not.toContainElement(status)
     expect(screen.getByRole('heading', { name: 'カート' })).toBeVisible()
     expect(screen.getByRole('heading', { name: 'クーポン' })).toBeVisible()
-    expect(
-      container.querySelectorAll('div[aria-hidden="true"]'),
-    ).not.toHaveLength(0)
+    expect(container.querySelectorAll('div[aria-hidden="true"]')).not.toHaveLength(0)
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
-    expect(screen.getByRole('link', { name: '買い物を続ける' }))
-      .toHaveAttribute('href', '/products')
+    expect(screen.getByRole('link', { name: '買い物を続ける' })).toHaveAttribute(
+      'href',
+      '/products',
+    )
   })
 
   it('CART-019: カート取得中は実画面の構造を表示し、完了後に切り替える', async () => {
@@ -65,28 +52,22 @@ describe('カート画面', () => {
 
     const status = screen.getByRole('status')
     const busyRegion = container.querySelector('[aria-busy="true"]')
-    expect(status).toHaveTextContent(
-      'カートを読み込んでいます。しばらくお待ちください。',
-    )
+    expect(status).toHaveTextContent('カートを読み込んでいます。しばらくお待ちください。')
     expect(busyRegion).not.toContainElement(status)
     expect(screen.getByRole('heading', { name: 'カート' })).toBeVisible()
     expect(screen.getByRole('heading', { name: 'クーポン' })).toBeVisible()
-    expect(
-      container.querySelectorAll('div[aria-hidden="true"]'),
-    ).not.toHaveLength(0)
+    expect(container.querySelectorAll('div[aria-hidden="true"]')).not.toHaveLength(0)
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
-    expect(screen.getByRole('link', { name: '買い物を続ける' }))
-      .toHaveAttribute('href', '/products')
+    expect(screen.getByRole('link', { name: '買い物を続ける' })).toHaveAttribute(
+      'href',
+      '/products',
+    )
 
     release?.()
-    expect(
-      await screen.findByText('リネンブレンド オーバーシャツ'),
-    ).toBeVisible()
-    expect(
-      screen.queryByText(/カートを読み込んでいます/u),
-    ).not.toBeInTheDocument()
+    expect(await screen.findByText('リネンブレンド オーバーシャツ')).toBeVisible()
+    expect(screen.queryByText(/カートを読み込んでいます/u)).not.toBeInTheDocument()
   })
 
   it('API-002: network errorを表示し、明示的な再試行後にカートを表示する', async () => {
@@ -98,18 +79,17 @@ describe('カート画面', () => {
         name: 'カートを読み込めませんでした',
       }),
     ).toBeVisible()
-    expect(screen.getByRole('alert')).toHaveTextContent(
-      'サーバーへ接続できませんでした',
-    )
+    expect(screen.getByRole('alert')).toHaveTextContent('サーバーへ接続できませんでした')
 
     server.use(http.get('/api/cart', () => cartResponse(cartFixture)))
     await userEvent.click(screen.getByRole('button', { name: '再試行' }))
 
     expect(await screen.findByRole('heading', { name: 'カート' })).toBeVisible()
     expect(screen.getByText('リネンブレンド オーバーシャツ')).toBeVisible()
-    expect(
-      screen.getByRole('img', { name: 'リネンブレンド オーバーシャツ' }),
-    ).toHaveAttribute('src', expect.stringContaining('linen-overshirt.jpg'))
+    expect(screen.getByRole('img', { name: 'リネンブレンド オーバーシャツ' })).toHaveAttribute(
+      'src',
+      expect.stringContaining('linen-overshirt.jpg'),
+    )
   })
 
   it('CART-006: 空状態から商品一覧へ移動できる', async () => {
@@ -140,13 +120,9 @@ describe('カート画面', () => {
     )
     renderWithProviders(<CartPage />)
 
-    const quantityInput = await screen.findByLabelText(
-      'リネンブレンド オーバーシャツの数量',
-    )
+    const quantityInput = await screen.findByLabelText('リネンブレンド オーバーシャツの数量')
     expect(
-      Array.from(quantityInput.querySelectorAll('option'), (option) =>
-        option.textContent?.trim(),
-      ),
+      Array.from(quantityInput.querySelectorAll('option'), (option) => option.textContent?.trim()),
     ).toEqual(['1点', '2点', '3点'])
   })
 
@@ -160,9 +136,7 @@ describe('カート画面', () => {
     renderWithProviders(<CartPage />)
 
     await screen.findByText('リネンブレンド オーバーシャツ')
-    await userEvent.click(
-      screen.getAllByRole('button', { name: /を削除$/u })[0]!,
-    )
+    await userEvent.click(screen.getAllByRole('button', { name: /を削除$/u })[0]!)
 
     expect(await screen.findByText('カートは空です')).toBeVisible()
   })
@@ -208,9 +182,7 @@ describe('カート画面', () => {
     const user = userEvent.setup()
     renderWithProviders(<CartPage />)
 
-    const quantityInput = await screen.findByLabelText(
-      'リネンブレンド オーバーシャツの数量',
-    )
+    const quantityInput = await screen.findByLabelText('リネンブレンド オーバーシャツの数量')
     await user.selectOptions(quantityInput, '4')
     expect(screen.getByRole('status')).toHaveTextContent('更新しています')
 
@@ -225,9 +197,7 @@ describe('カート画面', () => {
     expect(screen.getAllByText('¥114,400')).toHaveLength(3)
     releaseSecond?.()
     expect(await screen.findAllByText('¥85,800')).toHaveLength(3)
-    expect(
-      screen.getByLabelText('リネンブレンド オーバーシャツの数量'),
-    ).toHaveValue('3')
+    expect(screen.getByLabelText('リネンブレンド オーバーシャツの数量')).toHaveValue('3')
     expect(screen.getAllByText('¥85,800')).toHaveLength(3)
   })
 
@@ -251,14 +221,10 @@ describe('カート画面', () => {
     const user = userEvent.setup()
     renderWithProviders(<CartPage />)
 
-    const firstQuantity = await screen.findByLabelText(
-      'リネンブレンド オーバーシャツの数量',
-    )
+    const firstQuantity = await screen.findByLabelText('リネンブレンド オーバーシャツの数量')
     await user.selectOptions(firstQuantity, '3')
 
-    const secondQuantity = screen.getByLabelText(
-      'スエード コートスニーカーの数量',
-    )
+    const secondQuantity = screen.getByLabelText('スエード コートスニーカーの数量')
     await user.selectOptions(secondQuantity, '2')
 
     expect(requestCount).toBe(1)
@@ -326,9 +292,7 @@ describe('カート画面', () => {
     const user = userEvent.setup()
     renderWithProviders(<CartPage />)
 
-    const quantityInput = await screen.findByLabelText(
-      'リネンブレンド オーバーシャツの数量',
-    )
+    const quantityInput = await screen.findByLabelText('リネンブレンド オーバーシャツの数量')
     await user.selectOptions(quantityInput, '4')
     await user.selectOptions(quantityInput, '3')
     releaseFirst?.()
@@ -374,27 +338,17 @@ describe('カート画面', () => {
     const user = userEvent.setup()
     renderWithProviders(<CartPage />)
 
-    const quantityInput = await screen.findByLabelText(
-      'リネンブレンド オーバーシャツの数量',
-    )
+    const quantityInput = await screen.findByLabelText('リネンブレンド オーバーシャツの数量')
     await user.selectOptions(quantityInput, '4')
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      '注文可能な数量を超えています',
-    )
+    expect(await screen.findByRole('alert')).toHaveTextContent('注文可能な数量を超えています')
     expect(quantityInput).toHaveValue('4')
     expect(screen.getAllByText('¥57,200')).toHaveLength(3)
-    await user.click(
-      screen.getByRole('button', { name: '最新のカートを再取得' }),
-    )
+    await user.click(screen.getByRole('button', { name: '最新のカートを再取得' }))
 
     await waitFor(() => expect(getCount).toBe(2))
-    expect(
-      await screen.findByText(/最新のカートを取得できませんでした/u),
-    ).toBeVisible()
-    await user.click(
-      screen.getByRole('button', { name: '最新のカートを再取得' }),
-    )
+    expect(await screen.findByText(/最新のカートを取得できませんでした/u)).toBeVisible()
+    await user.click(screen.getByRole('button', { name: '最新のカートを再取得' }))
     await waitFor(() => expect(getCount).toBe(3))
     expect(quantityInput).toHaveValue('2')
     expect(screen.queryByRole('option', { name: '4点' })).not.toBeInTheDocument()
@@ -448,9 +402,7 @@ describe('カート画面', () => {
     const user = userEvent.setup()
     renderWithProviders(<CartPage />)
 
-    const quantityInput = await screen.findByLabelText(
-      'リネンブレンド オーバーシャツの数量',
-    )
+    const quantityInput = await screen.findByLabelText('リネンブレンド オーバーシャツの数量')
     await user.selectOptions(quantityInput, '4')
 
     expect(await screen.findByRole('alert')).toHaveTextContent(message)
@@ -480,9 +432,7 @@ describe('カート画面', () => {
       '4',
     )
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      '明細が見つかりません',
-    )
+    expect(await screen.findByRole('alert')).toHaveTextContent('明細が見つかりません')
     expect(screen.queryByRole('button', { name: '再試行' })).not.toBeInTheDocument()
   })
 
@@ -491,16 +441,12 @@ describe('カート画面', () => {
     server.use(
       http.get('/api/cart', () => {
         requestCount += 1
-        return cartResponse(
-          requestCount === 1 ? stockConflictCartFixture : cartFixture,
-        )
+        return cartResponse(requestCount === 1 ? stockConflictCartFixture : cartFixture)
       }),
     )
     const { client } = renderWithProviders(<CartPage />)
 
-    expect(
-      await screen.findByText(/在庫が変更されました/u),
-    ).toBeVisible()
+    expect(await screen.findByText(/在庫が変更されました/u)).toBeVisible()
     expect(
       screen.getByRole('combobox', {
         name: 'リネンブレンド オーバーシャツの数量',
@@ -509,11 +455,7 @@ describe('カート画面', () => {
     expect(screen.getByRole('option', { name: '3点（在庫超過）' })).toBeDisabled()
     await client.refetchQueries({ queryKey: ['cart', customer.id] })
 
-    await waitFor(() =>
-      expect(
-        screen.queryByText(/在庫が変更されました/u),
-      ).not.toBeInTheDocument(),
-    )
+    await waitFor(() => expect(screen.queryByText(/在庫が変更されました/u)).not.toBeInTheDocument())
     expect(screen.getByText('リネンブレンド オーバーシャツ')).toBeVisible()
   })
 
@@ -543,12 +485,8 @@ describe('カート画面', () => {
     server.use(http.get('/api/cart', () => cartResponse(unavailableCart)))
     renderWithProviders(<CartPage />)
 
-    expect(
-      await screen.findByLabelText('リネンブレンド オーバーシャツの数量'),
-    ).toBeDisabled()
-    expect(
-      screen.getByLabelText('スエード コートスニーカーの数量'),
-    ).toBeDisabled()
+    expect(await screen.findByLabelText('リネンブレンド オーバーシャツの数量')).toBeDisabled()
+    expect(screen.getByLabelText('スエード コートスニーカーの数量')).toBeDisabled()
     for (const deleteButton of screen.getAllByRole('button', {
       name: /を削除$/u,
     })) {
@@ -571,9 +509,7 @@ describe('カート画面', () => {
       user: { ...customer, role: 'admin' },
     })
 
-    expect(
-      screen.getByRole('heading', { name: 'カートは購入者専用です' }),
-    ).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'カートは購入者専用です' })).toBeVisible()
     expect(handler).not.toHaveBeenCalled()
   })
 })

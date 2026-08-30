@@ -1,8 +1,4 @@
-import {
-  loginRequestSchema,
-  sessionResponseSchema,
-  type LoginRequest,
-} from '@/contracts/session'
+import { loginRequestSchema, sessionResponseSchema, type LoginRequest } from '@/contracts/session'
 
 import { requestJson, requestNoContent } from './request-json'
 

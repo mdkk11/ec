@@ -1,9 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite'
 
-import {
-  AdminProductEditLoadingView,
-  AdminProductsLoadingView,
-} from './AdminProductLoadingViews'
+import { AdminProductEditLoadingView, AdminProductsLoadingView } from './AdminProductLoadingViews'
 
 const statusMessage = '商品を読み込んでいます。しばらくお待ちください。'
 

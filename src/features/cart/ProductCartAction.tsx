@@ -64,19 +64,15 @@ export function ProductCartAction({
   }
   if (sessionState.user.role !== 'customer') {
     return (
-      <p className="mt-7 text-sm leading-6 text-muted">
-        カートは購入者アカウントで利用できます。
-      </p>
+      <p className="mt-7 text-sm leading-6 text-muted">カートは購入者アカウントで利用できます。</p>
     )
   }
 
   const pending = operations.state.pending.some(
-    ({ operation }) =>
-      operation.kind === 'add' && operation.productId === productId,
+    ({ operation }) => operation.kind === 'add' && operation.productId === productId,
   )
   const failure = operations.state.errors.find(
-    ({ operation }) =>
-      operation.kind === 'add' && operation.productId === productId,
+    ({ operation }) => operation.kind === 'add' && operation.productId === productId,
   )
   const errorMessage = failure
     ? failure.error instanceof Error
@@ -101,10 +97,7 @@ export function ProductCartAction({
           if (toastTimeoutRef.current !== null) {
             window.clearTimeout(toastTimeoutRef.current)
           }
-          toastTimeoutRef.current = window.setTimeout(
-            () => setShowSuccess(false),
-            4_000,
-          )
+          toastTimeoutRef.current = window.setTimeout(() => setShowSuccess(false), 4_000)
         }}
       >
         {pending ? '追加中…' : '1点カートに追加'}

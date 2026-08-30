@@ -1,15 +1,8 @@
 'use client'
 
-import {
-  type FormEvent,
-  useRef,
-  useState,
-} from 'react'
+import { type FormEvent, useRef, useState } from 'react'
 
-import {
-  loginRequestSchema,
-  type UserDto,
-} from '@/contracts/session'
+import { loginRequestSchema, type UserDto } from '@/contracts/session'
 import { ApiClientError } from '@/lib/api-client/request-json'
 import { login } from '@/lib/api-client/session'
 
@@ -73,9 +66,7 @@ export function LoginForm({ onAuthenticated }: LoginFormProps) {
             : 'ログインできませんでした。入力内容を保ったまま、もう一度お試しください。',
         )
       } else {
-        setFormError(
-          'ログインできませんでした。入力内容を保ったまま、もう一度お試しください。',
-        )
+        setFormError('ログインできませんでした。入力内容を保ったまま、もう一度お試しください。')
       }
     } finally {
       submittingRef.current = false

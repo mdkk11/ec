@@ -18,9 +18,7 @@ export type AdminProductFormValues = {
 }
 
 export type AdminProductFormField = keyof AdminProductFormValues
-export type AdminProductFieldErrors = Partial<
-  Record<AdminProductFormField, string[]>
->
+export type AdminProductFieldErrors = Partial<Record<AdminProductFormField, string[]>>
 
 type AdminProductFormProps = {
   blocked?: boolean
@@ -39,13 +37,7 @@ type AdminProductFormProps = {
   values: AdminProductFormValues
 }
 
-function FieldError({
-  errors,
-  id,
-}: {
-  errors?: string[]
-  id: string
-}) {
+function FieldError({ errors, id }: { errors?: string[]; id: string }) {
   return errors?.[0] ? (
     <p className="mt-2 text-sm text-accent" id={id} role="alert">
       {errors[0]}
@@ -85,16 +77,11 @@ export function AdminProductForm({
     >
       <div className="grid gap-6">
         <div>
-          <label
-            className="text-sm font-semibold"
-            htmlFor={fieldId('categoryId')}
-          >
+          <label className="text-sm font-semibold" htmlFor={fieldId('categoryId')}>
             カテゴリ
           </label>
           <select
-            aria-describedby={
-              fieldErrors.categoryId ? errorId('categoryId') : undefined
-            }
+            aria-describedby={fieldErrors.categoryId ? errorId('categoryId') : undefined}
             aria-invalid={fieldErrors.categoryId ? true : undefined}
             className={inputClassName}
             disabled={disabled}
@@ -111,10 +98,7 @@ export function AdminProductForm({
               </option>
             ))}
           </select>
-          <FieldError
-            errors={fieldErrors.categoryId}
-            id={errorId('categoryId')}
-          />
+          <FieldError errors={fieldErrors.categoryId} id={errorId('categoryId')} />
         </div>
 
         <div>
@@ -135,16 +119,11 @@ export function AdminProductForm({
         </div>
 
         <div>
-          <label
-            className="text-sm font-semibold"
-            htmlFor={fieldId('description')}
-          >
+          <label className="text-sm font-semibold" htmlFor={fieldId('description')}>
             商品説明
           </label>
           <textarea
-            aria-describedby={
-              fieldErrors.description ? errorId('description') : undefined
-            }
+            aria-describedby={fieldErrors.description ? errorId('description') : undefined}
             aria-invalid={fieldErrors.description ? true : undefined}
             className={`${inputClassName} min-h-32 py-3`}
             disabled={disabled}
@@ -152,10 +131,7 @@ export function AdminProductForm({
             onChange={(event) => onChange('description', event.target.value)}
             value={values.description}
           />
-          <FieldError
-            errors={fieldErrors.description}
-            id={errorId('description')}
-          />
+          <FieldError errors={fieldErrors.description} id={errorId('description')} />
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2">
@@ -180,10 +156,7 @@ export function AdminProductForm({
           </div>
           {includeStock ? (
             <div>
-              <label
-                className="text-sm font-semibold"
-                htmlFor={fieldId('stock')}
-              >
+              <label className="text-sm font-semibold" htmlFor={fieldId('stock')}>
                 在庫数
               </label>
               <input
@@ -205,16 +178,11 @@ export function AdminProductForm({
         </div>
 
         <div>
-          <label
-            className="text-sm font-semibold"
-            htmlFor={fieldId('imagePath')}
-          >
+          <label className="text-sm font-semibold" htmlFor={fieldId('imagePath')}>
             画像パス
           </label>
           <input
-            aria-describedby={
-              fieldErrors.imagePath ? errorId('imagePath') : undefined
-            }
+            aria-describedby={fieldErrors.imagePath ? errorId('imagePath') : undefined}
             aria-invalid={fieldErrors.imagePath ? true : undefined}
             className={inputClassName}
             disabled={disabled}
@@ -250,12 +218,30 @@ export function AdminProductForm({
             入力内容は保持しています。最新値を反映してから、変更内容を確認し直してください。
           </p>
           <dl className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
-            <div><dt className="text-muted">商品名</dt><dd>{conflictProduct.name}</dd></div>
-            <div><dt className="text-muted">カテゴリ</dt><dd>{categoryCatalog.find(({ id }) => id === conflictProduct.categoryId)?.name}</dd></div>
-            <div><dt className="text-muted">価格</dt><dd>{formatPrice(conflictProduct.price)}</dd></div>
-            <div><dt className="text-muted">在庫</dt><dd>{conflictProduct.stock}</dd></div>
-            <div><dt className="text-muted">公開状態</dt><dd>{conflictProduct.isPublished ? '公開' : '非公開'}</dd></div>
-            <div><dt className="text-muted">version</dt><dd>{conflictProduct.version}</dd></div>
+            <div>
+              <dt className="text-muted">商品名</dt>
+              <dd>{conflictProduct.name}</dd>
+            </div>
+            <div>
+              <dt className="text-muted">カテゴリ</dt>
+              <dd>{categoryCatalog.find(({ id }) => id === conflictProduct.categoryId)?.name}</dd>
+            </div>
+            <div>
+              <dt className="text-muted">価格</dt>
+              <dd>{formatPrice(conflictProduct.price)}</dd>
+            </div>
+            <div>
+              <dt className="text-muted">在庫</dt>
+              <dd>{conflictProduct.stock}</dd>
+            </div>
+            <div>
+              <dt className="text-muted">公開状態</dt>
+              <dd>{conflictProduct.isPublished ? '公開' : '非公開'}</dd>
+            </div>
+            <div>
+              <dt className="text-muted">version</dt>
+              <dd>{conflictProduct.version}</dd>
+            </div>
           </dl>
           {onAcceptLatest ? (
             <Button className="mt-5" onClick={onAcceptLatest} type="button" variant="secondary">
@@ -276,11 +262,7 @@ export function AdminProductForm({
         </p>
       ) : null}
 
-      <Button
-        className="mt-7 w-full sm:w-auto"
-        disabled={disabled || submitDisabled}
-        type="submit"
-      >
+      <Button className="mt-7 w-full sm:w-auto" disabled={disabled || submitDisabled} type="submit">
         {pending
           ? mode === 'create'
             ? '商品を作成しています…'

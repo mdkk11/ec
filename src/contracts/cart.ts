@@ -6,11 +6,7 @@ const positiveQuantitySchema = z
   .int('数量は整数で入力してください。')
   .min(1, '数量は1以上で入力してください。')
 
-export const cartItemAvailabilitySchema = z.enum([
-  'available',
-  'out_of_stock',
-  'unpublished',
-])
+export const cartItemAvailabilitySchema = z.enum(['available', 'out_of_stock', 'unpublished'])
 
 export const cartItemSchema = z.object({
   availableStock: z.number().int().nonnegative(),
@@ -85,10 +81,6 @@ export type CartItemDto = z.infer<typeof cartItemSchema>
 export type AppliedCouponDto = z.infer<typeof appliedCouponSchema>
 export type CheckoutIssueDto = z.infer<typeof checkoutIssueSchema>
 export type AddCartItemRequest = z.infer<typeof addCartItemRequestSchema>
-export type UpdateCartItemRequest = z.infer<
-  typeof updateCartItemRequestSchema
->
+export type UpdateCartItemRequest = z.infer<typeof updateCartItemRequestSchema>
 export type ApplyCouponRequest = z.input<typeof applyCouponRequestSchema>
-export type NormalizedApplyCouponRequest = z.output<
-  typeof applyCouponRequestSchema
->
+export type NormalizedApplyCouponRequest = z.output<typeof applyCouponRequestSchema>

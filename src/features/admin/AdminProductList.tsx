@@ -12,9 +12,7 @@ export function AdminProductList({ items }: { items: AdminProductDto[] }) {
       {items.length === 0 ? (
         <div className="mt-6 border border-line bg-surface p-8 text-center">
           <h3 className="font-serif text-2xl">商品はまだありません</h3>
-          <p className="mt-3 text-sm text-muted">
-            右のフォームから最初の商品を作成してください。
-          </p>
+          <p className="mt-3 text-sm text-muted">右のフォームから最初の商品を作成してください。</p>
         </div>
       ) : (
         <ul className="mt-6 divide-y divide-line border-y border-line">
@@ -44,14 +42,10 @@ export function AdminProductList({ items }: { items: AdminProductDto[] }) {
                   </span>
                 </div>
                 <p className="mt-2 text-sm text-muted">
-                  {formatPrice(product.price)} / 在庫 {product.stock} / version{' '}
-                  {product.version}
+                  {formatPrice(product.price)} / 在庫 {product.stock} / version {product.version}
                 </p>
               </div>
-              <Link
-                className="button-secondary"
-                href={`/admin/products/${product.id}`}
-              >
+              <Link className="button-secondary" href={`/admin/products/${product.id}`}>
                 編集する
               </Link>
             </li>

@@ -42,6 +42,5 @@ export function runCli(env = process.env) {
 }
 
 const isMain =
-  process.argv[1] &&
-  path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))
+  process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))
 if (isMain) process.exitCode = runCli()

@@ -5,10 +5,7 @@ import { formatPrice } from '@/features/products/format-price'
 
 import { Button } from '@/components/button/Button'
 import { Skeleton } from '@/components/skeleton/Skeleton'
-import {
-  formatOrderDate,
-  orderStatusLabel,
-} from '@/features/orders/order-presentation'
+import { formatOrderDate, orderStatusLabel } from '@/features/orders/order-presentation'
 import { getAllowedOrderStatuses } from '@/features/orders/order-status-transition'
 
 type AdminOrderTableProps = {
@@ -46,18 +43,23 @@ export function AdminOrderTable({
         <p aria-live="polite" className="sr-only" role="status">
           {statusMessage}
         </p>
-        <section
-          aria-busy="true"
-          className="overflow-x-auto border border-line bg-surface"
-        >
+        <section aria-busy="true" className="overflow-x-auto border border-line bg-surface">
           <table className="w-full min-w-[48rem] text-left text-sm">
             <caption className="sr-only">管理注文一覧</caption>
             <thead className="border-b border-line bg-canvas text-xs font-semibold tracking-[0.08em]">
               <tr>
-                <th className="px-5 py-4" scope="col">注文</th>
-                <th className="px-5 py-4" scope="col">状態</th>
-                <th className="px-5 py-4" scope="col">合計</th>
-                <th className="px-5 py-4" scope="col">状態を更新</th>
+                <th className="px-5 py-4" scope="col">
+                  注文
+                </th>
+                <th className="px-5 py-4" scope="col">
+                  状態
+                </th>
+                <th className="px-5 py-4" scope="col">
+                  合計
+                </th>
+                <th className="px-5 py-4" scope="col">
+                  状態を更新
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -122,10 +124,18 @@ export function AdminOrderTable({
         <caption className="sr-only">管理注文一覧</caption>
         <thead className="border-b border-line bg-canvas text-xs font-semibold tracking-[0.08em]">
           <tr>
-            <th className="px-5 py-4" scope="col">注文</th>
-            <th className="px-5 py-4" scope="col">状態</th>
-            <th className="px-5 py-4" scope="col">合計</th>
-            <th className="px-5 py-4" scope="col">状態を更新</th>
+            <th className="px-5 py-4" scope="col">
+              注文
+            </th>
+            <th className="px-5 py-4" scope="col">
+              状態
+            </th>
+            <th className="px-5 py-4" scope="col">
+              合計
+            </th>
+            <th className="px-5 py-4" scope="col">
+              状態を更新
+            </th>
           </tr>
         </thead>
         <tbody className="divide-y divide-line">
@@ -152,7 +162,11 @@ export function AdminOrderTable({
                 </td>
                 <td className="px-5 py-5 align-top">
                   {isConflict ? (
-                    <div aria-live="assertive" className="max-w-xs border border-accent bg-[#fff8f5] p-4" role="alert">
+                    <div
+                      aria-live="assertive"
+                      className="max-w-xs border border-accent bg-[#fff8f5] p-4"
+                      role="alert"
+                    >
                       <p className="font-semibold">最新状態を確認してください</p>
                       <p className="mt-2 text-xs leading-5 text-muted">
                         {conflictLatest
@@ -182,10 +196,7 @@ export function AdminOrderTable({
                         disabled={isPending}
                         id={`admin-order-status-${order.id}`}
                         onChange={(event) =>
-                          onSelectStatus?.(
-                            order.id,
-                            event.target.value as OrderStatus | '',
-                          )
+                          onSelectStatus?.(order.id, event.target.value as OrderStatus | '')
                         }
                         value={selectedStatus}
                       >

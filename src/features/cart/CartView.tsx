@@ -10,9 +10,7 @@ import type { CartDto, CartItemDto } from '@/contracts/cart'
 import { CouponForm } from '@/features/coupons/CouponForm'
 import { formatPrice } from '@/features/products/format-price'
 
-import type {
-  CartOperation,
-} from './CartOperationProvider'
+import type { CartOperation } from './CartOperationProvider'
 
 export type CartViewOperationState = {
   errors: Array<{
@@ -42,10 +40,7 @@ type CartViewProps = {
   ) => Promise<boolean>
   onRefreshCart?: () => Promise<unknown> | void
   onRemoveCoupon: () => Promise<unknown> | void
-  onUpdate: (
-    itemId: string,
-    quantity: number,
-  ) => Promise<unknown> | void
+  onUpdate: (itemId: string, quantity: number) => Promise<unknown> | void
   operationState?: CartViewOperationState
 }
 
@@ -55,10 +50,7 @@ export function CartLoadingView({ statusMessage }: { statusMessage: string }) {
       <p aria-live="polite" className="sr-only" role="status">
         {statusMessage}
       </p>
-      <section
-        aria-busy="true"
-        className="page-wrap py-12 sm:py-16 lg:py-20"
-      >
+      <section aria-busy="true" className="page-wrap py-12 sm:py-16 lg:py-20">
         <p className="label text-accent">SHOPPING CART</p>
         <h1 className="mt-4 font-serif text-4xl sm:text-5xl">カート</h1>
         <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-14">
@@ -99,11 +91,15 @@ export function CartLoadingView({ statusMessage }: { statusMessage: string }) {
             <dl className="mt-6 space-y-4 text-sm">
               <div className="flex justify-between gap-4">
                 <dt className="text-muted">商品小計</dt>
-                <dd><Skeleton className="h-5 w-20" /></dd>
+                <dd>
+                  <Skeleton className="h-5 w-20" />
+                </dd>
               </div>
               <div className="flex justify-between gap-4 border-t border-line pt-4 text-base font-semibold">
                 <dt>合計</dt>
-                <dd><Skeleton className="h-6 w-24" /></dd>
+                <dd>
+                  <Skeleton className="h-6 w-24" />
+                </dd>
               </div>
             </dl>
             <Skeleton className="mt-6 h-12 w-full" />
@@ -154,8 +150,7 @@ function CartLine({
   const quantity = quantityDraft ?? item.quantity
   const pendingOperations = operationState.pending.filter(
     (operation) =>
-      (operation.kind === 'delete' || operation.kind === 'update') &&
-      operation.itemId === item.id,
+      (operation.kind === 'delete' || operation.kind === 'update') && operation.itemId === item.id,
   )
   const updating = pendingOperations.length > 0
   const operationError =
@@ -169,22 +164,15 @@ function CartLine({
       ? { ...operationError, operation: operationError.operation }
       : null
   const issue = issueMessage(cart, item)
-  const quantityOptions = Array.from(
-    { length: item.availableStock },
-    (_, index) => index + 1,
-  )
+  const quantityOptions = Array.from({ length: item.availableStock }, (_, index) => index + 1)
   const savedQuantityExceedsStock = item.quantity > item.availableStock
   const quantityDisabled =
-    interactionDisabled ||
-    item.availability !== 'available' ||
-    item.availableStock === 0
+    interactionDisabled || item.availability !== 'available' || item.availableStock === 0
 
   const updateQuantity = async (nextQuantity: number) => {
     const result = await onUpdate(item.id, nextQuantity)
     if (result) {
-      setQuantityDraft((current) =>
-        current === nextQuantity ? null : current,
-      )
+      setQuantityDraft((current) => (current === nextQuantity ? null : current))
     }
   }
 
@@ -194,25 +182,15 @@ function CartLine({
       className="grid gap-5 border-b border-line py-6 sm:grid-cols-[8rem_minmax(0,1fr)]"
     >
       <div className="relative aspect-[3/4] overflow-hidden bg-[#ebeae6]">
-        <Image
-          alt={item.name}
-          className="object-cover"
-          fill
-          sizes="128px"
-          src={item.imagePath}
-        />
+        <Image alt={item.name} className="object-cover" fill sizes="128px" src={item.imagePath} />
       </div>
       <div className="flex min-w-0 flex-col">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="font-serif text-2xl">{item.name}</h2>
-            <p className="mt-2 text-sm text-muted">
-              単価 {formatPrice(item.unitPrice)}
-            </p>
+            <p className="mt-2 text-sm text-muted">単価 {formatPrice(item.unitPrice)}</p>
           </div>
-          <p className="font-medium tabular-nums">
-            {formatPrice(item.lineTotal)}
-          </p>
+          <p className="font-medium tabular-nums">{formatPrice(item.lineTotal)}</p>
         </div>
 
         {issue ? (
@@ -225,10 +203,7 @@ function CartLine({
         ) : null}
 
         <div className="mt-auto flex flex-wrap items-end gap-3 pt-6">
-          <label
-            className="grid gap-2 text-xs font-semibold"
-            htmlFor={`quantity-${item.id}`}
-          >
+          <label className="grid gap-2 text-xs font-semibold" htmlFor={`quantity-${item.id}`}>
             数量
             <select
               aria-label={`${item.name}の数量`}
@@ -269,35 +244,28 @@ function CartLine({
         {operationError ? (
           <div className="mt-3 text-sm text-accent">
             <p role="alert">{operationError.message}</p>
-            {updateError?.recovery === 'refresh' &&
-            onRefreshAfterUpdateError ? (
+            {updateError?.recovery === 'refresh' && onRefreshAfterUpdateError ? (
               <Button
                 className="mt-3"
                 disabled={refreshPending}
                 onClick={async () => {
                   setRefreshPending(true)
                   setRefreshFailed(false)
-                  const refreshed = await onRefreshAfterUpdateError(
-                    updateError.operation,
-                  )
+                  const refreshed = await onRefreshAfterUpdateError(updateError.operation)
                   setRefreshPending(false)
                   if (refreshed) setQuantityDraft(null)
                   else setRefreshFailed(true)
                 }}
                 variant="secondary"
               >
-                {refreshPending
-                  ? '再取得しています…'
-                  : '最新のカートを再取得'}
+                {refreshPending ? '再取得しています…' : '最新のカートを再取得'}
               </Button>
             ) : null}
             {updateError?.recovery === 'retry' ? (
               <Button
                 className="mt-3"
                 disabled={updating}
-                onClick={() =>
-                  void updateQuantity(updateError.operation.quantity)
-                }
+                onClick={() => void updateQuantity(updateError.operation.quantity)}
                 variant="secondary"
               >
                 再試行
@@ -355,27 +323,18 @@ export function CartView({
     )
   }
 
-  const couponIssue = cart.issues.find((issue) =>
-    issue.code.startsWith('COUPON_'),
-  )
+  const couponIssue = cart.issues.find((issue) => issue.code.startsWith('COUPON_'))
   const couponPending = operationState.pending.find(
-    (operation) =>
-      operation.kind === 'apply-coupon' ||
-      operation.kind === 'remove-coupon',
+    (operation) => operation.kind === 'apply-coupon' || operation.kind === 'remove-coupon',
   )
   const couponError = operationState.errors.find(
-    ({ operation }) =>
-      operation.kind === 'apply-coupon' ||
-      operation.kind === 'remove-coupon',
+    ({ operation }) => operation.kind === 'apply-coupon' || operation.kind === 'remove-coupon',
   )?.message
   const cartOperationPending = operationState.pending.length > 0
   const interactionDisabled = checkoutState.pending
 
   return (
-    <section
-      aria-busy={checkoutState.pending}
-      className="page-wrap py-12 sm:py-16 lg:py-20"
-    >
+    <section aria-busy={checkoutState.pending} className="page-wrap py-12 sm:py-16 lg:py-20">
       <p className="label text-accent">SHOPPING CART</p>
       <h1 className="mt-4 font-serif text-4xl sm:text-5xl">カート</h1>
       <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-14">
@@ -424,9 +383,7 @@ export function CartView({
             {cart.coupon ? (
               <div className="flex justify-between gap-4">
                 <dt className="text-muted">クーポン割引</dt>
-                <dd className="tabular-nums">
-                  −{formatPrice(cart.discountAmount)}
-                </dd>
+                <dd className="tabular-nums">−{formatPrice(cart.discountAmount)}</dd>
               </div>
             ) : null}
             <div className="flex justify-between gap-4 border-t border-line pt-4 text-base font-semibold">
@@ -449,9 +406,7 @@ export function CartView({
               {checkoutState.errorMessage}
             </p>
           ) : null}
-          {(checkoutState.refreshFailed ||
-            checkoutState.confirmationRequired) &&
-          onRefreshCart ? (
+          {(checkoutState.refreshFailed || checkoutState.confirmationRequired) && onRefreshCart ? (
             <Button
               className="mt-4 w-full"
               disabled={checkoutState.pending}
@@ -462,10 +417,7 @@ export function CartView({
             </Button>
           ) : null}
           {checkoutState.confirmationRequired ? (
-            <Link
-              className="button-secondary mt-3 w-full"
-              href="/orders"
-            >
+            <Link className="button-secondary mt-3 w-full" href="/orders">
               注文履歴を確認
             </Link>
           ) : null}
@@ -491,10 +443,7 @@ export function CartView({
               注文を確定しています。
             </p>
           ) : null}
-          <Link
-            className="mt-6 inline-block text-sm underline underline-offset-4"
-            href="/products"
-          >
+          <Link className="mt-6 inline-block text-sm underline underline-offset-4" href="/products">
             買い物を続ける
           </Link>
         </aside>

@@ -2,11 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { Temporal } from '@/lib/date-time/temporal'
 
-import {
-  calculateDiscountAmount,
-  evaluateCoupon,
-  normalizeCouponCode,
-} from './coupon-calculation'
+import { calculateDiscountAmount, evaluateCoupon, normalizeCouponCode } from './coupon-calculation'
 
 const startsAt = Temporal.Instant.from('2026-01-01T00:00:00Z')
 const endsAt = Temporal.Instant.from('2026-02-01T00:00:00Z')
@@ -33,26 +29,18 @@ describe('クーポン計算', () => {
   })
 
   it('UNIT-COUPON-004: 終了日時を利用可能期間に含めない', () => {
-    expect(evaluateCoupon(baseCoupon, 10_000, endsAt)).toBe(
-      'COUPON_EXPIRED',
-    )
+    expect(evaluateCoupon(baseCoupon, 10_000, endsAt)).toBe('COUPON_EXPIRED')
   })
 
   it('UNIT-COUPON-005/006: 最低購入額と同額を許可し、1円未満を拒否する', () => {
     const now = Temporal.Instant.from('2026-01-15T00:00:00Z')
     expect(evaluateCoupon(baseCoupon, 10_000, now)).toBeNull()
-    expect(evaluateCoupon(baseCoupon, 9_999, now)).toBe(
-      'COUPON_MINIMUM_NOT_MET',
-    )
+    expect(evaluateCoupon(baseCoupon, 9_999, now)).toBe('COUPON_MINIMUM_NOT_MET')
   })
 
   it.each([
     [{ ...baseCoupon, isActive: false }, 'COUPON_INACTIVE'],
-    [
-      baseCoupon,
-      'COUPON_NOT_STARTED',
-      Temporal.Instant.from('2025-12-31T23:59:59.999999999Z'),
-    ],
+    [baseCoupon, 'COUPON_NOT_STARTED', Temporal.Instant.from('2025-12-31T23:59:59.999999999Z')],
     [baseCoupon, 'COUPON_EXPIRED', endsAt],
   ] as const)(
     'UNIT-COUPON-007: 条件ごとの原因コードを返す',
@@ -66,14 +54,10 @@ describe('クーポン計算', () => {
   })
 
   it('MAX_SAFE_INTEGER近傍でもBigIntで中間積を正確に計算する', () => {
-    expect(calculateDiscountAmount(Number.MAX_SAFE_INTEGER, 15)).toBe(
-      1_351_079_888_211_148,
-    )
+    expect(calculateDiscountAmount(Number.MAX_SAFE_INTEGER, 15)).toBe(1_351_079_888_211_148)
   })
 
   it('安全な整数ではない金額を拒否する', () => {
-    expect(() =>
-      calculateDiscountAmount(Number.MAX_SAFE_INTEGER + 1, 15),
-    ).toThrow('安全')
+    expect(() => calculateDiscountAmount(Number.MAX_SAFE_INTEGER + 1, 15)).toThrow('安全')
   })
 })

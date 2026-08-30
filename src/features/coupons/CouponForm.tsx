@@ -3,17 +3,11 @@
 import { useState } from 'react'
 
 import { Button } from '@/components/button/Button'
-import type {
-  AppliedCouponDto,
-  CheckoutIssueDto,
-} from '@/contracts/cart'
+import type { AppliedCouponDto, CheckoutIssueDto } from '@/contracts/cart'
 
 type CouponIssueCode = Extract<
   CheckoutIssueDto['code'],
-  | 'COUPON_INACTIVE'
-  | 'COUPON_NOT_STARTED'
-  | 'COUPON_EXPIRED'
-  | 'COUPON_MINIMUM_NOT_MET'
+  'COUPON_INACTIVE' | 'COUPON_NOT_STARTED' | 'COUPON_EXPIRED' | 'COUPON_MINIMUM_NOT_MET'
 >
 
 type CouponFormProps = {
@@ -65,9 +59,7 @@ export function CouponForm({
         <div className="mt-3">
           <p className="text-sm">
             <span className="font-semibold">{coupon.code}</span>
-            <span className="ml-2 text-muted">
-              {coupon.discountPercent}%割引
-            </span>
+            <span className="ml-2 text-muted">{coupon.discountPercent}%割引</span>
           </p>
           {issueCode ? (
             <p className="mt-2 text-sm leading-6 text-accent" role="status">
@@ -109,9 +101,7 @@ export function CouponForm({
           </label>
           <Button
             className="mt-3 w-full"
-            disabled={
-              disabled || pending !== null || code.trim().length === 0
-            }
+            disabled={disabled || pending !== null || code.trim().length === 0}
             type="submit"
             variant="secondary"
           >

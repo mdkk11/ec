@@ -18,20 +18,14 @@ const cases: VrtCase[] = [
       width,
     })),
   ),
-  ...[
-    'default',
-    'empty',
-    'category-selected',
-    'category-empty',
-    'loading',
-    'error',
-  ].flatMap((story) =>
-    [375, 768, 1440].map((width) => ({
-      height: width === 375 ? 812 : width === 768 ? 1024 : 1000,
-      name: `VRT-002-product-list-${story}-${width}`,
-      storyId: `features-products-productlist--${story}`,
-      width,
-    })),
+  ...['default', 'empty', 'category-selected', 'category-empty', 'loading', 'error'].flatMap(
+    (story) =>
+      [375, 768, 1440].map((width) => ({
+        height: width === 375 ? 812 : width === 768 ? 1024 : 1000,
+        name: `VRT-002-product-list-${story}-${width}`,
+        storyId: `features-products-productlist--${story}`,
+        width,
+      })),
   ),
   ...['default', 'loading', 'out-of-stock', 'long-content'].flatMap((story) =>
     [375, 1440].map((width) => ({

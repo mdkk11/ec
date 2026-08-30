@@ -1,7 +1,4 @@
-import type {
-  CategoryDto,
-  PublicCategoryDto,
-} from '@/contracts/category'
+import type { CategoryDto, PublicCategoryDto } from '@/contracts/category'
 
 export const categoryCatalog = [
   {

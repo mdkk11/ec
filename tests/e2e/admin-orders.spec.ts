@@ -21,9 +21,7 @@ function projectFixtures(projectName: string) {
   }
 }
 
-test('E2E-006: 管理者が受付注文を処理中へ更新できる', async ({
-  page,
-}, testInfo) => {
+test('E2E-006: 管理者が受付注文を処理中へ更新できる', async ({ page }, testInfo) => {
   const { admin, order } = projectFixtures(testInfo.project.name)
 
   await page.goto('/login')
@@ -37,9 +35,7 @@ test('E2E-006: 管理者が受付注文を処理中へ更新できる', async ({
 
   const row = page.getByRole('row').filter({ hasText: order.orderId })
   await expect(row).toBeVisible()
-  await row
-    .getByLabel(`注文 ${order.orderId} の変更先状態`)
-    .selectOption('processing')
+  await row.getByLabel(`注文 ${order.orderId} の変更先状態`).selectOption('processing')
   await row.getByRole('button', { name: '状態を更新' }).click()
   await expect(row.getByRole('cell', { name: /処理中/u })).toBeVisible()
 })

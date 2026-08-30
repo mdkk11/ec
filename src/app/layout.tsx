@@ -21,9 +21,7 @@ export const metadata: Metadata = {
   description: '毎日の服と道具を、素材と使い心地から選ぶ小さなオンラインストアです。',
 }
 
-export default async function RootLayout({
-  children,
-}: Readonly<{ children: ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   const initialSessionState = await loadInitialSessionState()
 
   return (

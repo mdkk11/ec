@@ -1,10 +1,6 @@
 import Link from 'next/link'
 
-export function OrderAccessView({
-  status,
-}: {
-  status: 'forbidden' | 'unauthenticated'
-}) {
+export function OrderAccessView({ status }: { status: 'forbidden' | 'unauthenticated' }) {
   return (
     <section className="page-wrap py-16 sm:py-24">
       <div className="mx-auto max-w-xl text-center">

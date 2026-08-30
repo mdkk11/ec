@@ -1,9 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-import {
-  e2eAdminFixtures,
-  e2ePurchaseFixtures,
-} from '@/server/db/seed'
+import { e2eAdminFixtures, e2ePurchaseFixtures } from '@/server/db/seed'
 
 function projectFixtures(projectName: string) {
   if (projectName.startsWith('chromium')) {
@@ -24,9 +21,7 @@ function projectFixtures(projectName: string) {
   }
 }
 
-test('E2E-003: 管理者が商品を作成し、在庫変更後に非公開化できる', async ({
-  page,
-}, testInfo) => {
+test('E2E-003: 管理者が商品を作成し、在庫変更後に非公開化できる', async ({ page }, testInfo) => {
   const { admin } = projectFixtures(testInfo.project.name)
 
   await page.goto('/login')
@@ -50,9 +45,7 @@ test('E2E-003: 管理者が商品を作成し、在庫変更後に非公開化�
   const row = page.getByRole('listitem').filter({ hasText: admin.productName })
   await row.getByRole('link', { name: '編集する' }).click()
   await expect(page).toHaveURL(new RegExp(`/admin/products/[0-9a-f-]+$`, 'u'))
-  await expect(
-    page.getByRole('heading', { level: 1, name: admin.productName }),
-  ).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: admin.productName })).toBeVisible()
 
   await page.getByLabel('在庫数').fill('5')
   await page.getByRole('button', { name: '在庫を更新' }).click()
@@ -77,9 +70,7 @@ test('E2E-003: 管理者が商品を作成し、在庫変更後に非公開化�
   await expect(page.getByText(admin.productName)).toHaveCount(0)
 })
 
-test('E2E-004: customerは管理URLと管理APIを利用できない', async ({
-  page,
-}, testInfo) => {
+test('E2E-004: customerは管理URLと管理APIを利用できない', async ({ page }, testInfo) => {
   const { customer } = projectFixtures(testInfo.project.name)
 
   await page.goto('/login')

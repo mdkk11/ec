@@ -25,14 +25,12 @@ describe('注文確定feedback', () => {
   it.each([
     {
       code: 'CHECKOUT_CHANGED',
-      expected:
-        '注文内容が変更されました。最新の内容を確認し、もう一度注文を確定してください。',
+      expected: '注文内容が変更されました。最新の内容を確認し、もう一度注文を確定してください。',
       status: 409,
     },
     {
       code: 'STOCK_CONFLICT',
-      expected:
-        '在庫が変更されました。最新のカートを確認し、数量を調整してください。',
+      expected: '在庫が変更されました。最新のカートを確認し、数量を調整してください。',
       status: 409,
     },
     {
@@ -49,22 +47,19 @@ describe('注文確定feedback', () => {
     })
   })
 
-  it.each(['network', 'invalid_response'] as const)(
-    '%sは注文結果の確認を要求する',
-    (kind) => {
-      const actual = decideCheckoutError(new ApiClientError(kind, '失敗'))
+  it.each(['network', 'invalid_response'] as const)('%sは注文結果の確認を要求する', (kind) => {
+    const actual = decideCheckoutError(new ApiClientError(kind, '失敗'))
 
-      expect(actual).toEqual({
-        feedback: {
-          ...initialCheckoutFeedback,
-          confirmationRequired: true,
-          errorMessage:
-            '注文結果を確認できませんでした。注文履歴または最新のカートを確認してから、もう一度お試しください。',
-        },
-        type: 'show-feedback',
-      })
-    },
-  )
+    expect(actual).toEqual({
+      feedback: {
+        ...initialCheckoutFeedback,
+        confirmationRequired: true,
+        errorMessage:
+          '注文結果を確認できませんでした。注文履歴または最新のカートを確認してから、もう一度お試しください。',
+      },
+      type: 'show-feedback',
+    })
+  })
 
   it('通常のAPIエラーはサーバーmessageを表示する', () => {
     const actual = decideCheckoutError(
@@ -86,8 +81,7 @@ describe('注文確定feedback', () => {
     expect(actual).toEqual({
       feedback: {
         ...initialCheckoutFeedback,
-        errorMessage:
-          '注文を確定できませんでした。時間をおいてもう一度お試しください。',
+        errorMessage: '注文を確定できませんでした。時間をおいてもう一度お試しください。',
       },
       type: 'show-feedback',
     })
@@ -105,8 +99,7 @@ describe('注文確定feedback', () => {
 
     expect(actual).toEqual({
       ...initialCheckoutFeedback,
-      message:
-        '最新のカートを取得しました。注文履歴も確認してから、もう一度お試しください。',
+      message: '最新のカートを取得しました。注文履歴も確認してから、もう一度お試しください。',
     })
   })
 

@@ -1,17 +1,9 @@
 'use client'
 
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import {
-  useEffect,
-  useRef,
-  useState,
-} from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { Button } from '@/components/button/Button'
 import { useSession } from '@/features/auth/SessionProvider'
@@ -19,10 +11,7 @@ import { getCart } from '@/lib/api-client/cart'
 import { createOrder } from '@/lib/api-client/order'
 import { ApiClientError } from '@/lib/api-client/request-json'
 
-import {
-  cartQueryKey,
-  useCartOperations,
-} from './CartOperationProvider'
+import { cartQueryKey, useCartOperations } from './CartOperationProvider'
 import {
   CartLoadingView,
   CartView,
@@ -80,12 +69,9 @@ function CustomerCartPage({ customerId }: { customerId: string }) {
   const queryClient = useQueryClient()
   const { setAnonymous } = useSession()
   const operations = useCartOperations()
-  const [checkoutFeedback, setCheckoutFeedback] = useState(
-    initialCheckoutFeedback,
-  )
+  const [checkoutFeedback, setCheckoutFeedback] = useState(initialCheckoutFeedback)
   const [checkoutPending, setCheckoutPending] = useState(false)
-  const [checkoutRefreshPending, setCheckoutRefreshPending] =
-    useState(false)
+  const [checkoutRefreshPending, setCheckoutRefreshPending] = useState(false)
   const checkoutAbortRef = useRef<AbortController | null>(null)
   const checkoutRunningRef = useRef(false)
   const mountedRef = useRef(false)
@@ -94,13 +80,8 @@ function CustomerCartPage({ customerId }: { customerId: string }) {
     queryKey: cartQueryKey(customerId),
   })
   const checkoutMutation = useMutation({
-    mutationFn: ({
-      checkoutToken,
-      signal,
-    }: {
-      checkoutToken: string
-      signal: AbortSignal
-    }) => createOrder({ checkoutToken }, signal),
+    mutationFn: ({ checkoutToken, signal }: { checkoutToken: string; signal: AbortSignal }) =>
+      createOrder({ checkoutToken }, signal),
     retry: false,
   })
 
@@ -115,23 +96,16 @@ function CustomerCartPage({ customerId }: { customerId: string }) {
   }, [])
 
   useEffect(() => {
-    if (
-      query.error instanceof ApiClientError &&
-      query.error.status === 401
-    ) {
+    if (query.error instanceof ApiClientError && query.error.status === 401) {
       setAnonymous()
     }
   }, [query.error, setAnonymous])
 
   if (query.isPending) {
-    return (
-      <CartLoadingView statusMessage="カートを読み込んでいます。しばらくお待ちください。" />
-    )
+    return <CartLoadingView statusMessage="カートを読み込んでいます。しばらくお待ちください。" />
   }
   if (!query.data) {
-    const networkError =
-      query.error instanceof ApiClientError &&
-      query.error.kind === 'network'
+    const networkError = query.error instanceof ApiClientError && query.error.kind === 'network'
     return (
       <StatusPage role="alert" title="カートを読み込めませんでした">
         <p>
@@ -150,22 +124,19 @@ function CustomerCartPage({ customerId }: { customerId: string }) {
     errors: operations.state.errors.map(({ error, operation }) => ({
       message:
         error instanceof ApiClientError &&
-        (operation.kind === 'apply-coupon' ||
-          operation.kind === 'remove-coupon')
+        (operation.kind === 'apply-coupon' || operation.kind === 'remove-coupon')
           ? couponErrorMessage(error)
           : error instanceof Error
-          ? error.message
-          : '更新できませんでした。もう一度お試しください。',
+            ? error.message
+            : '更新できませんでした。もう一度お試しください。',
       operation,
       recovery:
         operation.kind !== 'update'
           ? undefined
-          : error instanceof ApiClientError &&
-              error.code === 'QUANTITY_EXCEEDS_STOCK'
+          : error instanceof ApiClientError && error.code === 'QUANTITY_EXCEEDS_STOCK'
             ? ('refresh' as const)
             : error instanceof ApiClientError &&
-                (error.kind === 'network' ||
-                  (error.status !== undefined && error.status >= 500))
+                (error.kind === 'network' || (error.status !== undefined && error.status >= 500))
               ? ('retry' as const)
               : undefined,
     })),
@@ -181,35 +152,24 @@ function CustomerCartPage({ customerId }: { customerId: string }) {
     const result = await query.refetch()
     if (!mountedRef.current) return
 
-    if (
-      result.error instanceof ApiClientError &&
-      result.error.status === 401
-    ) {
+    if (result.error instanceof ApiClientError && result.error.status === 401) {
       queryClient.removeQueries({
         queryKey: cartQueryKey(customerId),
       })
       setAnonymous()
       return
     }
-    setCheckoutFeedback((current) =>
-      checkoutFeedbackAfterRefresh(current, result.isError),
-    )
+    setCheckoutFeedback((current) => checkoutFeedbackAfterRefresh(current, result.isError))
     setCheckoutRefreshPending(false)
   }
 
   const refreshCartAfterUpdateError = async (
-    operation: Extract<
-      Parameters<typeof operations.execute>[0],
-      { kind: 'update' }
-    >,
+    operation: Extract<Parameters<typeof operations.execute>[0], { kind: 'update' }>,
   ) => {
     const result = await query.refetch()
     if (!mountedRef.current) return false
 
-    if (
-      result.error instanceof ApiClientError &&
-      result.error.status === 401
-    ) {
+    if (result.error instanceof ApiClientError && result.error.status === 401) {
       queryClient.removeQueries({
         queryKey: cartQueryKey(customerId),
       })
@@ -308,9 +268,7 @@ export function CartPage() {
   const { refresh, state: sessionState } = useSession()
 
   if (sessionState.status === 'loading') {
-    return (
-      <CartLoadingView statusMessage="認証状態を確認しています。しばらくお待ちください。" />
-    )
+    return <CartLoadingView statusMessage="認証状態を確認しています。しばらくお待ちください。" />
   }
   if (sessionState.status === 'error') {
     return (
@@ -338,10 +296,5 @@ export function CartPage() {
     )
   }
 
-  return (
-    <CustomerCartPage
-      key={sessionState.user.id}
-      customerId={sessionState.user.id}
-    />
-  )
+  return <CustomerCartPage key={sessionState.user.id} customerId={sessionState.user.id} />
 }

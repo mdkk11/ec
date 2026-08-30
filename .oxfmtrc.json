@@ -1,0 +1,17 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 100,
+  "semi": false,
+  "singleQuote": true,
+  "trailingComma": "all",
+  "sortImports": false,
+  "sortPackageJson": false,
+  "sortTailwindcss": false,
+  "ignorePatterns": [
+    "**/*.md",
+    "**/pnpm-lock.yaml",
+    ".agents/**",
+    "drizzle/meta/**",
+    "tests/vrt/__screenshots__/**"
+  ]
+}

@@ -2,13 +2,8 @@ import { asc, eq, sql } from 'drizzle-orm'
 import { NextRequest } from 'next/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import {
-  GET as getOrderDetailRoute,
-} from '@/app/api/orders/[orderId]/route'
-import {
-  GET as listOrdersRoute,
-  POST as createOrderRoute,
-} from '@/app/api/orders/route'
+import { GET as getOrderDetailRoute } from '@/app/api/orders/[orderId]/route'
+import { GET as listOrdersRoute, POST as createOrderRoute } from '@/app/api/orders/route'
 import { PUT as applyCouponRoute } from '@/app/api/cart/coupon/route'
 import { POST as addCartItemRoute } from '@/app/api/cart/items/route'
 import { GET as getCartRoute } from '@/app/api/cart/route'
@@ -56,10 +51,7 @@ async function createOtherCustomer() {
   })
 }
 
-async function createCookie(
-  userId = customerId,
-  { expired = false }: { expired?: boolean } = {},
-) {
+async function createCookie(userId = customerId, { expired = false }: { expired?: boolean } = {}) {
   const token = `order-session-${userId}-${expired ? 'expired' : 'active'}`
   await backendDatabase.db.insert(sessions).values({
     createdAt: expired ? '2020-01-01T00:00:00Z' : '2026-07-01T00:00:00Z',
@@ -70,12 +62,7 @@ async function createCookie(
   return `mockshop_session=${token}`
 }
 
-function request(
-  method: 'GET' | 'POST' | 'PUT',
-  path: string,
-  cookie = '',
-  body?: unknown,
-) {
+function request(method: 'GET' | 'POST' | 'PUT', path: string, cookie = '', body?: unknown) {
   return new NextRequest(`${apiBaseUrl}${path}`, {
     body: body === undefined ? undefined : JSON.stringify(body),
     headers: {
@@ -86,11 +73,7 @@ function request(
   })
 }
 
-async function addItem(
-  cookie: string,
-  selectedProductId = productId,
-  quantity = 1,
-) {
+async function addItem(cookie: string, selectedProductId = productId, quantity = 1) {
   const response = await addCartItemRoute(
     request('POST', '/cart/items', cookie, {
       productId: selectedProductId,
@@ -118,9 +101,7 @@ async function getCheckoutToken(cookie: string) {
 }
 
 function submitOrder(cookie: string, checkoutToken: string) {
-  return createOrderRoute(
-    request('POST', '/orders', cookie, { checkoutToken }),
-  )
+  return createOrderRoute(request('POST', '/orders', cookie, { checkoutToken }))
 }
 
 beforeEach(() => {
@@ -168,25 +149,17 @@ describe('注文確定API', () => {
         .from(products)
         .where(eq(products.id, productId)),
     ).resolves.toEqual([{ stock: 6, version: 2 }])
-    await expect(backendDatabase.db.select().from(orders)).resolves.toHaveLength(
-      1,
-    )
-    await expect(
-      backendDatabase.db.select().from(orderItems),
-    ).resolves.toMatchObject([
+    await expect(backendDatabase.db.select().from(orders)).resolves.toHaveLength(1)
+    await expect(backendDatabase.db.select().from(orderItems)).resolves.toMatchObject([
       {
         productName: 'リネンブレンド オーバーシャツ',
         quantity: 2,
         unitPrice: 28_600,
       },
     ])
+    await expect(backendDatabase.db.select().from(cartItems)).resolves.toHaveLength(0)
     await expect(
-      backendDatabase.db.select().from(cartItems),
-    ).resolves.toHaveLength(0)
-    await expect(
-      backendDatabase.db
-        .select({ couponId: carts.couponId, version: carts.version })
-        .from(carts),
+      backendDatabase.db.select({ couponId: carts.couponId, version: carts.version }).from(carts),
     ).resolves.toEqual([{ couponId: null, version: 4 }])
   })
 
@@ -210,12 +183,8 @@ describe('注文確定API', () => {
       total: 3_000_000_000,
     })
     await expect(
-      backendDatabase.db
-        .select({ subtotal: orders.subtotal, total: orders.total })
-        .from(orders),
-    ).resolves.toEqual([
-      { subtotal: 3_000_000_000, total: 3_000_000_000 },
-    ])
+      backendDatabase.db.select({ subtotal: orders.subtotal, total: orders.total }).from(orders),
+    ).resolves.toEqual([{ subtotal: 3_000_000_000, total: 3_000_000_000 }])
   })
 
   it('ORDER-002: 空cartを400にして注文を作らない', async () => {
@@ -226,9 +195,7 @@ describe('注文確定API', () => {
 
     expect(response.status).toBe(400)
     expect(await response.json()).toMatchObject({ code: 'EMPTY_CART' })
-    await expect(backendDatabase.db.select().from(orders)).resolves.toHaveLength(
-      0,
-    )
+    await expect(backendDatabase.db.select().from(orders)).resolves.toHaveLength(0)
   })
 
   it('ORDER-006: 確認後の価格変更をCHECKOUT_CHANGEDにする', async () => {
@@ -250,9 +217,7 @@ describe('注文確定API', () => {
     expect(await response.json()).toMatchObject({
       code: 'CHECKOUT_CHANGED',
     })
-    await expect(backendDatabase.db.select().from(orders)).resolves.toHaveLength(
-      0,
-    )
+    await expect(backendDatabase.db.select().from(orders)).resolves.toHaveLength(0)
   })
 
   it('COUPON-008: 確認後のcoupon無効化をCHECKOUT_CHANGEDにする', async () => {
@@ -272,9 +237,7 @@ describe('注文確定API', () => {
     expect(await response.json()).toMatchObject({
       code: 'CHECKOUT_CHANGED',
     })
-    await expect(backendDatabase.db.select().from(orders)).resolves.toHaveLength(
-      0,
-    )
+    await expect(backendDatabase.db.select().from(orders)).resolves.toHaveLength(0)
   })
 
   it('ORDER-005: 複数商品の在庫不足で全更新をrollbackする', async () => {
@@ -307,21 +270,14 @@ describe('注文確定API', () => {
         .from(products)
         .where(eq(products.id, productId)),
     ).resolves.toEqual([{ id: productId, stock: 8, version: 1 }])
-    await expect(backendDatabase.db.select().from(orders)).resolves.toHaveLength(
-      0,
-    )
-    await expect(backendDatabase.db.select().from(cartItems)).resolves.toHaveLength(
-      2,
-    )
+    await expect(backendDatabase.db.select().from(orders)).resolves.toHaveLength(0)
+    await expect(backendDatabase.db.select().from(cartItems)).resolves.toHaveLength(2)
   })
 
   it('ORDER-004: 最後の在庫への別customer同時注文は1件だけ成功する', async () => {
     await prepareFixtures()
     await createOtherCustomer()
-    await backendDatabase.db
-      .update(products)
-      .set({ stock: 1 })
-      .where(eq(products.id, productId))
+    await backendDatabase.db.update(products).set({ stock: 1 }).where(eq(products.id, productId))
     const firstCookie = await createCookie(customerId)
     const secondCookie = await createCookie(otherCustomerId)
     await addItem(firstCookie)
@@ -337,9 +293,7 @@ describe('注文確定API', () => {
     expect(responses.map(({ status }) => status).sort()).toEqual([201, 409])
     const failed = responses.find(({ status }) => status === 409)
     expect(await failed?.json()).toMatchObject({ code: 'STOCK_CONFLICT' })
-    await expect(backendDatabase.db.select().from(orders)).resolves.toHaveLength(
-      1,
-    )
+    await expect(backendDatabase.db.select().from(orders)).resolves.toHaveLength(1)
     await expect(
       backendDatabase.db
         .select({ stock: products.stock })
@@ -362,9 +316,7 @@ describe('注文確定API', () => {
     expect(responses.map(({ status }) => status).sort()).toEqual([201, 400])
     const failed = responses.find(({ status }) => status === 400)
     expect(await failed?.json()).toMatchObject({ code: 'EMPTY_CART' })
-    await expect(backendDatabase.db.select().from(orders)).resolves.toHaveLength(
-      1,
-    )
+    await expect(backendDatabase.db.select().from(orders)).resolves.toHaveLength(1)
   })
 
   it('ORDER-013: 同額でも商品構成が変わったtokenを拒否する', async () => {
@@ -380,9 +332,7 @@ describe('注文確定API', () => {
       .select({ id: carts.id })
       .from(carts)
       .where(eq(carts.userId, customerId))
-    await backendDatabase.db
-      .delete(cartItems)
-      .where(eq(cartItems.cartId, cart!.id))
+    await backendDatabase.db.delete(cartItems).where(eq(cartItems.cartId, cart!.id))
     await backendDatabase.db.insert(cartItems).values({
       cartId: cart!.id,
       productId: secondProductId,
@@ -399,9 +349,7 @@ describe('注文確定API', () => {
     expect(await response.json()).toMatchObject({
       code: 'CHECKOUT_CHANGED',
     })
-    await expect(backendDatabase.db.select().from(orders)).resolves.toHaveLength(
-      0,
-    )
+    await expect(backendDatabase.db.select().from(orders)).resolves.toHaveLength(0)
   })
 
   it('ORDER-014: 確認後の非公開化を拒否しcart明細を保持する', async () => {
@@ -420,9 +368,7 @@ describe('注文確定API', () => {
     expect(await response.json()).toMatchObject({
       code: 'CHECKOUT_CHANGED',
     })
-    await expect(backendDatabase.db.select().from(cartItems)).resolves.toHaveLength(
-      1,
-    )
+    await expect(backendDatabase.db.select().from(cartItems)).resolves.toHaveLength(1)
   })
 })
 
@@ -461,9 +407,7 @@ describe('注文履歴・詳細API', () => {
       },
     ])
 
-    const listResponse = await listOrdersRoute(
-      request('GET', '/orders', cookie),
-    )
+    const listResponse = await listOrdersRoute(request('GET', '/orders', cookie))
     const listBody = await listResponse.json()
     const detailResponse = await getOrderDetailRoute(
       request('GET', `/orders/${createdOrder.id}`, cookie),
@@ -476,10 +420,7 @@ describe('注文履歴・詳細API', () => {
       listBody.items
         .map(({ id }: { id: string }) => id)
         .filter((id: string) => id.startsWith('70000000-')),
-    ).toEqual([
-      '70000000-0000-4000-8000-000000000011',
-      '70000000-0000-4000-8000-000000000010',
-    ])
+    ).toEqual(['70000000-0000-4000-8000-000000000011', '70000000-0000-4000-8000-000000000010'])
     expect(detailBody.order.items[0]).toMatchObject({
       productName: 'リネンブレンド オーバーシャツ',
       unitPrice: 28_600,
@@ -497,10 +438,9 @@ describe('注文履歴・詳細API', () => {
     const created = await submitOrder(firstCookie, checkoutToken)
     const orderId = (await created.json()).order.id as string
 
-    const response = await getOrderDetailRoute(
-      request('GET', `/orders/${orderId}`, otherCookie),
-      { params: Promise.resolve({ orderId }) },
-    )
+    const response = await getOrderDetailRoute(request('GET', `/orders/${orderId}`, otherCookie), {
+      params: Promise.resolve({ orderId }),
+    })
 
     expect(response.status).toBe(404)
     expect(await response.json()).toEqual({
@@ -535,10 +475,9 @@ describe('注文APIの認証・入力境界', () => {
     const forbidden = [
       await submitOrder(adminCookie, 'a'.repeat(64)),
       await listOrdersRoute(request('GET', '/orders', adminCookie)),
-      await getOrderDetailRoute(
-        request('GET', `/orders/${orderId}`, adminCookie),
-        { params: Promise.resolve({ orderId }) },
-      ),
+      await getOrderDetailRoute(request('GET', `/orders/${orderId}`, adminCookie), {
+        params: Promise.resolve({ orderId }),
+      }),
     ]
 
     for (const response of unauthenticated) {
@@ -560,10 +499,9 @@ describe('注文APIの認証・入力境界', () => {
         checkoutToken: 'invalid',
       }),
     )
-    const detailResponse = await getOrderDetailRoute(
-      request('GET', '/orders/invalid', cookie),
-      { params: Promise.resolve({ orderId: 'invalid' }) },
-    )
+    const detailResponse = await getOrderDetailRoute(request('GET', '/orders/invalid', cookie), {
+      params: Promise.resolve({ orderId: 'invalid' }),
+    })
 
     expect(createResponse.status).toBe(400)
     expect(await createResponse.json()).toMatchObject({
@@ -716,9 +654,6 @@ describe('DB-002/DB-005: 注文DB制約', () => {
       .from(orderItems)
       .orderBy(asc(orderItems.productId))
 
-    expect(items.map(({ productId: id }) => id)).toEqual([
-      productId,
-      secondProductId,
-    ])
+    expect(items.map(({ productId: id }) => id)).toEqual([productId, secondProductId])
   })
 })

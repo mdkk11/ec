@@ -20,8 +20,7 @@ export default defineConfig({
   ],
   reporter: [['list'], ['html', { open: 'never' }]],
   retries: 0,
-  snapshotPathTemplate:
-    '{testDir}/__screenshots__/{testFilePath}/{arg}-{projectName}{ext}',
+  snapshotPathTemplate: '{testDir}/__screenshots__/{testFilePath}/{arg}-{projectName}{ext}',
   testDir: './tests/vrt',
   use: {
     baseURL: storybookUrl,
@@ -30,8 +29,7 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   webServer: {
-    command:
-      'http-server storybook-static -a 127.0.0.1 -p 6006 -c-1 --silent',
+    command: 'http-server storybook-static -a 127.0.0.1 -p 6006 -c-1 --silent',
     reuseExistingServer: false,
     timeout: 120_000,
     url: storybookUrl,

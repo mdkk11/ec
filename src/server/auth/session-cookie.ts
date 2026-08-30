@@ -24,9 +24,7 @@ export function createSessionCookieOptions(
     maxAge: SESSION_DURATION_SECONDS,
     path: '/',
     sameSite: 'lax' as const,
-    secure:
-      nodeEnv === 'production' &&
-      !isLocalE2eHttpServer(environment),
+    secure: nodeEnv === 'production' && !isLocalE2eHttpServer(environment),
   }
 }
 
@@ -68,10 +66,7 @@ function isLocalE2eHttpServer(environment: SessionCookieEnvironment) {
     target.hostname === 'localhost' ||
     target.hostname === '127.0.0.1' ||
     (environment.GITHUB_ACTIONS === 'true' && target.hostname === 'postgres')
-  if (
-    !isAllowedHost ||
-    databaseName !== 'mockshop_e2e'
-  ) {
+  if (!isAllowedHost || databaseName !== 'mockshop_e2e') {
     throw new Error('E2E HTTP serverは許可した専用DBだけを使用できます。')
   }
 

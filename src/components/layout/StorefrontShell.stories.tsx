@@ -1,9 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite'
 
-import {
-  SessionProvider,
-  type SessionState,
-} from '@/features/auth/SessionProvider'
+import { SessionProvider, type SessionState } from '@/features/auth/SessionProvider'
 import { HomePage } from '@/features/home/HomePage'
 
 import { SiteFooter } from './SiteFooter'

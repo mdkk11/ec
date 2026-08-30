@@ -7,10 +7,7 @@ import { server } from '@/test/msw/server'
 
 import { ProductCartAction } from './ProductCartAction'
 import { cartFixture } from './cart-fixtures'
-import {
-  cartResponse,
-  renderWithProviders,
-} from './cart-frontend-test-helpers'
+import { cartResponse, renderWithProviders } from './cart-frontend-test-helpers'
 
 describe('商品詳細のカート操作', () => {
   it('CART-014: 商品追加APIを1回送信して成功Toastを表示する', async () => {
@@ -32,28 +29,18 @@ describe('商品詳細のカート操作', () => {
     )
     const user = userEvent.setup()
     renderWithProviders(
-      <ProductCartAction
-        availability="in_stock"
-        productId={cartFixture.items[0]!.productId}
-      />,
+      <ProductCartAction availability="in_stock" productId={cartFixture.items[0]!.productId} />,
     )
 
-    const doubleClick = user.dblClick(
-      screen.getByRole('button', { name: '1点カートに追加' }),
-    )
+    const doubleClick = user.dblClick(screen.getByRole('button', { name: '1点カートに追加' }))
 
     await waitFor(() => expect(requestCount).toBe(1))
     expect(screen.getByRole('button', { name: '追加中…' })).toBeDisabled()
     releaseResponse?.()
     await doubleClick
-    expect(
-      await screen.findByText('カートへ追加しました。'),
-    ).toBeVisible()
+    expect(await screen.findByText('カートへ追加しました。')).toBeVisible()
     expect(requestCount).toBe(1)
-    expect(screen.getByRole('link', { name: 'カートを見る' })).toHaveAttribute(
-      'href',
-      '/cart',
-    )
+    expect(screen.getByRole('link', { name: 'カートを見る' })).toHaveAttribute('href', '/cart')
     const addButton = screen.getByRole('button', {
       name: '1点カートに追加',
     })
@@ -66,10 +53,7 @@ describe('商品詳細のカート操作', () => {
     const handler = vi.fn()
     server.use(http.post('/api/cart/items', handler))
     renderWithProviders(
-      <ProductCartAction
-        availability="out_of_stock"
-        productId={cartFixture.items[0]!.productId}
-      />,
+      <ProductCartAction availability="out_of_stock" productId={cartFixture.items[0]!.productId} />,
     )
 
     expect(screen.getByRole('button', { name: '在庫切れ' })).toBeDisabled()

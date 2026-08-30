@@ -20,11 +20,7 @@ type SessionDependencies = {
   now: Temporal.Instant
 }
 
-function toUserDto(user: {
-  email: string
-  id: string
-  role: 'admin' | 'customer'
-}): UserDto {
+function toUserDto(user: { email: string; id: string; role: 'admin' | 'customer' }): UserDto {
   return {
     email: user.email,
     id: user.id,
@@ -70,10 +66,7 @@ export async function loginWithPassword(
   }
 }
 
-export async function resolveSessionActor(
-  token: string,
-  { db, now }: SessionDependencies,
-) {
+export async function resolveSessionActor(token: string, { db, now }: SessionDependencies) {
   const [record] = await db
     .select({
       email: users.email,
@@ -84,27 +77,18 @@ export async function resolveSessionActor(
     .from(sessions)
     .innerJoin(users, eq(users.id, sessions.userId))
     .where(
-      and(
-        eq(sessions.tokenHash, hashSessionToken(token)),
-        gt(sessions.expiresAt, now.toString()),
-      ),
+      and(eq(sessions.tokenHash, hashSessionToken(token)), gt(sessions.expiresAt, now.toString())),
     )
     .limit(1)
 
   return record ? toUserDto(record) : null
 }
 
-export async function deleteSession(
-  token: string,
-  { db, now }: SessionDependencies,
-) {
+export async function deleteSession(token: string, { db, now }: SessionDependencies) {
   const deleted = await db
     .delete(sessions)
     .where(
-      and(
-        eq(sessions.tokenHash, hashSessionToken(token)),
-        gt(sessions.expiresAt, now.toString()),
-      ),
+      and(eq(sessions.tokenHash, hashSessionToken(token)), gt(sessions.expiresAt, now.toString())),
     )
     .returning({ id: sessions.id })
 

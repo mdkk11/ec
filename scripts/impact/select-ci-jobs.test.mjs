@@ -1,21 +1,11 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import {
-  mkdtempSync,
-  mkdirSync,
-  readFileSync,
-  renameSync,
-  writeFileSync,
-} from 'node:fs'
+import { mkdtempSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
 
-import {
-  getChangedFiles,
-  runCli,
-  selectCiJobs,
-} from './select-ci-jobs.mjs'
+import { getChangedFiles, runCli, selectCiJobs } from './select-ci-jobs.mjs'
 
 const jobs = (selection) => selection.jobs
 
@@ -77,22 +67,16 @@ test('dedicated test files run only their responsible jobs', () => {
     storybook_vrt: true,
     e2e: false,
   })
-  assert.equal(
-    selectCiJobs(['tests/e2e/cart.spec.ts']).e2eMode,
-    'select',
-  )
+  assert.equal(selectCiJobs(['tests/e2e/cart.spec.ts']).e2eMode, 'select')
 })
 
 test('repository agent tooling still runs the static job', () => {
-  assert.deepEqual(
-    jobs(selectCiJobs(['.agents/skills/example/scripts/check.mjs'])),
-    {
-      static_and_unit: true,
-      backend_integration: false,
-      storybook_vrt: false,
-      e2e: false,
-    },
-  )
+  assert.deepEqual(jobs(selectCiJobs(['.agents/skills/example/scripts/check.mjs'])), {
+    static_and_unit: true,
+    backend_integration: false,
+    storybook_vrt: false,
+    e2e: false,
+  })
 })
 
 test('runtime paths select conservative responsibility sets', () => {
@@ -114,10 +98,7 @@ test('runtime paths select conservative responsibility sets', () => {
     storybook_vrt: true,
     e2e: true,
   })
-  assert.equal(
-    selectCiJobs(['public/images/fixtures/cart.png']).e2eMode,
-    'full',
-  )
+  assert.equal(selectCiJobs(['public/images/fixtures/cart.png']).e2eMode, 'full')
 })
 
 test('shared shell and database infrastructure force full E2E coverage', () => {
@@ -136,14 +117,9 @@ test('shared shell and database infrastructure force full E2E coverage', () => {
 })
 
 test('mixed diffs preserve selection unless an E2E-relevant path is unsafe', () => {
+  assert.equal(selectCiJobs(['docs/README.md', 'src/features/cart/CartView.tsx']).e2eMode, 'select')
   assert.equal(
-    selectCiJobs(['docs/README.md', 'src/features/cart/CartView.tsx'])
-      .e2eMode,
-    'select',
-  )
-  assert.equal(
-    selectCiJobs(['src/features/cart/CartView.tsx', 'runtime/new-hook.xyz'])
-      .e2eMode,
+    selectCiJobs(['src/features/cart/CartView.tsx', 'runtime/new-hook.xyz']).e2eMode,
     'full',
   )
 })

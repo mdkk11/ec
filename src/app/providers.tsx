@@ -1,16 +1,9 @@
 'use client'
 
-import {
-  isServer,
-  QueryClient,
-  QueryClientProvider,
-} from '@tanstack/react-query'
+import { isServer, QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 
-import {
-  SessionProvider,
-  type SessionState,
-} from '@/features/auth/SessionProvider'
+import { SessionProvider, type SessionState } from '@/features/auth/SessionProvider'
 import { CartOperationProvider } from '@/features/cart/CartOperationProvider'
 
 function makeQueryClient() {

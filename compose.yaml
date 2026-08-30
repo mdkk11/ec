@@ -6,11 +6,11 @@ services:
       POSTGRES_PASSWORD: mockshop_local
       POSTGRES_USER: mockshop
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - mockshop-postgres-dev:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U mockshop -d mockshop_dev"]
+      test: ['CMD-SHELL', 'pg_isready -U mockshop -d mockshop_dev']
       interval: 2s
       timeout: 5s
       retries: 15
@@ -22,11 +22,11 @@ services:
       POSTGRES_PASSWORD: mockshop_local
       POSTGRES_USER: mockshop
     ports:
-      - "5433:5432"
+      - '5433:5432'
     tmpfs:
       - /var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U mockshop -d mockshop_test"]
+      test: ['CMD-SHELL', 'pg_isready -U mockshop -d mockshop_test']
       interval: 2s
       timeout: 5s
       retries: 15
@@ -38,11 +38,11 @@ services:
       POSTGRES_PASSWORD: mockshop_local
       POSTGRES_USER: mockshop
     ports:
-      - "5434:5432"
+      - '5434:5432'
     tmpfs:
       - /var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U mockshop -d mockshop_e2e"]
+      test: ['CMD-SHELL', 'pg_isready -U mockshop -d mockshop_e2e']
       interval: 2s
       timeout: 5s
       retries: 15

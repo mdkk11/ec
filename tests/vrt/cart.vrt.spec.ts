@@ -2,13 +2,7 @@ import { test } from '@playwright/test'
 
 import { captureStory } from './capture-story'
 
-for (const story of [
-  'default',
-  'empty',
-  'loading',
-  'updating',
-  'stock-conflict',
-]) {
+for (const story of ['default', 'empty', 'loading', 'updating', 'stock-conflict']) {
   for (const width of [375, 1440]) {
     test(`VRT-004-cart-${story}-${width}`, async ({ page }) => {
       await captureStory(page, {

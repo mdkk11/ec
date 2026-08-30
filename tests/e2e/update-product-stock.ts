@@ -1,14 +1,8 @@
 import { createDatabaseClient } from '@/server/db/client'
-import {
-  loadDatabaseEnvironment,
-  requireDatabaseEnvironment,
-} from '@/server/db/environment'
+import { loadDatabaseEnvironment, requireDatabaseEnvironment } from '@/server/db/environment'
 import { assertConnectedDatabase } from '@/server/db/safety'
 
-export async function updateE2EProductStock(
-  productId: string,
-  stock: number,
-) {
+export async function updateE2EProductStock(productId: string, stock: number) {
   loadDatabaseEnvironment()
   const e2eDatabaseUrl = requireDatabaseEnvironment('E2E_DATABASE_URL')
   const client = createDatabaseClient(e2eDatabaseUrl)

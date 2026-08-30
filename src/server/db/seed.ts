@@ -119,8 +119,7 @@ const seedProducts = [
   },
   {
     createdAt: '2026-03-03T00:00:00Z',
-    description:
-      'しなやかなレザーと控えめな金具を組み合わせた、日常使いのためのデイバッグです。',
+    description: 'しなやかなレザーと控えめな金具を組み合わせた、日常使いのためのデイバッグです。',
     id: '30000000-0000-4000-8000-000000000002',
     imagePath: '/images/home/leather-day-bag.jpg',
     isPublished: true,
@@ -145,8 +144,7 @@ const seedProducts = [
   },
   {
     createdAt: '2026-03-01T00:00:00Z',
-    description:
-      'さらりとした肌触りとほどよい厚みを両立した、毎日のためのコットンTシャツです。',
+    description: 'さらりとした肌触りとほどよい厚みを両立した、毎日のためのコットンTシャツです。',
     id: '30000000-0000-4000-8000-000000000004',
     imagePath: '/images/home/cotton-tshirt.jpg',
     isPublished: true,
@@ -430,10 +428,7 @@ const seedProducts = [
   },
 ] as const
 
-const seedProductCategoryIds: Record<
-  (typeof seedProducts)[number]['id'],
-  CategoryId
-> = {
+const seedProductCategoryIds: Record<(typeof seedProducts)[number]['id'], CategoryId> = {
   '30000000-0000-4000-8000-000000000001': categoryIds.clothing,
   '30000000-0000-4000-8000-000000000002': categoryIds['bags-accessories'],
   '30000000-0000-4000-8000-000000000003': categoryIds.shoes,
@@ -474,13 +469,10 @@ export async function seedCatalogProducts(db: NodePgDatabase) {
   await seedCategories(db)
   for (const product of seedProducts) {
     const value = { ...product, categoryId: seedProductCategoryIds[product.id] }
-    await db
-      .insert(products)
-      .values(value)
-      .onConflictDoUpdate({
-        set: value,
-        target: products.id,
-      })
+    await db.insert(products).values(value).onConflictDoUpdate({
+      set: value,
+      target: products.id,
+    })
   }
 }
 
@@ -552,13 +544,10 @@ const seedCoupons = [
 
 export async function seedCouponFixtures(db: NodePgDatabase) {
   for (const coupon of seedCoupons) {
-    await db
-      .insert(coupons)
-      .values(coupon)
-      .onConflictDoUpdate({
-        set: coupon,
-        target: coupons.id,
-      })
+    await db.insert(coupons).values(coupon).onConflictDoUpdate({
+      set: coupon,
+      target: coupons.id,
+    })
   }
 }
 
@@ -762,13 +751,10 @@ export async function seedE2EFixtures(db: NodePgDatabase) {
       updatedAt: '2026-02-02T00:00:00Z',
       version: 1,
     } as const
-    await db
-      .insert(products)
-      .values(product)
-      .onConflictDoUpdate({
-        set: product,
-        target: products.id,
-      })
+    await db.insert(products).values(product).onConflictDoUpdate({
+      set: product,
+      target: products.id,
+    })
   }
 
   const purchaseCoupons = [
@@ -797,13 +783,10 @@ export async function seedE2EFixtures(db: NodePgDatabase) {
       startsAt: '2020-01-01T00:00:00Z',
       updatedAt: '2026-01-01T00:00:00Z',
     } as const
-    await db
-      .insert(coupons)
-      .values(coupon)
-      .onConflictDoUpdate({
-        set: coupon,
-        target: coupons.id,
-      })
+    await db.insert(coupons).values(coupon).onConflictDoUpdate({
+      set: coupon,
+      target: coupons.id,
+    })
   }
 
   for (const [browser, fixture] of Object.entries(e2eAdminOrderFixtures)) {

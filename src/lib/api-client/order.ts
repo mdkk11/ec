@@ -1,14 +1,8 @@
-import {
-  type CreateOrderRequest,
-  orderResponseSchema,
-} from '@/contracts/order'
+import { type CreateOrderRequest, orderResponseSchema } from '@/contracts/order'
 
 import { requestJson } from './request-json'
 
-export function createOrder(
-  input: CreateOrderRequest,
-  signal?: AbortSignal,
-) {
+export function createOrder(input: CreateOrderRequest, signal?: AbortSignal) {
   return requestJson('/api/orders', orderResponseSchema, {
     body: JSON.stringify(input),
     headers: {

@@ -59,13 +59,7 @@ export function SessionControls() {
           className="inline-flex size-11 items-center justify-center"
           href="/cart"
         >
-          <svg
-            aria-hidden="true"
-            fill="none"
-            height="20"
-            viewBox="0 0 24 24"
-            width="20"
-          >
+          <svg aria-hidden="true" fill="none" height="20" viewBox="0 0 24 24" width="20">
             <path
               d="M3 4h2l2.1 10.1a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 2-1.6L20.5 7H6"
               stroke="currentColor"
@@ -123,11 +117,7 @@ export function SessionControls() {
             {isLoggingOut ? 'ログアウト中…' : 'ログアウト'}
           </button>
           {logoutError ? (
-            <p
-              aria-live="assertive"
-              className="mt-1 text-xs text-red-700"
-              role="alert"
-            >
+            <p aria-live="assertive" className="mt-1 text-xs text-red-700" role="alert">
               失敗しました。再度お試しください。
             </p>
           ) : null}

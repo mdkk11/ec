@@ -10,7 +10,9 @@ const meta = {
       <main className="page-wrap py-12">
         <p className="label text-accent">ADMINISTRATION</p>
         <h1 className="mt-4 font-serif text-4xl">注文管理</h1>
-        <div className="mt-8"><Story /></div>
+        <div className="mt-8">
+          <Story />
+        </div>
       </main>
     ),
   ],

@@ -7,10 +7,7 @@ import { Skeleton } from '@/components/skeleton/Skeleton'
 import type { OrderDto } from '@/contracts/order'
 import { formatPrice } from '@/features/products/format-price'
 
-import {
-  formatOrderDate,
-  orderStatusLabel,
-} from './order-presentation'
+import { formatOrderDate, orderStatusLabel } from './order-presentation'
 
 type OrderHistoryViewProps =
   | { items: OrderDto[]; status: 'success' }
@@ -24,19 +21,14 @@ export function OrderHistoryView(props: OrderHistoryViewProps) {
         <p aria-live="polite" className="sr-only" role="status">
           注文履歴を読み込んでいます。しばらくお待ちください。
         </p>
-        <section
-          aria-busy="true"
-          className="page-wrap py-12 sm:py-16 lg:py-20"
-        >
+        <section aria-busy="true" className="page-wrap py-12 sm:py-16 lg:py-20">
           <p className="label text-accent">ORDER HISTORY</p>
           <h1 className="mt-4 font-serif text-4xl sm:text-5xl">注文履歴</h1>
           <ol className="mt-10 space-y-5">
             <li className="border border-line bg-surface p-6">
               <div className="flex flex-col items-start gap-5 sm:flex-row sm:justify-between">
                 <div className="w-full sm:w-auto">
-                  <p className="text-xs font-semibold tracking-[0.08em] text-muted">
-                    注文番号
-                  </p>
+                  <p className="text-xs font-semibold tracking-[0.08em] text-muted">注文番号</p>
                   <Skeleton className="mt-2 h-5 w-full max-w-72" />
                   <Skeleton className="mt-3 h-5 w-40" />
                 </div>
@@ -57,17 +49,9 @@ export function OrderHistoryView(props: OrderHistoryViewProps) {
   if (props.status === 'error') {
     return (
       <section className="page-wrap py-16 sm:py-24">
-        <div
-          aria-live="assertive"
-          className="mx-auto max-w-xl text-center"
-          role="alert"
-        >
-          <h1 className="font-serif text-4xl sm:text-5xl">
-            注文履歴を読み込めませんでした
-          </h1>
-          <p className="mt-5 text-sm leading-7 text-muted">
-            時間をおいてもう一度お試しください。
-          </p>
+        <div aria-live="assertive" className="mx-auto max-w-xl text-center" role="alert">
+          <h1 className="font-serif text-4xl sm:text-5xl">注文履歴を読み込めませんでした</h1>
+          <p className="mt-5 text-sm leading-7 text-muted">時間をおいてもう一度お試しください。</p>
           {props.onRetry ? (
             <Button className="mt-6" onClick={props.onRetry}>
               再試行
@@ -105,26 +89,18 @@ export function OrderHistoryView(props: OrderHistoryViewProps) {
           <li className="border border-line bg-surface p-6" key={order.id}>
             <div className="flex flex-col items-start gap-5 sm:flex-row sm:justify-between">
               <div>
-                <p className="text-xs font-semibold tracking-[0.08em] text-muted">
-                  注文番号
-                </p>
+                <p className="text-xs font-semibold tracking-[0.08em] text-muted">注文番号</p>
                 <p className="mt-2 break-all font-mono text-sm">{order.id}</p>
-                <p className="mt-3 text-sm text-muted">
-                  {formatOrderDate(order.createdAt)}
-                </p>
+                <p className="mt-3 text-sm text-muted">{formatOrderDate(order.createdAt)}</p>
               </div>
               <div className="sm:text-right">
-                <p className="text-sm font-semibold">
-                  {orderStatusLabel(order.status)}
-                </p>
+                <p className="text-sm font-semibold">{orderStatusLabel(order.status)}</p>
                 <p className="mt-2 text-lg font-semibold tabular-nums">
                   {formatPrice(order.total)}
                 </p>
               </div>
             </div>
-            <p className="mt-5 text-sm text-muted">
-              {order.items.length}点の商品
-            </p>
+            <p className="mt-5 text-sm text-muted">{order.items.length}点の商品</p>
             <Link
               className="mt-5 inline-block text-sm underline underline-offset-4"
               href={`/orders/${order.id}`}

@@ -12,11 +12,7 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic'
 
-export default async function Page({
-  params,
-}: {
-  params: Promise<{ orderId: string }>
-}) {
+export default async function Page({ params }: { params: Promise<{ orderId: string }> }) {
   const { orderId } = await params
   const parsedId = orderIdSchema.safeParse(orderId)
   if (!parsedId.success) notFound()

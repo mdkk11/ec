@@ -1,8 +1,5 @@
 import { createDatabaseClient, type DatabaseClient } from './client'
-import {
-  loadDatabaseEnvironment,
-  requireDatabaseEnvironment,
-} from './environment'
+import { loadDatabaseEnvironment, requireDatabaseEnvironment } from './environment'
 
 let runtimeDatabase: DatabaseClient | undefined
 

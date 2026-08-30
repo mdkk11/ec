@@ -35,18 +35,9 @@ export const users = pgTable(
   },
   (table) => [
     uniqueIndex('users_email_unique').on(table.email),
-    check(
-      'users_email_normalized_check',
-      sql`${table.email} = lower(btrim(${table.email}))`,
-    ),
-    check(
-      'users_email_length_check',
-      sql`char_length(${table.email}) between 1 and 254`,
-    ),
-    check(
-      'users_password_hash_not_empty_check',
-      sql`char_length(${table.passwordHash}) > 0`,
-    ),
+    check('users_email_normalized_check', sql`${table.email} = lower(btrim(${table.email}))`),
+    check('users_email_length_check', sql`char_length(${table.email}) between 1 and 254`),
+    check('users_password_hash_not_empty_check', sql`char_length(${table.passwordHash}) > 0`),
   ],
 )
 
@@ -65,14 +56,8 @@ export const sessions = pgTable(
   },
   (table) => [
     uniqueIndex('sessions_token_hash_unique').on(table.tokenHash),
-    check(
-      'sessions_token_hash_format_check',
-      sql`${table.tokenHash} ~ '^[0-9a-f]{64}$'`,
-    ),
-    check(
-      'sessions_expiration_check',
-      sql`${table.expiresAt} > ${table.createdAt}`,
-    ),
+    check('sessions_token_hash_format_check', sql`${table.tokenHash} ~ '^[0-9a-f]{64}$'`),
+    check('sessions_expiration_check', sql`${table.expiresAt} > ${table.createdAt}`),
   ],
 )
 
@@ -88,14 +73,8 @@ export const categories = pgTable(
     uniqueIndex('categories_name_unique').on(table.name),
     uniqueIndex('categories_slug_unique').on(table.slug),
     uniqueIndex('categories_display_order_unique').on(table.displayOrder),
-    check(
-      'categories_slug_format_check',
-      sql`${table.slug} ~ '^[a-z]+(-[a-z]+)*$'`,
-    ),
-    check(
-      'categories_display_order_positive_check',
-      sql`${table.displayOrder} >= 1`,
-    ),
+    check('categories_slug_format_check', sql`${table.slug} ~ '^[a-z]+(-[a-z]+)*$'`),
+    check('categories_display_order_positive_check', sql`${table.displayOrder} >= 1`),
   ],
 )
 
@@ -147,19 +126,10 @@ export const coupons = pgTable(
   },
   (table) => [
     uniqueIndex('coupons_code_unique').on(table.code),
-    check(
-      'coupons_code_normalized_check',
-      sql`${table.code} = upper(btrim(${table.code}))`,
-    ),
+    check('coupons_code_normalized_check', sql`${table.code} = upper(btrim(${table.code}))`),
     check('coupons_code_not_empty_check', sql`char_length(${table.code}) > 0`),
-    check(
-      'coupons_discount_percent_check',
-      sql`${table.discountPercent} between 1 and 100`,
-    ),
-    check(
-      'coupons_minimum_subtotal_non_negative_check',
-      sql`${table.minimumSubtotal} >= 0`,
-    ),
+    check('coupons_discount_percent_check', sql`${table.discountPercent} between 1 and 100`),
+    check('coupons_minimum_subtotal_non_negative_check', sql`${table.minimumSubtotal} >= 0`),
     check('coupons_period_check', sql`${table.startsAt} < ${table.endsAt}`),
   ],
 )
@@ -199,10 +169,7 @@ export const cartItems = pgTable(
     quantity: integer('quantity').notNull(),
   },
   (table) => [
-    uniqueIndex('cart_items_cart_product_unique').on(
-      table.cartId,
-      table.productId,
-    ),
+    uniqueIndex('cart_items_cart_product_unique').on(table.cartId, table.productId),
     check('cart_items_quantity_positive_check', sql`${table.quantity} >= 1`),
   ],
 )
@@ -233,20 +200,13 @@ export const orders = pgTable(
       .defaultNow(),
   },
   (table) => [
-    index('orders_user_created_id_idx').on(
-      table.userId,
-      table.createdAt.desc(),
-      table.id.desc(),
-    ),
+    index('orders_user_created_id_idx').on(table.userId, table.createdAt.desc(), table.id.desc()),
     check('orders_subtotal_non_negative_check', sql`${table.subtotal} >= 0`),
     check(
       'orders_discount_percent_check',
       sql`${table.discountPercent} is null or ${table.discountPercent} between 1 and 100`,
     ),
-    check(
-      'orders_discount_amount_non_negative_check',
-      sql`${table.discountAmount} >= 0`,
-    ),
+    check('orders_discount_amount_non_negative_check', sql`${table.discountAmount} >= 0`),
     check('orders_total_non_negative_check', sql`${table.total} >= 0`),
     check('orders_version_positive_check', sql`${table.version} >= 1`),
   ],
@@ -268,22 +228,10 @@ export const orderItems = pgTable(
     lineTotal: bigint('line_total', { mode: 'number' }).notNull(),
   },
   (table) => [
-    index('order_items_order_product_idx').on(
-      table.orderId,
-      table.productId,
-    ),
-    check(
-      'order_items_unit_price_non_negative_check',
-      sql`${table.unitPrice} >= 0`,
-    ),
-    check(
-      'order_items_quantity_positive_check',
-      sql`${table.quantity} >= 1`,
-    ),
-    check(
-      'order_items_line_total_non_negative_check',
-      sql`${table.lineTotal} >= 0`,
-    ),
+    index('order_items_order_product_idx').on(table.orderId, table.productId),
+    check('order_items_unit_price_non_negative_check', sql`${table.unitPrice} >= 0`),
+    check('order_items_quantity_positive_check', sql`${table.quantity} >= 1`),
+    check('order_items_line_total_non_negative_check', sql`${table.lineTotal} >= 0`),
   ],
 )
 

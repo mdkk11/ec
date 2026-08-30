@@ -6,16 +6,10 @@ import {
   authorizeAdminOrderRequest,
 } from '@/features/admin/server/admin-order-http'
 import { updateAdminOrderStatus } from '@/features/admin/server/admin-order-service'
-import {
-  orderIdSchema,
-  updateAdminOrderStatusRequestSchema,
-} from '@/contracts/order'
+import { orderIdSchema, updateAdminOrderStatusRequestSchema } from '@/contracts/order'
 import { Temporal } from '@/lib/date-time/temporal'
 import { getRuntimeDatabase } from '@/server/db/runtime'
-import {
-  apiErrorResponse,
-  parseJsonRequest,
-} from '@/server/http/json'
+import { apiErrorResponse, parseJsonRequest } from '@/server/http/json'
 
 export async function PATCH(
   request: NextRequest,
@@ -28,17 +22,10 @@ export async function PATCH(
     const { orderId } = await params
     const parsedId = orderIdSchema.safeParse(orderId)
     if (!parsedId.success) {
-      return apiErrorResponse(
-        404,
-        'ORDER_NOT_FOUND',
-        '注文が見つかりませんでした。',
-      )
+      return apiErrorResponse(404, 'ORDER_NOT_FOUND', '注文が見つかりませんでした。')
     }
 
-    const parsed = await parseJsonRequest(
-      request,
-      updateAdminOrderStatusRequestSchema,
-    )
+    const parsed = await parseJsonRequest(request, updateAdminOrderStatusRequestSchema)
     if (!parsed.ok) return parsed.response
 
     const order = await updateAdminOrderStatus(parsedId.data, parsed.data, {

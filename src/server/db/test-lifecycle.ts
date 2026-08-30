@@ -13,10 +13,7 @@ function quoteIdentifier(identifier: string) {
   return `"${identifier.replaceAll('"', '""')}"`
 }
 
-export async function resetTestDatabase(
-  pool: Pool,
-  options: TestDatabaseLifecycleOptions,
-) {
+export async function resetTestDatabase(pool: Pool, options: TestDatabaseLifecycleOptions) {
   const client = await pool.connect()
 
   try {
@@ -38,10 +35,7 @@ export async function resetTestDatabase(
   }
 }
 
-export async function truncateApplicationTables(
-  pool: Pool,
-  options: TestDatabaseLifecycleOptions,
-) {
+export async function truncateApplicationTables(pool: Pool, options: TestDatabaseLifecycleOptions) {
   const client = await pool.connect()
 
   try {

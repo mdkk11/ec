@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  canTransitionOrderStatus,
-  getAllowedOrderStatuses,
-} from './order-status-transition'
+import { canTransitionOrderStatus, getAllowedOrderStatuses } from './order-status-transition'
 
 describe('注文状態遷移', () => {
   it('UNIT-ORDER-001: PRODUCTで定義した5遷移だけを許可する', () => {
@@ -25,9 +22,6 @@ describe('注文状態遷移', () => {
     expect(canTransitionOrderStatus('processing', 'received')).toBe(false)
     expect(canTransitionOrderStatus('completed', 'cancelled')).toBe(false)
     expect(canTransitionOrderStatus('cancelled', 'received')).toBe(false)
-    expect(getAllowedOrderStatuses('received')).toEqual([
-      'processing',
-      'cancelled',
-    ])
+    expect(getAllowedOrderStatuses('received')).toEqual(['processing', 'cancelled'])
   })
 })

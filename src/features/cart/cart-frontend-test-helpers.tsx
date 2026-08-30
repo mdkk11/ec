@@ -1,16 +1,10 @@
-import {
-  QueryClient,
-  QueryClientProvider,
-} from '@tanstack/react-query'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render } from '@testing-library/react'
 import { HttpResponse } from 'msw'
 import type { ReactNode } from 'react'
 
 import type { CartDto } from '@/contracts/cart'
-import {
-  SessionProvider,
-  type SessionState,
-} from '@/features/auth/SessionProvider'
+import { SessionProvider, type SessionState } from '@/features/auth/SessionProvider'
 
 import { CartOperationProvider } from './CartOperationProvider'
 

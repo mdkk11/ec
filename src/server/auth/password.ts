@@ -65,8 +65,7 @@ export async function hashPassword(
 }
 
 export async function verifyPassword(password: string, encodedHash: string) {
-  const [algorithm, version, n, r, p, encodedSalt, encodedKey, ...rest] =
-    encodedHash.split('$')
+  const [algorithm, version, n, r, p, encodedSalt, encodedKey, ...rest] = encodedHash.split('$')
 
   if (
     rest.length > 0 ||

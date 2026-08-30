@@ -1,9 +1,6 @@
 import { defineConfig, devices } from '@playwright/test'
 
-import {
-  loadDatabaseEnvironment,
-  requireDatabaseEnvironment,
-} from './src/server/db/environment'
+import { loadDatabaseEnvironment, requireDatabaseEnvironment } from './src/server/db/environment'
 
 loadDatabaseEnvironment()
 const e2eDatabaseUrl = requireDatabaseEnvironment('E2E_DATABASE_URL')
@@ -108,8 +105,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command:
-      'corepack pnpm build && corepack pnpm start --hostname 127.0.0.1 --port 3105',
+    command: 'corepack pnpm build && corepack pnpm start --hostname 127.0.0.1 --port 3105',
     env: {
       DATABASE_URL: e2eDatabaseUrl,
       E2E_DATABASE_URL: e2eDatabaseUrl,

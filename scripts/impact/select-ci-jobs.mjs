@@ -4,19 +4,9 @@ import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
-export const JOB_KEYS = [
-  'static_and_unit',
-  'backend_integration',
-  'storybook_vrt',
-  'e2e',
-]
+export const JOB_KEYS = ['static_and_unit', 'backend_integration', 'storybook_vrt', 'e2e']
 
-const DOCUMENTATION_PATHS = [
-  'AGENTS.md',
-  'CONTEXT.md',
-  'DESIGN.md',
-  'README.md',
-]
+const DOCUMENTATION_PATHS = ['AGENTS.md', 'CONTEXT.md', 'DESIGN.md', 'README.md']
 
 const FULL_RUN_PATHS = [
   '.dependency-cruiser.cjs',
@@ -65,10 +55,7 @@ export function normalizeChangedFiles(filePaths) {
 }
 
 function classifyPath(filePath) {
-  if (
-    filePath.startsWith('docs/') ||
-    DOCUMENTATION_PATHS.includes(filePath)
-  ) {
+  if (filePath.startsWith('docs/') || DOCUMENTATION_PATHS.includes(filePath)) {
     return { jobs: emptyJobs(), e2eMode: 'skip', kind: 'safe-ignore' }
   }
 
@@ -84,10 +71,7 @@ function classifyPath(filePath) {
     return { jobs: fullJobs(), e2eMode: 'full', kind: 'high-risk' }
   }
 
-  if (
-    matchesTestFile(filePath, '.unit.test.') ||
-    matchesTestFile(filePath, '.frontend.test.')
-  ) {
+  if (matchesTestFile(filePath, '.unit.test.') || matchesTestFile(filePath, '.frontend.test.')) {
     return {
       jobs: { ...emptyJobs(), static_and_unit: true },
       e2eMode: 'skip',
@@ -126,8 +110,7 @@ function classifyPath(filePath) {
   if (filePath.startsWith('tests/e2e/')) {
     return {
       jobs: { ...emptyJobs(), static_and_unit: true, e2e: true },
-      e2eMode:
-        filePath === 'tests/e2e/update-product-stock.ts' ? 'full' : 'select',
+      e2eMode: filePath === 'tests/e2e/update-product-stock.ts' ? 'full' : 'select',
       kind: 'covered',
     }
   }
@@ -248,9 +231,7 @@ export function selectCiJobs(filePaths, { fullRun = false } = {}) {
     : jobs.e2e
       ? 'select'
       : 'skip'
-  const reasons = classifications.map(
-    ({ filePath, kind }) => `${filePath}: ${kind}`,
-  )
+  const reasons = classifications.map(({ filePath, kind }) => `${filePath}: ${kind}`)
 
   return {
     changedFiles,
@@ -264,13 +245,7 @@ export function getChangedFiles({ baseSha, headSha, cwd = process.cwd() }) {
   if (!baseSha || !headSha) throw new Error('base/head SHA are required')
   const result = spawnSync(
     'git',
-    [
-      'diff',
-      '--no-renames',
-      '--name-only',
-      '-z',
-      `${baseSha}...${headSha}`,
-    ],
+    ['diff', '--no-renames', '--name-only', '-z', `${baseSha}...${headSha}`],
     { cwd, encoding: 'utf8', maxBuffer: 20 * 1024 * 1024 },
   )
   if (result.status !== 0) {
@@ -295,9 +270,7 @@ function writeOutputs(selection, outputPath) {
 
 function writeSummary(selection, summaryPath) {
   if (!summaryPath) return
-  const jobLines = JOB_KEYS.map(
-    (key) => `- ${key}: ${selection.jobs[key] ? 'run' : 'skip'}`,
-  )
+  const jobLines = JOB_KEYS.map((key) => `- ${key}: ${selection.jobs[key] ? 'run' : 'skip'}`)
   const fileLines = selection.changedFiles.length
     ? selection.changedFiles.map((filePath) => `- \`${filePath}\``)
     : ['- _none_']
@@ -348,6 +321,5 @@ export function runCli(env = process.env) {
 }
 
 const isMain =
-  process.argv[1] &&
-  path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))
+  process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))
 if (isMain) runCli()

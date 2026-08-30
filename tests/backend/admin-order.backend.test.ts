@@ -2,27 +2,13 @@ import { eq, sql } from 'drizzle-orm'
 import { NextRequest } from 'next/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import {
-  PATCH as updateAdminProductStockRoute,
-} from '@/app/api/admin/products/[productId]/stock/route'
-import {
-  PATCH as updateAdminOrderStatusRoute,
-} from '@/app/api/admin/orders/[orderId]/status/route'
-import {
-  GET as listAdminOrdersRoute,
-} from '@/app/api/admin/orders/route'
+import { PATCH as updateAdminProductStockRoute } from '@/app/api/admin/products/[productId]/stock/route'
+import { PATCH as updateAdminOrderStatusRoute } from '@/app/api/admin/orders/[orderId]/status/route'
+import { GET as listAdminOrdersRoute } from '@/app/api/admin/orders/route'
 import { Temporal } from '@/lib/date-time/temporal'
 import { hashSessionToken } from '@/server/auth/session-token'
-import {
-  orderItems,
-  orders,
-  products,
-  sessions,
-} from '@/server/db/schema'
-import {
-  seedAuthenticationUsers,
-  seedCatalogProducts,
-} from '@/server/db/seed'
+import { orderItems, orders, products, sessions } from '@/server/db/schema'
+import { seedAuthenticationUsers, seedCatalogProducts } from '@/server/db/seed'
 import { backendDatabase } from '@/test/backend/database'
 
 const apiBaseUrl = 'http://localhost:3000/api'
@@ -49,12 +35,7 @@ async function createCookie(userId: string) {
   return `mockshop_session=${token}`
 }
 
-function request(
-  method: 'GET' | 'PATCH',
-  path: string,
-  cookie = '',
-  body?: unknown,
-) {
+function request(method: 'GET' | 'PATCH', path: string, cookie = '', body?: unknown) {
   return new NextRequest(`${apiBaseUrl}${path}`, {
     body: body === undefined ? undefined : JSON.stringify(body),
     headers: {
@@ -66,10 +47,9 @@ function request(
 }
 
 function updateStatus(cookie: string, id: string, body: unknown) {
-  return updateAdminOrderStatusRoute(
-    request('PATCH', `/admin/orders/${id}/status`, cookie, body),
-    { params: Promise.resolve({ orderId: id }) },
-  )
+  return updateAdminOrderStatusRoute(request('PATCH', `/admin/orders/${id}/status`, cookie, body), {
+    params: Promise.resolve({ orderId: id }),
+  })
 }
 
 async function createOrderFixture({
@@ -122,9 +102,7 @@ describe('管理注文API', () => {
     await createOrderFixture()
     const cookie = await createCookie(adminId)
 
-    const listResponse = await listAdminOrdersRoute(
-      request('GET', '/admin/orders', cookie),
-    )
+    const listResponse = await listAdminOrdersRoute(request('GET', '/admin/orders', cookie))
     expect(listResponse.status).toBe(200)
     expect(listResponse.headers.get('cache-control')).toBe('no-store')
     expect(await listResponse.json()).toMatchObject({
@@ -201,9 +179,7 @@ describe('管理注文API', () => {
       code: 'INVALID_STATUS_TRANSITION',
     })
     await expect(
-      backendDatabase.db
-        .select({ status: orders.status, version: orders.version })
-        .from(orders),
+      backendDatabase.db.select({ status: orders.status, version: orders.version }).from(orders),
     ).resolves.toEqual([{ status: 'received', version: 1 }])
     await expect(
       backendDatabase.db
@@ -319,9 +295,7 @@ describe('管理注文API', () => {
 
     expect(response.status).toBe(500)
     await expect(
-      backendDatabase.db
-        .select({ status: orders.status, version: orders.version })
-        .from(orders),
+      backendDatabase.db.select({ status: orders.status, version: orders.version }).from(orders),
     ).resolves.toEqual([{ status: 'received', version: 1 }])
     await expect(
       backendDatabase.db

@@ -4,10 +4,7 @@ import { categoryIdSchema, publicCategoryDtoSchema } from './category'
 
 export const productIdSchema = z.uuid()
 
-export const productAvailabilitySchema = z.enum([
-  'in_stock',
-  'out_of_stock',
-])
+export const productAvailabilitySchema = z.enum(['in_stock', 'out_of_stock'])
 
 export const productDtoSchema = z.object({
   category: publicCategoryDtoSchema,
@@ -32,9 +29,7 @@ export const productResponseSchema = z.object({
 })
 
 const productNameSchema = z.string().min(1, '商品名を入力してください。')
-const productDescriptionSchema = z
-  .string()
-  .min(1, '商品説明を入力してください。')
+const productDescriptionSchema = z.string().min(1, '商品説明を入力してください。')
 const productPriceSchema = z
   .number({ error: '価格は数値で入力してください。' })
   .int('価格は整数で入力してください。')
@@ -107,16 +102,8 @@ export type ProductDetailDto = z.infer<typeof productDetailDtoSchema>
 export type ProductListResponse = z.infer<typeof productListResponseSchema>
 export type ProductResponse = z.infer<typeof productResponseSchema>
 export type AdminProductDto = z.infer<typeof adminProductDtoSchema>
-export type AdminProductListResponse = z.infer<
-  typeof adminProductListResponseSchema
->
+export type AdminProductListResponse = z.infer<typeof adminProductListResponseSchema>
 export type AdminProductResponse = z.infer<typeof adminProductResponseSchema>
-export type CreateAdminProductRequest = z.infer<
-  typeof createAdminProductRequestSchema
->
-export type UpdateAdminProductRequest = z.infer<
-  typeof updateAdminProductRequestSchema
->
-export type UpdateAdminProductStockRequest = z.infer<
-  typeof updateAdminProductStockRequestSchema
->
+export type CreateAdminProductRequest = z.infer<typeof createAdminProductRequestSchema>
+export type UpdateAdminProductRequest = z.infer<typeof updateAdminProductRequestSchema>
+export type UpdateAdminProductStockRequest = z.infer<typeof updateAdminProductStockRequestSchema>

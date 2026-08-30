@@ -32,14 +32,8 @@ const adminUser = {
 }
 
 async function fillCredentials(user: ReturnType<typeof userEvent.setup>) {
-  await user.type(
-    screen.getByLabelText('メールアドレス'),
-    authenticatedUser.email,
-  )
-  await user.type(
-    screen.getByLabelText('パスワード'),
-    'CustomerPass123!',
-  )
+  await user.type(screen.getByLabelText('メールアドレス'), authenticatedUser.email)
+  await user.type(screen.getByLabelText('パスワード'), 'CustomerPass123!')
 }
 
 beforeEach(() => {
@@ -56,9 +50,7 @@ describe('ログインフォーム', () => {
     await user.click(screen.getByRole('button', { name: 'ログイン' }))
 
     expect(screen.getByLabelText('メールアドレス')).toHaveFocus()
-    expect(
-      screen.getByText('メールアドレスを入力してください。'),
-    ).toBeVisible()
+    expect(screen.getByText('メールアドレスを入力してください。')).toBeVisible()
     expect(screen.getByText('パスワードを入力してください。')).toBeVisible()
     expect(onAuthenticated).not.toHaveBeenCalled()
   })
@@ -84,9 +76,7 @@ describe('ログインフォーム', () => {
     const button = screen.getByRole('button', { name: 'ログイン' })
     await user.dblClick(button)
 
-    expect(
-      screen.getByRole('button', { name: 'ログイン中…' }),
-    ).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'ログイン中…' })).toBeDisabled()
     expect(requestCount).toBe(1)
 
     releaseResponse?.()
@@ -114,12 +104,8 @@ describe('ログインフォーム', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       '入力内容を保ったまま、もう一度お試しください。',
     )
-    expect(screen.getByLabelText('メールアドレス')).toHaveValue(
-      authenticatedUser.email,
-    )
-    expect(screen.getByLabelText('パスワード')).toHaveValue(
-      'CustomerPass123!',
-    )
+    expect(screen.getByLabelText('メールアドレス')).toHaveValue(authenticatedUser.email)
+    expect(screen.getByLabelText('パスワード')).toHaveValue('CustomerPass123!')
     expect(screen.getByRole('button', { name: 'ログイン' })).toBeEnabled()
   })
 
@@ -147,11 +133,7 @@ describe('ログインフォーム', () => {
   })
 
   it('AUTH-012: 実API clientの成功結果をheaderへ反映してtopへ遷移する', async () => {
-    server.use(
-      http.post('/api/session', () =>
-        HttpResponse.json({ user: authenticatedUser }),
-      ),
-    )
+    server.use(http.post('/api/session', () => HttpResponse.json({ user: authenticatedUser })))
 
     const user = userEvent.setup()
     render(
@@ -173,9 +155,7 @@ describe('ログインフォーム', () => {
   it('Server Componentから渡された購入者状態を開き、role別導線を表示する', async () => {
     const user = userEvent.setup()
     render(
-      <SessionProvider
-        initialState={{ status: 'authenticated', user: authenticatedUser }}
-      >
+      <SessionProvider initialState={{ status: 'authenticated', user: authenticatedUser }}>
         <SiteHeader />
       </SessionProvider>,
     )
@@ -204,10 +184,7 @@ describe('ログインフォーム', () => {
       'href',
       '/admin/products',
     )
-    expect(screen.getByRole('link', { name: '注文履歴' })).toHaveAttribute(
-      'href',
-      '/admin/orders',
-    )
+    expect(screen.getByRole('link', { name: '注文履歴' })).toHaveAttribute('href', '/admin/orders')
     expect(screen.getByRole('button', { name: 'ログアウト' })).toBeVisible()
     expect(screen.queryByRole('link', { name: 'カート' })).not.toBeInTheDocument()
   })
@@ -227,9 +204,7 @@ describe('ログインフォーム', () => {
 
     const user = userEvent.setup()
     render(
-      <SessionProvider
-        initialState={{ status: 'authenticated', user: authenticatedUser }}
-      >
+      <SessionProvider initialState={{ status: 'authenticated', user: authenticatedUser }}>
         <SiteHeader />
       </SessionProvider>,
     )
@@ -238,9 +213,7 @@ describe('ログインフォーム', () => {
     expect(screen.getByText(authenticatedUser.email)).toBeVisible()
     await user.click(screen.getByRole('button', { name: 'ログアウト' }))
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      '失敗しました。再度お試しください。',
-    )
+    expect(await screen.findByRole('alert')).toHaveTextContent('失敗しました。再度お試しください。')
     expect(screen.getByText(authenticatedUser.email)).toBeVisible()
     expect(screen.getByRole('button', { name: 'ログアウト' })).toBeEnabled()
   })
@@ -260,9 +233,7 @@ describe('ログインフォーム', () => {
     )
     const user = userEvent.setup()
     render(
-      <SessionProvider
-        initialState={{ status: 'authenticated', user: authenticatedUser }}
-      >
+      <SessionProvider initialState={{ status: 'authenticated', user: authenticatedUser }}>
         <SiteHeader />
       </SessionProvider>,
     )
@@ -271,9 +242,7 @@ describe('ログインフォーム', () => {
     const logout = screen.getByRole('button', { name: 'ログアウト' })
     await user.dblClick(logout)
 
-    expect(
-      screen.getByRole('button', { name: 'ログアウト中…' }),
-    ).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'ログアウト中…' })).toBeDisabled()
     expect(requestCount).toBe(1)
     release?.()
     expect(await screen.findByRole('link', { name: 'ログイン' })).toBeVisible()

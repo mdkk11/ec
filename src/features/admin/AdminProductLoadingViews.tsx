@@ -17,20 +17,13 @@ function LoadingField({
   )
 }
 
-export function AdminProductsLoadingView({
-  statusMessage,
-}: {
-  statusMessage: string
-}) {
+export function AdminProductsLoadingView({ statusMessage }: { statusMessage: string }) {
   return (
     <>
       <p aria-live="polite" className="sr-only" role="status">
         {statusMessage}
       </p>
-      <section
-        aria-busy="true"
-        className="page-wrap py-12 sm:py-16 lg:py-20"
-      >
+      <section aria-busy="true" className="page-wrap py-12 sm:py-16 lg:py-20">
         <p className="label text-accent">ADMINISTRATION</p>
         <h1 className="mt-4 font-serif text-4xl sm:text-5xl">商品管理</h1>
         <p className="mt-4 max-w-2xl text-sm leading-7 text-muted">
@@ -67,10 +60,7 @@ export function AdminProductsLoadingView({
               <div className="grid gap-6">
                 <LoadingField label="カテゴリ" />
                 <LoadingField label="商品名" />
-                <LoadingField
-                  label="商品説明"
-                  shapeClassName="h-32 w-full"
-                />
+                <LoadingField label="商品説明" shapeClassName="h-32 w-full" />
                 <div className="grid gap-6 sm:grid-cols-2">
                   <LoadingField label="価格（円）" />
                   <LoadingField label="在庫数" />
@@ -90,24 +80,14 @@ export function AdminProductsLoadingView({
   )
 }
 
-export function AdminProductEditLoadingView({
-  statusMessage,
-}: {
-  statusMessage: string
-}) {
+export function AdminProductEditLoadingView({ statusMessage }: { statusMessage: string }) {
   return (
     <>
       <p aria-live="polite" className="sr-only" role="status">
         {statusMessage}
       </p>
-      <section
-        aria-busy="true"
-        className="page-wrap py-12 sm:py-16 lg:py-20"
-      >
-        <Link
-          className="text-sm underline underline-offset-4"
-          href="/admin/products"
-        >
+      <section aria-busy="true" className="page-wrap py-12 sm:py-16 lg:py-20">
+        <Link className="text-sm underline underline-offset-4" href="/admin/products">
           商品管理へ戻る
         </Link>
         <p className="label mt-8 text-accent">ADMINISTRATION</p>
@@ -124,10 +104,7 @@ export function AdminProductEditLoadingView({
               <div className="grid gap-6">
                 <LoadingField label="カテゴリ" />
                 <LoadingField label="商品名" />
-                <LoadingField
-                  label="商品説明"
-                  shapeClassName="h-32 w-full"
-                />
+                <LoadingField label="商品説明" shapeClassName="h-32 w-full" />
                 <div className="grid gap-6 sm:grid-cols-2">
                   <LoadingField label="価格（円）" />
                 </div>

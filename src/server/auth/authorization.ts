@@ -6,10 +6,7 @@ export type AuthorizationResult =
   | { actor: UserDto; ok: true }
   | { code: AuthorizationFailure; ok: false }
 
-function requireRole(
-  actor: UserDto | null,
-  expectedRole: UserRole,
-): AuthorizationResult {
+function requireRole(actor: UserDto | null, expectedRole: UserRole): AuthorizationResult {
   if (!actor) return { code: 'UNAUTHENTICATED', ok: false }
   if (actor.role !== expectedRole) return { code: 'FORBIDDEN', ok: false }
   return { actor, ok: true }

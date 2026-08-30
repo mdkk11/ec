@@ -20,10 +20,7 @@ for (const width of [375, 768, 1440]) {
         loadAllImages: true,
         name: `VRT-009-storefront-shell-${story}-${width}`,
         storyId: `layout-storefrontshell--${story}`,
-        visibleText:
-          story === 'customer-menu'
-            ? 'customer@example.test'
-            : 'admin@example.test',
+        visibleText: story === 'customer-menu' ? 'customer@example.test' : 'admin@example.test',
         width,
       })
     })

@@ -2,19 +2,12 @@ import { eq } from 'drizzle-orm'
 import { NextRequest } from 'next/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import {
-  DELETE as removeCouponRoute,
-  PUT as applyCouponRoute,
-} from '@/app/api/cart/coupon/route'
+import { DELETE as removeCouponRoute, PUT as applyCouponRoute } from '@/app/api/cart/coupon/route'
 import { POST as addCartItemRoute } from '@/app/api/cart/items/route'
 import { GET as getCartRoute } from '@/app/api/cart/route'
 import { Temporal } from '@/lib/date-time/temporal'
 import { hashSessionToken } from '@/server/auth/session-token'
-import {
-  carts,
-  coupons,
-  sessions,
-} from '@/server/db/schema'
+import { carts, coupons, sessions } from '@/server/db/schema'
 import {
   seedAuthenticationUsers,
   seedCatalogProducts,
@@ -63,9 +56,7 @@ function request(
 }
 
 function addItem(cookie: string) {
-  return addCartItemRoute(
-    request('POST', '/items', cookie, { productId, quantity: 1 }),
-  )
+  return addCartItemRoute(request('POST', '/items', cookie, { productId, quantity: 1 }))
 }
 
 function applyCoupon(cookie: string, code: string) {
@@ -127,34 +118,27 @@ describe('クーポンAPI', () => {
     ['COUPON-003', seedCouponCodes.inactive, 400, 'COUPON_INACTIVE'],
     ['COUPON-004', seedCouponCodes.future, 400, 'COUPON_NOT_STARTED'],
     ['COUPON-005', seedCouponCodes.expired, 400, 'COUPON_EXPIRED'],
-    [
-      'COUPON-006',
-      seedCouponCodes.minimum,
-      400,
-      'COUPON_MINIMUM_NOT_MET',
-    ],
-  ])('%s: 条件不成立を原因別エラーにしてカートを変更しない', async (
-    _scenario,
-    code,
-    status,
-    expectedCode,
-  ) => {
-    await prepareFixtures()
-    const cookie = await createCookie()
-    await addItem(cookie)
+    ['COUPON-006', seedCouponCodes.minimum, 400, 'COUPON_MINIMUM_NOT_MET'],
+  ])(
+    '%s: 条件不成立を原因別エラーにしてカートを変更しない',
+    async (_scenario, code, status, expectedCode) => {
+      await prepareFixtures()
+      const cookie = await createCookie()
+      await addItem(cookie)
 
-    const response = await applyCoupon(cookie, code)
-    const body = await response.json()
+      const response = await applyCoupon(cookie, code)
+      const body = await response.json()
 
-    expect(response.status).toBe(status)
-    expect(body).toMatchObject({
-      code: expectedCode,
-      fieldErrors: { code: [expect.any(String)] },
-    })
-    await expect(backendDatabase.db.select().from(carts)).resolves.toMatchObject([
-      { couponId: null, version: 2 },
-    ])
-  })
+      expect(response.status).toBe(status)
+      expect(body).toMatchObject({
+        code: expectedCode,
+        fieldErrors: { code: [expect.any(String)] },
+      })
+      await expect(backendDatabase.db.select().from(carts)).resolves.toMatchObject([
+        { couponId: null, version: 2 },
+      ])
+    },
+  )
 
   it('失敗した新コードで適用済みクーポンを上書きしない', async () => {
     await prepareFixtures()
@@ -221,14 +205,9 @@ describe('クーポンAPI', () => {
     await prepareFixtures()
     const cookie = await createCookie()
     await addItem(cookie)
-    const first = (await (
-      await applyCoupon(cookie, seedCouponCodes.welcome)
-    ).json()).cart
+    const first = (await (await applyCoupon(cookie, seedCouponCodes.welcome)).json()).cart
 
-    const secondResponse = await applyCoupon(
-      cookie,
-      ` ${seedCouponCodes.welcome.toLowerCase()} `,
-    )
+    const secondResponse = await applyCoupon(cookie, ` ${seedCouponCodes.welcome.toLowerCase()} `)
     const second = (await secondResponse.json()).cart
 
     expect(secondResponse.status).toBe(200)
@@ -315,18 +294,14 @@ describe('DB-006: クーポンDB制約', () => {
     },
   ])('$labelを拒否する', async ({ override }) => {
     await expect(
-      backendDatabase.db
-        .insert(coupons)
-        .values({ ...validCoupon, ...override }),
+      backendDatabase.db.insert(coupons).values({ ...validCoupon, ...override }),
     ).rejects.toThrow()
   })
 
   it('重複コードと存在しないcoupon_idを拒否する', async () => {
     await prepareFixtures()
     await backendDatabase.db.insert(coupons).values(validCoupon)
-    await expect(
-      backendDatabase.db.insert(coupons).values(validCoupon),
-    ).rejects.toThrow()
+    await expect(backendDatabase.db.insert(coupons).values(validCoupon)).rejects.toThrow()
 
     await expect(
       backendDatabase.db.insert(carts).values({

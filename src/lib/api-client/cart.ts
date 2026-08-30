@@ -15,10 +15,7 @@ export function getCart(signal?: AbortSignal) {
   return requestJson('/api/cart', cartResponseSchema, { signal })
 }
 
-export function addCartItem(
-  input: AddCartItemRequest,
-  signal?: AbortSignal,
-) {
+export function addCartItem(input: AddCartItemRequest, signal?: AbortSignal) {
   return requestJson('/api/cart/items', cartResponseSchema, {
     body: JSON.stringify(input),
     headers: jsonHeaders,
@@ -27,38 +24,23 @@ export function addCartItem(
   })
 }
 
-export function updateCartItem(
-  itemId: string,
-  input: UpdateCartItemRequest,
-  signal?: AbortSignal,
-) {
-  return requestJson(
-    `/api/cart/items/${itemId}`,
-    cartResponseSchema,
-    {
-      body: JSON.stringify(input),
-      headers: jsonHeaders,
-      method: 'PATCH',
-      signal,
-    },
-  )
+export function updateCartItem(itemId: string, input: UpdateCartItemRequest, signal?: AbortSignal) {
+  return requestJson(`/api/cart/items/${itemId}`, cartResponseSchema, {
+    body: JSON.stringify(input),
+    headers: jsonHeaders,
+    method: 'PATCH',
+    signal,
+  })
 }
 
 export function deleteCartItem(itemId: string, signal?: AbortSignal) {
-  return requestJson(
-    `/api/cart/items/${itemId}`,
-    cartResponseSchema,
-    {
-      method: 'DELETE',
-      signal,
-    },
-  )
+  return requestJson(`/api/cart/items/${itemId}`, cartResponseSchema, {
+    method: 'DELETE',
+    signal,
+  })
 }
 
-export function applyCartCoupon(
-  input: ApplyCouponRequest,
-  signal?: AbortSignal,
-) {
+export function applyCartCoupon(input: ApplyCouponRequest, signal?: AbortSignal) {
   return requestJson('/api/cart/coupon', cartResponseSchema, {
     body: JSON.stringify(input),
     headers: jsonHeaders,

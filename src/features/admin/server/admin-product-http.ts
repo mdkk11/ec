@@ -1,20 +1,12 @@
 import type { NextRequest } from 'next/server'
 
-import {
-  adminProductListResponseSchema,
-  adminProductResponseSchema,
-} from '@/contracts/product'
+import { adminProductListResponseSchema, adminProductResponseSchema } from '@/contracts/product'
 import { requireAdminRequest } from '@/server/auth/request-actor'
-import {
-  apiErrorResponse,
-  noStoreJsonResponse,
-} from '@/server/http/json'
+import { apiErrorResponse, noStoreJsonResponse } from '@/server/http/json'
 
 import { AdminProductServiceError } from './admin-product-service'
 
-type AuthorizationResult =
-  | { ok: true; adminId: string }
-  | { ok: false; response: Response }
+type AuthorizationResult = { ok: true; adminId: string } | { ok: false; response: Response }
 
 export async function authorizeAdminProductRequest(
   request: NextRequest,
@@ -35,12 +27,9 @@ export async function authorizeAdminProductRequest(
 export function adminProductRouteErrorResponse(error: unknown) {
   if (error instanceof AdminProductServiceError) {
     if (error.code === 'INVALID_CATEGORY') {
-      return apiErrorResponse(
-        400,
-        'VALIDATION_ERROR',
-        error.message,
-        { categoryId: [error.message] },
-      )
+      return apiErrorResponse(400, 'VALIDATION_ERROR', error.message, {
+        categoryId: [error.message],
+      })
     }
     return apiErrorResponse(
       error.code === 'PRODUCT_NOT_FOUND' ? 404 : 409,
@@ -61,10 +50,7 @@ export function adminProductListSuccessResponse(items: unknown) {
   return noStoreJsonResponse(body)
 }
 
-export function adminProductSuccessResponse(
-  product: unknown,
-  status: 200 | 201 = 200,
-) {
+export function adminProductSuccessResponse(product: unknown, status: 200 | 201 = 200) {
   const body = adminProductResponseSchema.parse({ product })
   return noStoreJsonResponse(body, status)
 }

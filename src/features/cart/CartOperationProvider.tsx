@@ -1,9 +1,6 @@
 'use client'
 
-import {
-  useMutation,
-  useQueryClient,
-} from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   createContext,
   type ReactNode,
@@ -26,8 +23,7 @@ import {
 } from '@/lib/api-client/cart'
 import { ApiClientError } from '@/lib/api-client/request-json'
 
-export const cartQueryKey = (customerId: string) =>
-  ['cart', customerId] as const
+export const cartQueryKey = (customerId: string) => ['cart', customerId] as const
 
 export type CartOperation =
   | { kind: 'add'; productId: string; quantity: number }
@@ -62,8 +58,7 @@ type QueueTask = PendingOperation & {
   sessionGeneration: number
 }
 
-const CartOperationContext =
-  createContext<CartOperationContextValue | null>(null)
+const CartOperationContext = createContext<CartOperationContextValue | null>(null)
 
 function operationFingerprint(operation: CartOperation) {
   return JSON.stringify(operation)
@@ -71,19 +66,13 @@ function operationFingerprint(operation: CartOperation) {
 
 function operationTarget(operation: CartOperation) {
   if (operation.kind === 'add') return `product:${operation.productId}`
-  if (
-    operation.kind === 'apply-coupon' ||
-    operation.kind === 'remove-coupon'
-  ) {
+  if (operation.kind === 'apply-coupon' || operation.kind === 'remove-coupon') {
     return 'coupon'
   }
   return `item:${operation.itemId}`
 }
 
-function isQueuedUpdateForSameItem(
-  task: QueueTask,
-  operation: CartOperation,
-) {
+function isQueuedUpdateForSameItem(task: QueueTask, operation: CartOperation) {
   return (
     task.operation.kind === 'update' &&
     operation.kind === 'update' &&
@@ -91,11 +80,7 @@ function isQueuedUpdateForSameItem(
   )
 }
 
-export function CartOperationProvider({
-  children,
-}: {
-  children: ReactNode
-}) {
+export function CartOperationProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
   const { setAnonymous, state: sessionState } = useSession()
   const [state, setState] = useState<OperationState>({
@@ -129,11 +114,7 @@ export function CartOperationProvider({
         )
       }
       if (operation.kind === 'update') {
-        return updateCartItem(
-          operation.itemId,
-          { quantity: operation.quantity },
-          signal,
-        )
+        return updateCartItem(operation.itemId, { quantity: operation.quantity }, signal)
       }
       if (operation.kind === 'delete') {
         return deleteCartItem(operation.itemId, signal)
@@ -147,8 +128,7 @@ export function CartOperationProvider({
   })
 
   const customerId =
-    sessionState.status === 'authenticated' &&
-    sessionState.user.role === 'customer'
+    sessionState.status === 'authenticated' && sessionState.user.role === 'customer'
       ? sessionState.user.id
       : null
 
@@ -209,9 +189,7 @@ export function CartOperationProvider({
             continue
           }
 
-          const current = queryClient.getQueryData<CartDto>(
-            cartQueryKey(task.customerId),
-          )
+          const current = queryClient.getQueryData<CartDto>(cartQueryKey(task.customerId))
           if (!current || cart.version >= current.version) {
             queryClient.setQueryData(cartQueryKey(task.customerId), cart)
             task.resolve(cart)
@@ -239,18 +217,14 @@ export function CartOperationProvider({
           }
 
           const hasNewerOperationForTarget = queueRef.current.some(
-            ({ operation }) =>
-              operationTarget(operation) ===
-              operationTarget(task.operation),
+            ({ operation }) => operationTarget(operation) === operationTarget(task.operation),
           )
           if (!hasNewerOperationForTarget) {
             setState((current) => ({
               ...current,
               errors: [
                 ...current.errors.filter(
-                  ({ operation }) =>
-                    operationTarget(operation) !==
-                    operationTarget(task.operation),
+                  ({ operation }) => operationTarget(operation) !== operationTarget(task.operation),
                 ),
                 {
                   error,
@@ -283,8 +257,7 @@ export function CartOperationProvider({
         currentTaskRef.current &&
         operationFingerprint(currentTaskRef.current.operation) === fingerprint
       const duplicateQueued = queueRef.current.some(
-        (task) =>
-          operationFingerprint(task.operation) === fingerprint,
+        (task) => operationFingerprint(task.operation) === fingerprint,
       )
       if (duplicateCurrent || duplicateQueued) {
         return Promise.resolve(null)
@@ -303,10 +276,7 @@ export function CartOperationProvider({
         const lastQueueIndex = queueRef.current.length - 1
         const replaceIndex =
           lastQueueIndex >= 0 &&
-          isQueuedUpdateForSameItem(
-            queueRef.current[lastQueueIndex]!,
-            operation,
-          )
+          isQueuedUpdateForSameItem(queueRef.current[lastQueueIndex]!, operation)
             ? lastQueueIndex
             : -1
         let replacedTask: QueueTask | undefined
@@ -321,13 +291,10 @@ export function CartOperationProvider({
         const target = operationTarget(operation)
         setState((current) => ({
           errors: current.errors.filter(
-            ({ operation: failedOperation }) =>
-              operationTarget(failedOperation) !== target,
+            ({ operation: failedOperation }) => operationTarget(failedOperation) !== target,
           ),
           pending: [
-            ...current.pending.filter(
-              ({ id }) => id !== replacedTask?.id,
-            ),
+            ...current.pending.filter(({ id }) => id !== replacedTask?.id),
             { id: task.id, operation },
           ],
         }))
@@ -342,30 +309,20 @@ export function CartOperationProvider({
     setState((current) => ({
       ...current,
       errors: current.errors.filter(
-        ({ operation: failedOperation }) =>
-          operationTarget(failedOperation) !== target,
+        ({ operation: failedOperation }) => operationTarget(failedOperation) !== target,
       ),
     }))
   }, [])
 
-  const value = useMemo(
-    () => ({ dismissError, execute, state }),
-    [dismissError, execute, state],
-  )
+  const value = useMemo(() => ({ dismissError, execute, state }), [dismissError, execute, state])
 
-  return (
-    <CartOperationContext.Provider value={value}>
-      {children}
-    </CartOperationContext.Provider>
-  )
+  return <CartOperationContext.Provider value={value}>{children}</CartOperationContext.Provider>
 }
 
 export function useCartOperations() {
   const context = useContext(CartOperationContext)
   if (!context) {
-    throw new Error(
-      'useCartOperationsはCartOperationProvider内で使用してください。',
-    )
+    throw new Error('useCartOperationsはCartOperationProvider内で使用してください。')
   }
   return context
 }

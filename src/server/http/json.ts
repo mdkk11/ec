@@ -7,13 +7,9 @@ const noStoreHeaders = {
   'Cache-Control': 'no-store',
 }
 
-type JsonRequestParseResult<T> =
-  | { ok: true; data: T }
-  | { ok: false; response: Response }
+type JsonRequestParseResult<T> = { ok: true; data: T } | { ok: false; response: Response }
 
-function validationFieldErrors(error: {
-  issues: { message: string; path: PropertyKey[] }[]
-}) {
+function validationFieldErrors(error: { issues: { message: string; path: PropertyKey[] }[] }) {
   const fieldErrors: Record<string, string[]> = {}
   for (const issue of error.issues) {
     const field = issue.path[0]
@@ -52,11 +48,7 @@ export async function parseJsonRequest<T>(
   } catch {
     return {
       ok: false,
-      response: apiErrorResponse(
-        400,
-        'VALIDATION_ERROR',
-        '入力内容を確認してください。',
-      ),
+      response: apiErrorResponse(400, 'VALIDATION_ERROR', '入力内容を確認してください。'),
     }
   }
 

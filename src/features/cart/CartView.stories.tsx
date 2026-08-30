@@ -1,10 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite'
 
-import {
-  cartFixture,
-  emptyCartFixture,
-  stockConflictCartFixture,
-} from './cart-fixtures'
+import { cartFixture, emptyCartFixture, stockConflictCartFixture } from './cart-fixtures'
 import { CartLoadingView, CartView } from './CartView'
 
 const meta = {
