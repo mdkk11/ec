@@ -151,6 +151,8 @@ test('mixed diffs preserve selection unless an E2E-relevant path is unsafe', () 
 test('shared, unknown, empty, and explicit full runs execute everything', () => {
   for (const selection of [
     selectCiJobs(['src/contracts/cart.ts']),
+    selectCiJobs(['.github/dependabot.yml']),
+    selectCiJobs(['scripts/tooling/tooling-policy.test.mjs']),
     selectCiJobs(['unknown.file']),
     selectCiJobs([]),
     selectCiJobs(['docs/README.md'], { fullRun: true }),

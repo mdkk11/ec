@@ -3,10 +3,17 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "packageManager": "pnpm@11.15.1",
+  "packageManager": "pnpm@11.23.0",
   "engines": {
     "node": ">=24 <25",
     "pnpm": ">=11 <12"
+  },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "24.19.0",
+      "onFail": "download"
+    }
   },
   "scripts": {
     "dev": "next dev",
@@ -29,6 +36,7 @@
     "db:prepare:test": "NODE_ENV=test tsx scripts/db/prepare-test.ts",
     "db:prepare:e2e": "NODE_ENV=test tsx scripts/db/prepare-e2e.ts",
     "ci:impact:select": "node scripts/impact/select-affected-e2e.mjs",
+    "actionlint": "node scripts/tooling/run-actionlint.mjs",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },

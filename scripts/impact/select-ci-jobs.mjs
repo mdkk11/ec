@@ -21,8 +21,8 @@ const DOCUMENTATION_PATHS = [
 const FULL_RUN_PATHS = [
   '.dependency-cruiser.cjs',
   '.env.example',
+  '.github/dependabot.yml',
   '.github/workflows/',
-  '.node-version',
   'compose.override.yaml',
   'compose.yaml',
   'config/impact/',
@@ -36,6 +36,7 @@ const FULL_RUN_PATHS = [
   'pnpm-workspace.yaml',
   'postcss.config.mjs',
   'scripts/impact/',
+  'scripts/tooling/',
   'tests/e2e/global-setup.ts',
   'tsconfig.json',
 ]

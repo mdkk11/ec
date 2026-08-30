@@ -6,11 +6,11 @@
 
 ## Requirements
 
-- Node.js 24
-- pnpm 11
+- Node.js 24（対応範囲は `package.json` の `engines.node`）
+- pnpm 11（exact versionは `package.json` の `packageManager`）
 - Docker / Docker Compose
 
-リポジトリの `.node-version` と同じNode.js、および `package.json` の `packageManager` と同じpnpmを使用してください。Vitestとjsdomの対応範囲外であるNode.js 23では検証しません。
+`pnpm install` と `pnpm run` は、`package.json` の `devEngines.runtime` に固定したNode.jsを使用します。ローカルにない場合はpnpmがproject用runtimeを自動取得し、system Nodeへ暗黙に切り替えません。
 
 ## Setup
 
@@ -46,6 +46,7 @@ pnpm db:seed
 pnpm db:prepare:test
 pnpm db:prepare:e2e
 pnpm ci:impact:select
+pnpm actionlint
 pnpm build
 pnpm storybook
 pnpm build-storybook
@@ -116,6 +117,10 @@ pnpm test:ui
 `vite`はNext.jsアプリの実行には使用しません。Vitestと`@storybook/nextjs-vite`が要求するビルダーとしてdevDependencyに限定しています。
 
 `postcss`と`sharp`は、Next.jsが参照するバージョンに公開済みの脆弱性があるため、修正版へ一時的にoverrideしています。Next.js側の依存が更新された時点でoverrideを再評価します。
+
+依存関係はexact versionで保存し、通常releaseは公開から7日経過するまで解決しません。Dependabotはnpm packageとGitHub Actionsを週次で確認し、minor/patch更新を用途別にまとめ、major更新は個別PRにします。自動mergeは行いません。
+
+公開直後のsecurity fixが必要な場合だけ、対象packageとversionを `minimumReleaseAgeExclude` へ理由付きで追加します。wildcardは使わず、公開から7日経過後に手動で例外を削除して `pnpm install --frozen-lockfile` を確認します。`minimumReleaseAgeExcludePrune` が自動削除するのは、`pnpm add`、`pnpm update`、`pnpm remove` により対象versionがlockfileから外れた場合だけです。
 
 ## Database
 
