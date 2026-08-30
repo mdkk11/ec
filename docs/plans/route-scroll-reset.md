@@ -10,8 +10,6 @@
 
 ### 調査済みの事実
 
-- 作業開始時に `origin/main` を取得し、ローカル `main` をマージ済みPR #34の `43d06ac2bacebabc9f9dcb1126121ab74519bd43` へfast-forwardした。
-- `feature/route-scroll-reset` は `43d06ac` をbaseにした単独stackで、計画作成前のworktreeはcleanである。
 - `package.json` はNext.js `16.2.11` を固定している。
 - `src/app/globals.css` にglobalな `scroll-behavior: smooth` はなく、reduced motion内の `scroll-behavior: auto !important` だけが残っている。
 - repository内のNext.js `Link` に `scroll={false}` はなく、通常遷移は既定の `scroll=true` を使っている。
@@ -20,7 +18,7 @@
 - ソースを変更せず `__NEXT_EXPERIMENTAL_APP_NEW_SCROLL_HANDLER=true` で別buildを作り、同じ操作を行うと、詳細表示後の `scrollY` は `0` になった。
 - `next.config.ts` の型とNext.jsのconfig schemaは `experimental.appNewScrollHandler` を提供している。
 - `tests/e2e/product-browsing.spec.ts` は実Next.js App Routerで商品一覧から詳細へ進む `E2E-007` を持つが、遷移後のスクロール位置は検証していない。
-- 実装中に追加したproduction buildのE2Eでは旧handlerでも先頭表示になった。旧handlerの途中位置は実ブラウザ/dev環境で再現するため、E2Eは設定差分のred-greenではなく、利用者向け契約を固定する回帰テストとして扱う。
+- production buildのE2Eでは旧handlerでも先頭表示になった。旧handlerの途中位置は実ブラウザ/dev環境で再現するため、E2Eは設定差分のred-greenではなく、利用者向け契約を固定する回帰テストとして扱う。
 
 ### 推測
 
@@ -59,7 +57,7 @@ PRODUCTのビジネスルール、API、DB、React表示、Storybook/VRTの見�
 1. `next.config.ts` の既存 `nextConfig` に `experimental: { appNewScrollHandler: true }` を追加する。
 2. `tests/e2e/product-browsing.spec.ts` に `E2E-008` を追加する。`/products` を開き、意味のあるaccessible nameで対象商品Linkを取得し、Linkがviewport内にある深い位置までscrollする。遷移前が `scrollY > 0` であること、Link操作後に商品詳細URLとH1が確定すること、その後 `scrollY` が0であることを確認する。
 3. `docs/TEST_SCENARIOS.md` のE2E表へ、商品一覧下部から詳細への通常Link遷移が先頭表示になるシナリオを追加する。
-4. diffと対象テストを確認し、設定・回帰テスト・scenario文書だけを1つのfix commitへまとめる。
+4. diffと対象テストを確認し、対象外の変更がないことを確認する。
 
 ## 8. テスト・検証方法
 
@@ -91,4 +89,4 @@ PRODUCTのビジネスルール、API、DB、React表示、Storybook/VRTの見�
 - browser back/forwardやhash navigationを上書きする独自Client scroll処理を追加していない。
 - API、DB、migration、dependency、React表示、VRT baselineに差分がない。
 - lint、typecheck、unit、Frontend結合、build、対象E2Eが成功する。
-- diffが `next.config.ts`、商品閲覧E2E、TEST_SCENARIOS、承認済み計画に限定される。
+- 変更が `next.config.ts`、商品閲覧E2E、TEST_SCENARIOSに限定される。
