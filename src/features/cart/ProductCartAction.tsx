@@ -115,7 +115,7 @@ export function ProductCartAction({
       {showSuccess ? (
         <div
           aria-live="polite"
-          className="fixed bottom-5 left-1/2 z-50 w-[min(90vw,24rem)] -translate-x-1/2 border border-ink bg-ink px-5 py-4 text-sm text-white sm:bottom-8 sm:left-auto sm:right-8 sm:translate-x-0"
+          className="fixed bottom-5 left-1/2 z-50 w-[min(90vw,24rem)] -translate-x-1/2 border border-ink bg-ink px-5 py-4 text-sm text-white sm:right-8 sm:bottom-8 sm:left-auto sm:translate-x-0"
           role="status"
         >
           <p>カートへ追加しました。</p>

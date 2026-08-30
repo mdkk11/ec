@@ -7,7 +7,6 @@ import { describe, expect, it } from 'vitest'
 import type { AdminProductDto } from '@/contracts/product'
 import { server } from '@/test/msw/server'
 
-import { AdminProductEditPage } from './AdminProductEditPage'
 import {
   admin,
   listResponse,
@@ -15,6 +14,7 @@ import {
   renderWithProviders,
 } from './admin-product-frontend-test-helpers'
 import { adminProductsQueryKey } from './admin-product-query'
+import { AdminProductEditPage } from './AdminProductEditPage'
 
 describe('管理商品編集・在庫', () => {
   it('AUTH-014: 認証待機中は商品編集の構造と認証状態を通知する', () => {

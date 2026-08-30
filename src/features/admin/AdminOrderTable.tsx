@@ -1,12 +1,11 @@
 'use client'
 
-import type { OrderDto, OrderStatus } from '@/contracts/order'
-import { formatPrice } from '@/features/products/format-price'
-
 import { Button } from '@/components/button/Button'
 import { Skeleton } from '@/components/skeleton/Skeleton'
+import type { OrderDto, OrderStatus } from '@/contracts/order'
 import { formatOrderDate, orderStatusLabel } from '@/features/orders/order-presentation'
 import { getAllowedOrderStatuses } from '@/features/orders/order-status-transition'
+import { formatPrice } from '@/features/products/format-price'
 
 type AdminOrderTableProps = {
   conflictLatest?: OrderDto | null
@@ -148,7 +147,7 @@ export function AdminOrderTable({
             return (
               <tr aria-busy={isPending} key={order.id}>
                 <th className="px-5 py-5 align-top font-normal" scope="row">
-                  <p className="break-all font-mono text-xs">{order.id}</p>
+                  <p className="font-mono text-xs break-all">{order.id}</p>
                   <p className="mt-2 text-xs text-muted">
                     {formatOrderDate(order.createdAt)} / {order.items.length}点
                   </p>

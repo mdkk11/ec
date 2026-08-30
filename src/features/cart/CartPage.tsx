@@ -11,6 +11,11 @@ import { getCart } from '@/lib/api-client/cart'
 import { createOrder } from '@/lib/api-client/order'
 import { ApiClientError } from '@/lib/api-client/request-json'
 
+import {
+  checkoutFeedbackAfterRefresh,
+  decideCheckoutError,
+  initialCheckoutFeedback,
+} from './cartCheckoutFeedback'
 import { cartQueryKey, useCartOperations } from './CartOperationProvider'
 import {
   CartLoadingView,
@@ -18,11 +23,6 @@ import {
   type CartCheckoutState,
   type CartViewOperationState,
 } from './CartView'
-import {
-  checkoutFeedbackAfterRefresh,
-  decideCheckoutError,
-  initialCheckoutFeedback,
-} from './cartCheckoutFeedback'
 
 function StatusPage({
   children,

@@ -90,7 +90,7 @@ export function OrderHistoryView(props: OrderHistoryViewProps) {
             <div className="flex flex-col items-start gap-5 sm:flex-row sm:justify-between">
               <div>
                 <p className="text-xs font-semibold tracking-[0.08em] text-muted">注文番号</p>
-                <p className="mt-2 break-all font-mono text-sm">{order.id}</p>
+                <p className="mt-2 font-mono text-sm break-all">{order.id}</p>
                 <p className="mt-3 text-sm text-muted">{formatOrderDate(order.createdAt)}</p>
               </div>
               <div className="sm:text-right">

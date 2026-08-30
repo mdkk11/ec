@@ -25,7 +25,7 @@ export function SiteHeader() {
           <Logo />
         </div>
 
-        <div className="flex min-w-0 items-center justify-self-end gap-3">
+        <div className="flex min-w-0 items-center gap-3 justify-self-end">
           <p className="hidden text-[10px] font-medium tracking-[0.1em] text-muted xl:block">
             JAPAN / JPY
           </p>

@@ -9,9 +9,9 @@ import type { OrderDto } from '@/contracts/order'
 import { SessionProvider, type SessionState } from '@/features/auth/SessionProvider'
 import { server } from '@/test/msw/server'
 
-import { AdminOrdersPage } from './AdminOrdersPage'
 import { adminOrderFixture } from './admin-order-fixtures'
 import { adminOrdersQueryKey } from './admin-order-query'
+import { AdminOrdersPage } from './AdminOrdersPage'
 
 const admin = {
   email: 'admin@example.test',

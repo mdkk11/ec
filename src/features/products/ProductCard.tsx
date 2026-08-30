@@ -33,7 +33,7 @@ export function ProductCard({ product }: { product: ProductDto }) {
         </div>
         <div className="pt-4">
           <h2 className="text-sm leading-6">{product.name}</h2>
-          <p className="mt-2 text-sm tabular-nums text-muted">{formatPrice(product.price)}</p>
+          <p className="mt-2 text-sm text-muted tabular-nums">{formatPrice(product.price)}</p>
         </div>
       </Link>
     </article>

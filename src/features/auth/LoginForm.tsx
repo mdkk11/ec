@@ -84,7 +84,7 @@ export function LoginForm({ onAuthenticated }: LoginFormProps) {
           aria-describedby={fieldErrors.email ? 'email-error' : undefined}
           aria-invalid={fieldErrors.email ? true : undefined}
           autoComplete="email"
-          className="mt-2 min-h-12 w-full border border-line bg-surface px-4 text-base outline-none transition focus:border-ink focus:ring-2 focus:ring-ink/20"
+          className="mt-2 min-h-12 w-full border border-line bg-surface px-4 text-base transition outline-none focus:border-ink focus:ring-2 focus:ring-ink/20"
           id="email"
           maxLength={254}
           onChange={(event) => setEmail(event.target.value)}
@@ -107,7 +107,7 @@ export function LoginForm({ onAuthenticated }: LoginFormProps) {
           aria-describedby={fieldErrors.password ? 'password-error' : undefined}
           aria-invalid={fieldErrors.password ? true : undefined}
           autoComplete="current-password"
-          className="mt-2 min-h-12 w-full border border-line bg-surface px-4 text-base outline-none transition focus:border-ink focus:ring-2 focus:ring-ink/20"
+          className="mt-2 min-h-12 w-full border border-line bg-surface px-4 text-base transition outline-none focus:border-ink focus:ring-2 focus:ring-ink/20"
           id="password"
           maxLength={256}
           onChange={(event) => setPassword(event.target.value)}

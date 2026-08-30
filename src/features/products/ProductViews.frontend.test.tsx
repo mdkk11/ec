@@ -10,9 +10,9 @@ import ProductListLoading from '@/app/products/loading'
 import ProductListNotFound from '@/app/products/not-found'
 import { publicCategoryCatalog } from '@/features/categories/category-catalog'
 
+import { outOfStockProductFixture, productFixture, productListFixture } from './product-fixtures'
 import { ProductDetailView } from './ProductDetailView'
 import { ProductListView } from './ProductListView'
-import { outOfStockProductFixture, productFixture, productListFixture } from './product-fixtures'
 
 describe('商品一覧', () => {
   it('PRODUCT-010: 商品名・価格・在庫状態とキーボードで使える詳細導線を表示する', async () => {

@@ -11,6 +11,7 @@ import { useSession } from '@/features/auth/SessionProvider'
 import { createAdminProduct, getAdminProducts } from '@/lib/api-client/admin-product'
 import { ApiClientError } from '@/lib/api-client/request-json'
 
+import { adminProductsQueryKey } from './admin-product-query'
 import {
   AdminProductForm,
   type AdminProductFieldErrors,
@@ -20,7 +21,6 @@ import {
 import { AdminProductList } from './AdminProductList'
 import { AdminProductsLoadingView } from './AdminProductLoadingViews'
 import { AdminLoginRequired, AdminProductStatusPage } from './AdminProductStatusPage'
-import { adminProductsQueryKey } from './admin-product-query'
 import { useAdminRequestCoordinator } from './use-admin-request-coordinator'
 
 const initialValues: AdminProductFormValues = {

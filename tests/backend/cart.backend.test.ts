@@ -2,12 +2,12 @@ import { eq } from 'drizzle-orm'
 import { NextRequest } from 'next/server'
 import { describe, expect, it } from 'vitest'
 
-import { GET as getCartRoute } from '@/app/api/cart/route'
 import {
   DELETE as deleteCartItemRoute,
   PATCH as updateCartItemRoute,
 } from '@/app/api/cart/items/[itemId]/route'
 import { POST as addCartItemRoute } from '@/app/api/cart/items/route'
+import { GET as getCartRoute } from '@/app/api/cart/route'
 import { addCartItem } from '@/features/cart/server/cart-service'
 import { Temporal } from '@/lib/date-time/temporal'
 import { hashSessionToken } from '@/server/auth/session-token'

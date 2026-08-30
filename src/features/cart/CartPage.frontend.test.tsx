@@ -5,9 +5,9 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { server } from '@/test/msw/server'
 
-import { CartPage } from './CartPage'
 import { cartFixture, emptyCartFixture, stockConflictCartFixture } from './cart-fixtures'
 import { cartResponse, customer, renderWithProviders } from './cart-frontend-test-helpers'
+import { CartPage } from './CartPage'
 
 const router = vi.hoisted(() => ({
   push: vi.fn(),

@@ -5,8 +5,8 @@ import { describe, expect, it } from 'vitest'
 
 import { server } from '@/test/msw/server'
 
-import { AdminProductsPage } from './AdminProductsPage'
 import { listResponse, product, renderWithProviders } from './admin-product-frontend-test-helpers'
+import { AdminProductsPage } from './AdminProductsPage'
 
 const customer = {
   email: 'customer@example.test',

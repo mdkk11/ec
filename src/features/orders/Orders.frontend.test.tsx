@@ -2,16 +2,16 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 
-import OrderError from '@/app/orders/error'
-import OrderLoading from '@/app/orders/loading'
+import OrderCompleteError from '@/app/orders/[orderId]/complete/error'
 import OrderDetailError from '@/app/orders/[orderId]/error'
 import OrderDetailLoading from '@/app/orders/[orderId]/loading'
-import OrderCompleteError from '@/app/orders/[orderId]/complete/error'
+import OrderError from '@/app/orders/error'
+import OrderLoading from '@/app/orders/loading'
 
+import { orderFixture } from './order-fixtures'
 import { OrderAccessView } from './OrderAccessView'
 import { OrderDetailView } from './OrderDetailView'
 import { OrderHistoryView } from './OrderHistoryView'
-import { orderFixture } from './order-fixtures'
 
 describe('注文履歴', () => {
   it('ORDER-010: 空状態から商品一覧へ移動できる', () => {

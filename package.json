@@ -1,45 +1,33 @@
 {
   "name": "mockshop-storefront",
-  "private": true,
   "version": "0.0.0",
+  "private": true,
   "type": "module",
-  "packageManager": "pnpm@11.23.0",
-  "engines": {
-    "node": ">=24 <25",
-    "pnpm": ">=11 <12"
-  },
-  "devEngines": {
-    "runtime": {
-      "name": "node",
-      "version": "24.19.0",
-      "onFail": "download"
-    }
-  },
   "scripts": {
-    "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "format": "oxfmt --check .",
-    "format:fix": "oxfmt .",
-    "lint": "eslint .",
-    "typecheck": "next typegen && tsc --noEmit",
-    "test:unit": "vitest run --project unit",
-    "test:frontend": "vitest run --project frontend",
-    "test:backend": "vitest run --project backend",
-    "test:e2e": "NODE_ENV=test playwright test",
-    "test:e2e:selected": "NODE_ENV=test node scripts/impact/run-selected-e2e.mjs",
-    "test:vrt": "storybook build && playwright test --config=playwright.vrt.config.ts",
-    "test:vrt:update": "storybook build && playwright test --config=playwright.vrt.config.ts --update-snapshots",
-    "db:up": "docker compose up -d --wait postgres-dev postgres-test postgres-e2e",
+    "build-storybook": "storybook build",
+    "ci:impact:select": "node scripts/impact/select-affected-e2e.mjs",
     "db:down": "docker compose down",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/db/migrate.ts",
-    "db:seed": "tsx scripts/db/seed.ts",
-    "db:prepare:test": "NODE_ENV=test tsx scripts/db/prepare-test.ts",
     "db:prepare:e2e": "NODE_ENV=test tsx scripts/db/prepare-e2e.ts",
-    "ci:impact:select": "node scripts/impact/select-affected-e2e.mjs",
+    "db:prepare:test": "NODE_ENV=test tsx scripts/db/prepare-test.ts",
+    "db:seed": "tsx scripts/db/seed.ts",
+    "db:up": "docker compose up -d --wait postgres-dev postgres-test postgres-e2e",
+    "dev": "next dev",
+    "format": "oxfmt --check .",
+    "format:fix": "oxfmt .",
+    "lint": "eslint .",
+    "start": "next start",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "test:backend": "vitest run --project backend",
+    "test:e2e": "NODE_ENV=test playwright test",
+    "test:e2e:selected": "NODE_ENV=test node scripts/impact/run-selected-e2e.mjs",
+    "test:frontend": "vitest run --project frontend",
+    "test:unit": "vitest run --project unit",
+    "test:vrt": "storybook build && playwright test --config=playwright.vrt.config.ts",
+    "test:vrt:update": "storybook build && playwright test --config=playwright.vrt.config.ts --update-snapshots",
+    "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
     "@js-temporal/polyfill": "0.5.1",
@@ -84,5 +72,17 @@
     "typescript": "5.9.3",
     "vite": "7.3.6",
     "vitest": "4.1.10"
-  }
+  },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "24.19.0",
+      "onFail": "download"
+    }
+  },
+  "engines": {
+    "node": ">=24 <25",
+    "pnpm": ">=11 <12"
+  },
+  "packageManager": "pnpm@11.23.0"
 }

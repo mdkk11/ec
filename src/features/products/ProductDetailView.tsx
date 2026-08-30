@@ -158,7 +158,7 @@ export function ProductDetailView(props: ProductDetailViewProps) {
           {props.purchaseAction}
           <div className="mt-9 border-t border-line pt-7">
             <h2 className="text-xs font-semibold tracking-[0.1em]">商品説明</h2>
-            <p className="mt-4 whitespace-pre-line text-sm leading-8 text-muted">
+            <p className="mt-4 text-sm leading-8 whitespace-pre-line text-muted">
               {product.description}
             </p>
           </div>

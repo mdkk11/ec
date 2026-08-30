@@ -4,9 +4,13 @@
   "semi": false,
   "singleQuote": true,
   "trailingComma": "all",
-  "sortImports": false,
-  "sortPackageJson": false,
-  "sortTailwindcss": false,
+  "sortImports": true,
+  "sortPackageJson": {
+    "sortScripts": true
+  },
+  "sortTailwindcss": {
+    "stylesheet": "./src/app/globals.css"
+  },
   "ignorePatterns": [
     "**/*.md",
     "**/pnpm-lock.yaml",

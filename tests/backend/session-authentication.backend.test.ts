@@ -3,9 +3,9 @@ import { NextRequest } from 'next/server'
 import { describe, expect, it } from 'vitest'
 
 import { DELETE, GET, POST } from '@/app/api/session/route'
+import { hashSessionToken } from '@/server/auth/session-token'
 import { sessions, users } from '@/server/db/schema'
 import { seedAuthenticationUsers } from '@/server/db/seed'
-import { hashSessionToken } from '@/server/auth/session-token'
 import { backendDatabase } from '@/test/backend/database'
 
 const sessionUrl = 'http://localhost:3000/api/session'

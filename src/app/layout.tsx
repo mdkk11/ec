@@ -10,6 +10,7 @@ import '@fontsource-variable/inter'
 import '@fontsource-variable/noto-sans-jp'
 import '@fontsource-variable/cormorant-garamond'
 import '@fontsource-variable/noto-serif-jp'
+
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -28,7 +29,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     <html lang="ja">
       <body>
         <a
-          className="fixed left-4 top-4 z-50 -translate-y-24 bg-ink px-4 py-3 text-sm font-semibold text-white transition-transform focus:translate-y-0"
+          className="fixed top-4 left-4 z-50 -translate-y-24 bg-ink px-4 py-3 text-sm font-semibold text-white transition-transform focus:translate-y-0"
           href="#main-content"
         >
           メインコンテンツへ移動

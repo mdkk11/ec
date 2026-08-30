@@ -52,7 +52,7 @@ export function SessionControls() {
   const admin = state.user.role === 'admin'
 
   return (
-    <div className="flex items-center gap-2 whitespace-nowrap text-right">
+    <div className="flex items-center gap-2 text-right whitespace-nowrap">
       {!admin ? (
         <Link
           aria-label="カート"
@@ -79,8 +79,8 @@ export function SessionControls() {
         >
           マイページ
         </summary>
-        <div className="absolute right-0 top-full z-50 mt-2 w-64 border border-line bg-surface p-4 text-left shadow-lg">
-          <p className="break-all text-xs text-muted">{state.user.email}</p>
+        <div className="absolute top-full right-0 z-50 mt-2 w-64 border border-line bg-surface p-4 text-left shadow-lg">
+          <p className="text-xs break-all text-muted">{state.user.email}</p>
           <nav aria-label="マイページ" className="mt-4 grid gap-1">
             {admin ? (
               <Link

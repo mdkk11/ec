@@ -19,15 +19,15 @@ import {
 } from '@/lib/api-client/admin-product'
 import { ApiClientError } from '@/lib/api-client/request-json'
 
+import { adminProductsQueryKey, replaceAdminProduct } from './admin-product-query'
 import {
   AdminProductForm,
   type AdminProductFieldErrors,
   type AdminProductFormField,
   type AdminProductFormValues,
 } from './AdminProductForm'
-import { AdminLoginRequired, AdminProductStatusPage } from './AdminProductStatusPage'
 import { AdminProductEditLoadingView } from './AdminProductLoadingViews'
-import { adminProductsQueryKey, replaceAdminProduct } from './admin-product-query'
+import { AdminLoginRequired, AdminProductStatusPage } from './AdminProductStatusPage'
 import { useAdminRequestCoordinator } from './use-admin-request-coordinator'
 
 type PendingOperation = 'metadata' | 'refresh' | 'stock' | null

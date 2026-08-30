@@ -30,7 +30,7 @@ export function OrderDetailView({
         <div>
           <div className="border-b border-line pb-6">
             <p className="text-xs font-semibold tracking-[0.08em] text-muted">注文番号</p>
-            <p className="mt-2 break-all font-mono text-sm">{order.id}</p>
+            <p className="mt-2 font-mono text-sm break-all">{order.id}</p>
             <p className="mt-3 text-sm text-muted">{formatOrderDate(order.createdAt)}</p>
           </div>
           <ul>

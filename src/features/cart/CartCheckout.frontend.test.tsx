@@ -7,9 +7,9 @@ import { useSession } from '@/features/auth/SessionProvider'
 import { orderFixture } from '@/features/orders/order-fixtures'
 import { server } from '@/test/msw/server'
 
-import { CartPage } from './CartPage'
 import { cartFixture, stockConflictCartFixture } from './cart-fixtures'
 import { cartResponse, customer, renderWithProviders } from './cart-frontend-test-helpers'
+import { CartPage } from './CartPage'
 
 const router = vi.hoisted(() => ({
   push: vi.fn(),

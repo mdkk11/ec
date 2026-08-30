@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import { HomePage } from './HomePage'
 import { previewProducts } from './home-content'
+import { HomePage } from './HomePage'
 
 describe('HomePage', () => {
   it('Vite試作から引き継いだトップページの主要コンテンツを表示する', () => {
