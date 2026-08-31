@@ -96,7 +96,7 @@
 
 ### 4.3 Oxlintへの移行
 
-- Oxlintを正式lintとし、`oxlint.config.ts` でbuilt-inのNext.js、React、TypeScript、import、jsx-a11y、Vitest/Node環境を構成する。
+- Oxlintを正式lintとし、`.oxlintrc.json` でbuilt-inのNext.js、React、TypeScript、import、jsx-a11y、Vitest/Node環境を構成する。
 - `oxlint-tsgolint` を追加し、CIの正式lintはtype-awareかつwarningを失敗扱いにする。
 - `lint:oxlint` はOxlintの全対象非変更check、`lint:fix` は開発者が明示実行するOxlint fix commandとする。
 - 現在のESLint effective configを、通常のTSX、Storybook story、Node configの代表fileごとに `eslint --print-config` で記録し、Next/TypeScript/Storybookの有効ruleをOxlint built-in ruleおよびJS plugin ruleへ対応付ける。
@@ -123,7 +123,7 @@
 ### 4.5 Knip
 
 - Knipを正式な未使用file/export/dependency検査として追加し、`knip` scriptを用意する。
-- root workspaceではNext.js App Router、Storybook、Vitest、Playwright、Drizzle、root scripts/configを実在するentry/projectとして `knip.jsonc` に列挙する。
+- root workspaceではNext.js App Router、Storybook、Vitest、Playwright、Drizzle、root scripts/configを実在するentry/projectとして `knip.json` に列挙する。
 - `.agents/skills/explained-code-review` はroot applicationへ混ぜず、独自 `package.json`、scripts、Playwright config、testsを持つ別Knip workspaceとして列挙する。clean CIでnested dependencyのinstallが必要と判明した場合は、そのexact frozen-installを `knip:prepare` として正式化し、`knip` を `pnpm knip:prepare && knip` に接続する。CIは常に `pnpm knip` だけを呼び、READMEとAGENTS.mdにもこの前処理を含むcommand契約を記載する。
 - generated bundle、schemaから生成されるartifact、frameworkが規約で読むentryだけを根拠付きで扱う。`ignoreDependencies: ["*"]`、全issue type無効化、`.agents/**` 全体ignoreのような設定は使わない。
 - false positiveは、import元、package script、framework configのどれがentryであるかを確認してから個別設定する。
@@ -205,9 +205,9 @@
 
 - `package.json`
 - `pnpm-lock.yaml`
-- `oxlint.config.ts`（追加）
+- `.oxlintrc.json`（追加）
 - `eslint.config.js`（parity完了時は削除、実在gap時だけ縮小）
-- `knip.jsonc`（追加）
+- `knip.json`（追加）
 - `lefthook.yml`（追加）
 - `pnpm-workspace.yaml`
 - `docs/tooling/lint-parity.md`（追加）
