@@ -182,6 +182,10 @@ pnpm dev
 pnpm format
 pnpm format:fix
 pnpm lint
+pnpm lint:fix
+pnpm lint:parity
+pnpm knip
+pnpm check:staged
 pnpm typecheck
 pnpm test:unit
 pnpm test:frontend
@@ -199,6 +203,7 @@ pnpm db:prepare:test
 pnpm db:prepare:e2e
 pnpm ci:impact:select
 pnpm build
+pnpm storybook:serve
 pnpm build-storybook
 ```
 
@@ -213,6 +218,12 @@ pnpm build-storybook
 - `ci:impact:select` はPR差分からE2E specを選び、分類不能・high-risk・解析失敗では全specへ倒す。
 - `format` はリポジトリ全体の書式、import、Tailwind class、`package.json` の並び順を変更せずに検査する。
 - `format:fix` は同じ規則をリポジトリ全体へ適用する。
+- `lint` はOxlintの正式検査とStorybook ruleだけのESLint fallbackを実行する。
+- `lint:fix` はOxlintの安全な自動修正を明示的に適用する。
+- `lint:parity` はNext.js、React、Storybook、type-aware TypeScriptの代表ruleが実際に動くことを検査する。
+- `knip` はroot applicationとrepository-local Skillの未使用file、export、dependencyを検査する。
+- `check:staged` はGit indexのcopyへ非変更のformatとOxlintを実行し、working treeとindexを変更しない。
+- `storybook:serve` はbuild済みStorybookをVRT用に起動する。
 - `test:e2e:selected` は選択結果が有効な場合だけ対象specを実行し、欠落・不正時は `test:e2e` へ倒す。
 
 ## PR前の確認

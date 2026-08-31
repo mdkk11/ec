@@ -67,12 +67,18 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Test impact selectors
         run: node --test scripts/impact/*.test.mjs
+      - name: Test tooling
+        run: node --test scripts/tooling/*.test.mjs
       - name: Format
         run: pnpm format
       - name: Lint
         run: pnpm lint
+      - name: Verify lint responsibilities
+        run: pnpm lint:parity
       - name: Typecheck
         run: pnpm typecheck
+      - name: Find unused code
+        run: pnpm knip
       - name: Unit tests
         run: pnpm test:unit
       - name: Frontend integration tests

@@ -32,6 +32,10 @@ pnpm dev
 pnpm format
 pnpm format:fix
 pnpm lint
+pnpm lint:fix
+pnpm lint:parity
+pnpm knip
+pnpm check:staged
 pnpm typecheck
 pnpm test:unit
 pnpm test:frontend
@@ -50,8 +54,11 @@ pnpm db:prepare:e2e
 pnpm ci:impact:select
 pnpm build
 pnpm storybook
+pnpm storybook:serve
 pnpm build-storybook
 ```
+
+`pnpm install` でLefthookがGit hookを設定し、commit前にstage済みのJavaScript、TypeScript、JSON、YAML、CSSだけを変更せず検査します。未stageの変更、test、build、E2Eは対象にしません。
 
 初回のPlaywright実行前に購入導線で使用する3ブラウザをインストールします。
 

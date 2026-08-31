@@ -128,7 +128,10 @@ test('shared, unknown, empty, and explicit full runs execute everything', () => 
   for (const selection of [
     selectCiJobs(['src/contracts/cart.ts']),
     selectCiJobs(['.oxfmtrc.json']),
+    selectCiJobs(['.oxlintrc.json']),
     selectCiJobs(['.editorconfig']),
+    selectCiJobs(['knip.json']),
+    selectCiJobs(['lefthook.yml']),
     selectCiJobs(['.github/dependabot.yml']),
     selectCiJobs(['unknown.file']),
     selectCiJobs([]),
