@@ -20,7 +20,7 @@ type CouponFormProps = {
   pending?: 'apply' | 'remove' | null
 }
 
-export function couponIssueMessage(code: CouponIssueCode) {
+function couponIssueMessage(code: CouponIssueCode) {
   switch (code) {
     case 'COUPON_INACTIVE':
       return '適用中のクーポンは現在利用できません。'

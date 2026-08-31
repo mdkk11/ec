@@ -6,9 +6,9 @@ const positiveQuantitySchema = z
   .int('数量は整数で入力してください。')
   .min(1, '数量は1以上で入力してください。')
 
-export const cartItemAvailabilitySchema = z.enum(['available', 'out_of_stock', 'unpublished'])
+const cartItemAvailabilitySchema = z.enum(['available', 'out_of_stock', 'unpublished'])
 
-export const cartItemSchema = z.object({
+const cartItemSchema = z.object({
   availableStock: z.number().int().nonnegative(),
   imagePath: z.string().startsWith('/images/'),
   id: z.uuid(),
@@ -20,7 +20,7 @@ export const cartItemSchema = z.object({
   availability: cartItemAvailabilitySchema,
 })
 
-export const appliedCouponSchema = z.object({
+const appliedCouponSchema = z.object({
   code: z.string().min(1),
   discountPercent: z.number().int().min(1).max(100),
   minimumSubtotal: moneySchema,
@@ -28,7 +28,7 @@ export const appliedCouponSchema = z.object({
   endsAt: z.iso.datetime({ offset: true }),
 })
 
-export const checkoutIssueSchema = z.object({
+const checkoutIssueSchema = z.object({
   code: z.enum([
     'PRODUCT_UNAVAILABLE',
     'STOCK_CONFLICT',
@@ -40,7 +40,7 @@ export const checkoutIssueSchema = z.object({
   itemId: z.uuid().optional(),
 })
 
-export const cartSchema = z.object({
+const cartSchema = z.object({
   id: z.uuid(),
   version: z.number().int().min(1),
   items: z.array(cartItemSchema),

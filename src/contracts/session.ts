@@ -1,8 +1,8 @@
 import { z } from 'zod'
 
-export const userRoleSchema = z.enum(['customer', 'admin'])
+const userRoleSchema = z.enum(['customer', 'admin'])
 
-export const userDtoSchema = z.object({
+const userDtoSchema = z.object({
   id: z.uuid(),
   email: z.email(),
   role: userRoleSchema,

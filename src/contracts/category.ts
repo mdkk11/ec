@@ -24,4 +24,3 @@ export const productCategoryQuerySchema = z.object({
 
 export type CategoryDto = z.infer<typeof categoryDtoSchema>
 export type PublicCategoryDto = z.infer<typeof publicCategoryDtoSchema>
-export type ProductCategoryQuery = z.infer<typeof productCategoryQuerySchema>

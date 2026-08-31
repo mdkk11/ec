@@ -4,7 +4,7 @@ import { categoryIdSchema, publicCategoryDtoSchema } from './category'
 
 export const productIdSchema = z.uuid()
 
-export const productAvailabilitySchema = z.enum(['in_stock', 'out_of_stock'])
+const productAvailabilitySchema = z.enum(['in_stock', 'out_of_stock'])
 
 export const productDtoSchema = z.object({
   category: publicCategoryDtoSchema,
@@ -99,11 +99,7 @@ export const updateAdminProductStockRequestSchema = z.object({
 
 export type ProductDto = z.infer<typeof productDtoSchema>
 export type ProductDetailDto = z.infer<typeof productDetailDtoSchema>
-export type ProductListResponse = z.infer<typeof productListResponseSchema>
-export type ProductResponse = z.infer<typeof productResponseSchema>
 export type AdminProductDto = z.infer<typeof adminProductDtoSchema>
-export type AdminProductListResponse = z.infer<typeof adminProductListResponseSchema>
-export type AdminProductResponse = z.infer<typeof adminProductResponseSchema>
 export type CreateAdminProductRequest = z.infer<typeof createAdminProductRequestSchema>
 export type UpdateAdminProductRequest = z.infer<typeof updateAdminProductRequestSchema>
 export type UpdateAdminProductStockRequest = z.infer<typeof updateAdminProductStockRequestSchema>

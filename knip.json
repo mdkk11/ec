@@ -1,0 +1,27 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "treatConfigHintsAsErrors": true,
+  "workspaces": {
+    ".": {
+      "playwright": {
+        "config": ["playwright.config.ts", "playwright.vrt.config.ts"]
+      }
+    },
+    ".agents/skills/explained-code-review": {
+      "entry": [
+        "assets/review.css",
+        "assets/review.js",
+        "scripts/collect-diff.mjs",
+        "scripts/generate-report.mjs",
+        "scripts/syntax-highlighter.source.mjs",
+        "scripts/validate-batch-output.mjs"
+      ],
+      "project": ["assets/**/*.js", "scripts/**/*.mjs", "tests/**/*.mjs"],
+      "playwright": false,
+      "ignoreIssues": {
+        "scripts/batch-output-validator.mjs": ["exports"],
+        "scripts/report-validator.mjs": ["exports"]
+      }
+    }
+  }
+}
