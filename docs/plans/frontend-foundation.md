@@ -156,7 +156,7 @@
 - Oxfmt、Oxlint、Knip、Lefthook、Dependabot、EditorConfig、actionlint関連configをimpact selectorのtooling/high-risk pathへ追加する。
 - package、lockfile、runtime、workflow、TypeScript、Next.js、lint/format/Knip config変更は全4 jobへ倒す現在の保守的挙動を維持する。
 - selector testへ各新規pathの代表caseと `.node-version` 削除後の分類を追加する。
-- `static-and-unit` でformat check、Oxlint、lint parity検査、typecheck、Knip、tooling policy test、actionlint、SHA pin検査を実行し、その後に既存selector test、unit、frontend integration testを維持する。
+- `static-and-unit` でformat check、Oxlint、lint parity検査、typecheck、Knip、actionlint、SHA pin検査を実行し、その後に既存selector test、unit、frontend integration testを維持する。
 - 追加・変更する `lint`、`lint:fix`、`format`、`format:fix`、`knip` commandを `package.json`、README、AGENTS.md、CIで同期する。
 
 ## 5. 採用しない方針
@@ -183,7 +183,6 @@
 - `.github/workflows/ci.yml`
 - `.github/dependabot.yml`（追加）
 - `scripts/tooling/run-actionlint.mjs`（追加。exact version、asset、SHA-256を固定）
-- `scripts/tooling/tooling-policy.test.mjs`（追加。設定値とNode runtime lockを決定的に検証）
 - `scripts/impact/select-ci-jobs.mjs`
 - `scripts/impact/select-ci-jobs.test.mjs`
 - `README.md`
@@ -235,7 +234,7 @@
 
 | 段階 | 責務と主なfile | 前提 | 後続への影響 | この段階の検証 | 戻す条件と方法 |
 | --- | --- | --- | --- | --- | --- |
-| Runtimeと供給網 | `package.json`、`pnpm-workspace.yaml`、lockfile、GitHub Actions、Dependabot、impact selector | 既存のNode 24・pnpm 11構成 | 後続のdependency追加、local command、全CI jobがこのversion・release-age設定を使う | runtime path/version、fresh/frozen install、policy test、actionlint、SHA pin、4 CI job | exact runtimeの取得またはCI setupが成立しない場合はNode正本を `.node-version` へ戻す。Action SHA固定とDependabotは独立して維持できる |
+| Runtimeと供給網 | `package.json`、`pnpm-workspace.yaml`、lockfile、GitHub Actions、Dependabot、impact selector | 既存のNode 24・pnpm 11構成 | 後続のdependency追加、local command、全CI jobがこのversion・release-age設定を使う | runtime path/version、fresh/frozen install、actionlint、SHA pin、4 CI job | exact runtimeの取得またはCI setupが成立しない場合はNode正本を `.node-version` へ戻す。Action SHA固定とDependabotは独立して維持できる |
 | Oxfmt適用 | `.oxfmtrc.json`、`.editorconfig`、source/test/config、format command、CI | Runtimeと供給網 | 後続の静的品質変更は整形済みのfileを前提にする | format再実行で差分0、全import差分確認、VRT/E2E、4 CI job | import初期化順やTailwind表示が変わる場合は該当sortingを無効化して整形規則だけを維持する |
 | 静的品質 | Oxlint、TypeScript、Knip、typedRoutes、Lefthook、CI | Oxfmt適用 | `pnpm lint`、`pnpm typecheck`、`pnpm knip`、pre-commitの正式契約になる | lint parity、typecheck、Knip、index snapshot hook、全test/build、4 CI job | lint coverageが下がる場合は該当ESLint ruleだけを残す。strict optionがruntime変更を要求する場合はそのoptionを有効化せず再検討する |
 
@@ -245,16 +244,15 @@
 2. `package.json` にexact `devEngines.runtime` とpnpm `packageManager` を設定し、`pnpm-workspace.yaml` にexact保存、10080分待機、exclude pruneを設定する。
 3. fresh installで `pnpm-lock.yaml` のNode runtime version/checksumとdependency解決を更新し、既存override/allowBuildsを維持する。pnpm versionはlockfileへ記録されないため、`packageManager` と実行結果の一致だけを確認する。
 4. temporary `runtime:version` scriptで `process.version` と `process.execPath` をJSON出力し、`pnpm run` で実行する。versionがexact pinと一致し、`realpath(process.execPath)` がsystem `node` のrealpathと異なり、lockfileのruntime version/checksumと一致することを確認する。検証用scriptは確認後に削除する。
-5. `scripts/tooling/tooling-policy.test.mjs` をNode標準libraryで追加し、`packageManager`、`devEngines.runtime`、`saveExact`、`minimumReleaseAge`、`minimumReleaseAgeExcludePrune`、`allowBuilds`、lockfileのNode runtime version/checksumを検査する。このtestは `static-and-unit` で継続実行する。
-6. registryに依存する7日待機の動作確認は実装時に一度だけ行う。`mkdtemp` 配下の独立package/workspaceで、実行時点で公開168時間未満のstable package/versionをregistryから選び、公開時刻を出力したうえで、通常解決の拒否、version限定excludeによる通過、`pnpm remove/update` でlockfileから外れた際のexclude pruneを確認する。temporary directoryは確認後に削除し、このprobeをCIへ入れない。
-7. `.node-version` を削除し、CIのsetup-nodeを `package.json` 参照、pnpm/action-setupを `packageManager` 参照へ統一する。
-8. 全Action refを、公式release/tagが指すcommitをAPIで確認してfull SHAへ固定し、version commentを付ける。
-9. `scripts/tooling/run-actionlint.mjs` にactionlint exact release assetとSHA-256を固定し、`pnpm actionlint` を `static-and-unit` に入れる。asset改ざんを模したchecksum不一致とworkflow構文違反の一時fixtureで非zeroになることを確認する。
-10. pinact-actionをfull SHAで追加し、`fix: "false"`、`verify: "true"`、`min_age: "7"`、`verify_min_age: "true"` で検証専用にする。tag参照、誤ったversion comment、公開後7日未満のAction refを一時fixtureで個別に拒否できることを確認する。
-11. Dependabotのnpm production/development minor-patch group、個別major、Actions group、週次、7日cooldownを追加する。
-12. selectorのhigh-risk pathとtestを同期し、runtime/config/workflow差分が4 jobすべてを選ぶことを確認する。
-13. READMEとAGENTS.mdへNode自動取得、version正本、7日待機、security例外、追加commandを記載する。
-14. この段階までの変更でローカル回帰確認と4 CI jobを成功させる。
+5. registryに依存する7日待機の動作確認は実装時に一度だけ行う。`mkdtemp` 配下の独立package/workspaceで、実行時点で公開168時間未満のstable package/versionをregistryから選び、公開時刻を出力したうえで、通常解決の拒否、version限定excludeによる通過、`pnpm remove/update` でlockfileから外れた際のexclude pruneを確認する。temporary directoryは確認後に削除し、このprobeをCIへ入れない。
+6. `.node-version` を削除し、CIのsetup-nodeを `package.json` 参照、pnpm/action-setupを `packageManager` 参照へ統一する。
+7. 全Action refを、公式release/tagが指すcommitをAPIで確認してfull SHAへ固定し、version commentを付ける。
+8. `scripts/tooling/run-actionlint.mjs` にactionlint exact release assetとSHA-256を固定し、`pnpm actionlint` を `static-and-unit` に入れる。asset改ざんを模したchecksum不一致とworkflow構文違反の一時fixtureで非zeroになることを確認する。
+9. pinact-actionをfull SHAで追加し、`fix: "false"`、`verify: "true"`、`min_age: "7"`、`verify_min_age: "true"` で検証専用にする。tag参照、誤ったversion comment、公開後7日未満のAction refを一時fixtureで個別に拒否できることを確認する。
+10. Dependabotのnpm production/development minor-patch group、個別major、Actions group、週次、7日cooldownを追加する。
+11. selectorのhigh-risk pathとtestを同期し、runtime/config/workflow差分が4 jobすべてを選ぶことを確認する。
+12. READMEとAGENTS.mdへNode自動取得、version正本、7日待機、security例外、追加commandを記載する。
+13. この段階までの変更でローカル回帰確認と4 CI jobを成功させる。
 
 ### 7.3 Oxfmt適用
 
@@ -280,7 +278,7 @@
 9. Lefthookを追加し、`pnpm-workspace.yaml` でdependency install scriptを許可し、root `prepare` でGit hookを登録する。pre-commitは `scripts/tooling/check-staged.mjs` を呼ぶ。
 10. `check-staged.mjs` はindex全体を `mkdtemp` 配下へ `git checkout-index` で展開し、root `node_modules` へのdirectory symlinkを一時directoryへ作る。rootのOxlint/Oxfmt executableを絶対pathで起動し、working directoryを一時directoryにして、staged対象pathのindex内容だけを検査する。finallyでsymlinkとtemporary directoryを削除する。
 11. 部分stageの検証では「staged側に違反・unstaged側は正常」が失敗し、「staged側は正常・unstaged側だけに違反」が成功することを確認する。両caseでworking tree、index、unstaged hunkのhashが実行前後で変わらないことも確認する。
-12. `static-and-unit` にformat、Oxlint、`lint:parity`、typecheck、Knip、tooling policy test、actionlint/SHA pin、既存selector/unit/frontendを統合する。
+12. `static-and-unit` にformat、Oxlint、`lint:parity`、typecheck、Knip、actionlint/SHA pin、既存selector/unit/frontendを統合する。
 13. selector test、README、AGENTS.mdのcommand契約を最終構成へ同期する。
 14. 全変更を適用した状態でローカル回帰確認と4 CI jobを成功させる。
 
@@ -310,7 +308,6 @@
 - pnpm script内の `process.version`、lockfileのNode runtime、全CI setup-nodeの解決versionが一致する。
 - pnpm script内の `realpath(process.execPath)` がsystem `node` のrealpathと異なり、project-local runtimeを使っていることを確認する。
 - activeな設定・script・利用手順に `.node-version` 参照が残らない。
-- `node --test scripts/tooling/tooling-policy.test.mjs` を実行し、repository内のversion・7日待機・allowBuilds・Node runtime lockを決定的に検査する。このtestはCIでも実行する。
 - registryを使う一回限りのprobeでは、実行時点で公開168時間未満のstable package/versionと公開時刻を出力し、`mkdtemp` fixture内だけで通常解決の拒否、version限定excludeの通過、`pnpm remove/update` 後のexclude pruneを確認する。時間経過や `pnpm install` だけでpruneされるとはみなさない。
 - 一回限りのprobe前後の `git status --short` が同一であり、temporary fixtureがrepository内へ残らないことを確認する。
 - `pnpm install --frozen-lockfile` が許可済みbuildだけで成功する。

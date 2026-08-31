@@ -152,7 +152,7 @@ test('shared, unknown, empty, and explicit full runs execute everything', () => 
   for (const selection of [
     selectCiJobs(['src/contracts/cart.ts']),
     selectCiJobs(['.github/dependabot.yml']),
-    selectCiJobs(['scripts/tooling/tooling-policy.test.mjs']),
+    selectCiJobs(['scripts/tooling/run-actionlint.mjs']),
     selectCiJobs(['unknown.file']),
     selectCiJobs([]),
     selectCiJobs(['docs/README.md'], { fullRun: true }),
