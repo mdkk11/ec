@@ -46,7 +46,6 @@ pnpm db:seed
 pnpm db:prepare:test
 pnpm db:prepare:e2e
 pnpm ci:impact:select
-pnpm actionlint
 pnpm build
 pnpm storybook
 pnpm build-storybook

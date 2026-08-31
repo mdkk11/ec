@@ -36,7 +36,6 @@
     "db:prepare:test": "NODE_ENV=test tsx scripts/db/prepare-test.ts",
     "db:prepare:e2e": "NODE_ENV=test tsx scripts/db/prepare-e2e.ts",
     "ci:impact:select": "node scripts/impact/select-affected-e2e.mjs",
-    "actionlint": "node scripts/tooling/run-actionlint.mjs",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },

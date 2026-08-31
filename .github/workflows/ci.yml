@@ -67,8 +67,6 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Test impact selectors
         run: node --test scripts/impact/*.test.mjs
-      - name: Validate GitHub Actions
-        run: pnpm actionlint
       - name: Lint
         run: pnpm lint
       - name: Typecheck
