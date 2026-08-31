@@ -130,8 +130,8 @@
 
 ### 4.6 Lefthook
 
-- Lefthookを追加し、install後にGit hookを準備する `prepare` scriptを設定する。
-- `pnpm-workspace.yaml` の `allowBuilds` に `lefthook: true` を追加する。dependency側install scriptはplatform binaryの準備、root `prepare: lefthook install` はrepositoryのGit hook登録だけを担当し、責任を重ねない。
+- Lefthookを追加し、dependency側のinstall scriptでローカルのGit hookを登録する。
+- `pnpm-workspace.yaml` の `allowBuilds` に `lefthook: true` を追加する。Lefthook自身がCIではhook登録をスキップするため、rootの `prepare` scriptは重ねない。
 - `scripts/tooling/check-staged.mjs` は `git diff --cached --name-only --diff-filter=ACMR -z` で対象pathを取得し、`git checkout-index --all --prefix=<temporary-directory>/` でGit index全体を一時directoryへ展開する。rootの `node_modules` を一時directoryから参照できるようにしたうえで、stagedされたJS/TS/JSON/YAML/CSSのindex内容だけへ非変更のOxlintとOxfmt checkを実行する。
 - pre-commitは `scripts/tooling/check-staged.mjs` だけを呼ぶ。hookから `git add`、`lint:fix`、`format:fix` を実行せず、working treeとGit indexを変更しない。
 - 部分stageでは、staged側に違反がありunstaged側で修正済みのcaseを失敗させ、staged側が正常でunstaged側だけに違反があるcaseを成功させる。これによりcommit対象だけを判定する。
@@ -272,7 +272,7 @@
 6. `typedRoutes: true` を有効化し、typegen、typecheck、buildでLink/routerのroute型を確認する。
 7. Knipをroot applicationとrepository-local skillの2 workspace境界で設定し、実在entryを列挙する。各ignoreには生成元またはframework読込根拠をコメントする。clean checkout相当としてnested packageの `node_modules` がない状態で、root install後の `pnpm exec knip --debug` を実行し、2 workspaceの認識とunresolved import 0件を確認する。成功する場合は `knip: "knip"` とする。nested installが必要な場合は `knip:prepare` をnested packageのexact frozen installに固定し、`knip: "pnpm knip:prepare && knip"` とする。どちらの場合もCIは `pnpm knip` だけを正式commandとして呼び、root `pnpm-workspace.yaml` のpackagesにはnested packageを追加しない。
 8. Knipが報告したunused file/export/dependencyを1件ずつimport/package script/configと照合し、真のdead codeだけを削除する。アプリ機能や将来用interfaceは追加しない。
-9. Lefthookを追加し、`pnpm-workspace.yaml` でdependency install scriptを許可し、root `prepare` でGit hookを登録する。pre-commitは `scripts/tooling/check-staged.mjs` を呼ぶ。
+9. Lefthookを追加し、`pnpm-workspace.yaml` でdependency install scriptを許可する。ローカルではdependency側のinstall scriptがGit hookを登録し、CIではLefthook自身の判定で登録をスキップする。pre-commitは `scripts/tooling/check-staged.mjs` を呼ぶ。
 10. `check-staged.mjs` はindex全体を `mkdtemp` 配下へ `git checkout-index` で展開し、root `node_modules` へのdirectory symlinkを一時directoryへ作る。rootのOxlint/Oxfmt executableを絶対pathで起動し、working directoryを一時directoryにして、staged対象pathのindex内容だけを検査する。finallyでsymlinkとtemporary directoryを削除する。
 11. 部分stageの検証では「staged側に違反・unstaged側は正常」が失敗し、「staged側は正常・unstaged側だけに違反」が成功することを確認する。両caseでworking tree、index、unstaged hunkのhashが実行前後で変わらないことも確認する。
 12. `static-and-unit` にformat、Oxlint、`lint:parity`、typecheck、Knip、SHA pin、既存selector/unit/frontendを統合する。
@@ -391,7 +391,7 @@ Next.js、Storybook、Playwright、Drizzle、repository-local skillにはframewo
 - TypeScript 5.9の指定strict optionとNext.js typed routesが有効で、cast/ignoreによる無効化がない。
 - Knipがroot applicationとrepository-local skillの実在entryを検査し、広いignoreで結果を隠していない。
 - LefthookがGit indexの内容だけへ非変更の高速checkを行い、部分stageでもcommit対象を正しく判定する。CIが唯一の正式gateである。
-- Lefthookのplatform binary準備はallowlisted dependency install script、Git hook登録はroot `prepare` が担当し、fresh clone・CI・再installで成立する。
+- Lefthookのplatform binary準備とローカルのGit hook登録はallowlisted dependency install scriptが担当し、CIではhook登録をスキップする。fresh clone・CI・再installで成立する。
 - 既存4 required check、impact selection、E2E 1 worker/retries 0、browser matrix、test responsibilityが維持される。
 - package.json、README、AGENTS.md、CIのcommand契約が一致する。
 - unit、frontend、backend、E2E、VRT、build、Storybook buildが全変更適用後に成功し、VRT画像、UI、API、DB、business ruleに意図した差分がない。
