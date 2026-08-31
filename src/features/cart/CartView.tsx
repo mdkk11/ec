@@ -248,13 +248,15 @@ function CartLine({
               <Button
                 className="mt-3"
                 disabled={refreshPending}
-                onClick={async () => {
-                  setRefreshPending(true)
-                  setRefreshFailed(false)
-                  const refreshed = await onRefreshAfterUpdateError(updateError.operation)
-                  setRefreshPending(false)
-                  if (refreshed) setQuantityDraft(null)
-                  else setRefreshFailed(true)
+                onClick={() => {
+                  void (async () => {
+                    setRefreshPending(true)
+                    setRefreshFailed(false)
+                    const refreshed = await onRefreshAfterUpdateError(updateError.operation)
+                    setRefreshPending(false)
+                    if (refreshed) setQuantityDraft(null)
+                    else setRefreshFailed(true)
+                  })()
                 }}
                 variant="secondary"
               >

@@ -100,17 +100,19 @@ export function SessionControls() {
           <button
             className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold underline underline-offset-4 disabled:cursor-wait disabled:opacity-60"
             disabled={isLoggingOut}
-            onClick={async () => {
-              if (isLoggingOut) return
-              setLogoutError(false)
-              setIsLoggingOut(true)
-              try {
-                await logout()
-              } catch {
-                setLogoutError(true)
-              } finally {
-                setIsLoggingOut(false)
-              }
+            onClick={() => {
+              void (async () => {
+                if (isLoggingOut) return
+                setLogoutError(false)
+                setIsLoggingOut(true)
+                try {
+                  await logout()
+                } catch {
+                  setLogoutError(true)
+                } finally {
+                  setIsLoggingOut(false)
+                }
+              })()
             }}
             type="button"
           >

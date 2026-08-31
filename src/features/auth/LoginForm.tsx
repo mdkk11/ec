@@ -1,6 +1,6 @@
 'use client'
 
-import { type FormEvent, useRef, useState } from 'react'
+import { type SyntheticEvent, useRef, useState } from 'react'
 
 import { loginRequestSchema, type UserDto } from '@/contracts/session'
 import { ApiClientError } from '@/lib/api-client/request-json'
@@ -35,7 +35,7 @@ export function LoginForm({ onAuthenticated }: LoginFormProps) {
   const emailRef = useRef<HTMLInputElement>(null)
   const passwordRef = useRef<HTMLInputElement>(null)
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: SyntheticEvent<HTMLFormElement, SubmitEvent>) {
     event.preventDefault()
     if (submittingRef.current) return
 
@@ -75,7 +75,7 @@ export function LoginForm({ onAuthenticated }: LoginFormProps) {
   }
 
   return (
-    <form className="mt-8 space-y-6" noValidate onSubmit={handleSubmit}>
+    <form className="mt-8 space-y-6" noValidate onSubmit={(event) => void handleSubmit(event)}>
       <div>
         <label className="block text-sm font-semibold" htmlFor="email">
           メールアドレス

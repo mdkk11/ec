@@ -82,10 +82,12 @@ export function CouponForm({
       ) : (
         <form
           className="mt-3"
-          onSubmit={async (event) => {
-            event.preventDefault()
-            const result = await onApply(code)
-            if (result) setCode('')
+          onSubmit={(event) => {
+            void (async () => {
+              event.preventDefault()
+              const result = await onApply(code)
+              if (result) setCode('')
+            })()
           }}
         >
           <label className="grid gap-2 text-xs font-semibold" htmlFor="coupon-code">

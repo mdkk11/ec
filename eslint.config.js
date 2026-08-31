@@ -1,11 +1,12 @@
-import nextVitals from 'eslint-config-next/core-web-vitals'
-import nextTypeScript from 'eslint-config-next/typescript'
+import parser from '@typescript-eslint/parser'
 import storybook from 'eslint-plugin-storybook'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  ...nextVitals,
-  ...nextTypeScript,
+  {
+    files: ['**/*.{ts,tsx,mts,cts}'],
+    languageOptions: { parser },
+  },
   ...storybook.configs['flat/recommended'],
   globalIgnores([
     '.next/**',
@@ -14,9 +15,6 @@ export default defineConfig([
     'playwright-report/**',
     'test-results/**',
     '.review/**',
-    '.agents/**/scripts/batch-output-validator.mjs',
-    '.agents/**/scripts/report-validator.mjs',
-    '.agents/**/scripts/syntax-highlighter.bundle.mjs',
     'next-env.d.ts',
   ]),
 ])
