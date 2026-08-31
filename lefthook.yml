@@ -1,0 +1,4 @@
+pre-commit:
+  commands:
+    staged-checks:
+      run: pnpm check:staged

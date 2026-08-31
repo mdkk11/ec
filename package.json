@@ -6,6 +6,7 @@
   "scripts": {
     "build": "next build",
     "build-storybook": "storybook build",
+    "check:staged": "node scripts/tooling/check-staged.mjs",
     "ci:impact:select": "node scripts/impact/select-affected-e2e.mjs",
     "db:down": "docker compose down",
     "db:generate": "drizzle-kit generate",
@@ -23,6 +24,7 @@
     "lint:fix": "oxlint --fix .",
     "lint:oxlint": "oxlint --deny-warnings .",
     "lint:parity": "node scripts/tooling/verify-lint-parity.mjs",
+    "prepare": "lefthook install",
     "start": "next start",
     "storybook": "storybook dev -p 6006",
     "storybook:serve": "http-server storybook-static -a 127.0.0.1 -p 6006 -c-1 --silent",
@@ -72,6 +74,7 @@
     "http-server": "14.1.1",
     "jsdom": "29.1.1",
     "knip": "6.32.2",
+    "lefthook": "2.1.10",
     "msw": "2.15.0",
     "oxfmt": "0.64.0",
     "oxlint": "1.79.0",

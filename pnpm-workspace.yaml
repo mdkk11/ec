@@ -7,6 +7,7 @@ minimumReleaseAgeExcludePrune: true
 
 allowBuilds:
   esbuild: true
+  lefthook: true
   msw: false
   unrs-resolver: true
 
