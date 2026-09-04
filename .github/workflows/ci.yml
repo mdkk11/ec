@@ -57,7 +57,6 @@ jobs:
       - name: Setup pnpm and Node.js
         uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2
         with:
-          cache: true
           install: false
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -108,7 +107,6 @@ jobs:
       - name: Setup pnpm and Node.js
         uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2
         with:
-          cache: true
           install: false
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -130,7 +128,6 @@ jobs:
       - name: Setup pnpm and Node.js
         uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2
         with:
-          cache: true
           install: false
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -180,7 +177,6 @@ jobs:
       - name: Setup pnpm and Node.js
         uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2
         with:
-          cache: true
           install: false
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

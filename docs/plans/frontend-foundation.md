@@ -48,7 +48,7 @@
 ### 2.3 参照仕様
 
 - pnpmの `devEngines.runtime` はproject-local runtimeを解決し、lockfileへexact versionとchecksumを記録できる。
-- `pnpm/setup` は `packageManager` と `devEngines.runtime` を参照し、固定したpnpmとNode.jsを1 stepで準備できる。依存を使わない `changes` jobだけは `actions/setup-node` で同じNode.js versionを参照する。
+- `pnpm/setup` は `packageManager` と `devEngines.runtime` を参照し、固定したpnpmとNode.jsを1 stepで準備できる。依存を使わない `changes` jobだけは `actions/setup-node` で同じNode.js versionを参照する。pnpm storeは約239MBのcache転送・展開がcacheなしのinstallより遅いため、cacheしない。
 - OxlintはNext.js、React、TypeScript、import、jsx-a11y等をbuilt-in pluginとして持ち、`oxlint-tsgolint` によるtype-aware lintを実行できる。
 - Storybook ruleは `eslint-plugin-storybook` をOxlintのJS pluginとして読み込める。ただしJS pluginはalphaで、type-aware ruleを実行できない。
 - Oxfmtのimport sorting、Tailwind class sortingはopt-inで、package.json field sortingは既定で有効、scripts sortingはopt-inである。side-effect import sortingは安全上無効が既定である。
@@ -74,7 +74,7 @@
 - `engines.node: ">=24 <25"` はpackageの対応範囲として残す。exact実行環境と対応範囲の責任を分ける。
 - `packageManager` は公開後7日を経過したpnpm 11 exact versionへ更新し、ローカルとCIが参照するpnpm versionの単一正本にする。`engines.pnpm: ">=11 <12"` は対応範囲として残す。pnpm 11はlegacy `packageManager` の解決情報をlockfileへ保存しないため、pnpm versionのlockfile一致は完了条件にしない。
 - `.node-version` を削除し、CIのNode.js versionを `package.json` の `devEngines.runtime` 参照へ統一する。
-- 依存を使うCI jobは `pnpm/setup` でpnpmとNode.jsをまとめて準備し、pnpm storeをcacheする。pnpm versionは `packageManager` だけに置く。
+- 依存を使うCI jobは `pnpm/setup` でpnpmとNode.jsをまとめて準備する。pnpm storeはcacheせず、pnpm versionは `packageManager` だけに置く。
 - `pnpm-workspace.yaml` に `saveExact: true`、`minimumReleaseAge: 10080`、`minimumReleaseAgeExcludePrune: true` を追加する。
 - 既存 `allowBuilds` を維持し、`dangerouslyAllowAllBuilds` は使わない。
 - `postcss@8.5.22` のoverrideとrelease-age除外が現在の解決に必要かlockfileとfresh installで確認する。解決中でも公開後7日を経過していればrelease-age除外は人手で削除し、overrideだけでinstallできることを確認する。解決対象から外れている場合はdependencyを `pnpm update/remove` した際のprune結果を反映する。
