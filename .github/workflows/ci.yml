@@ -62,8 +62,6 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Test impact selectors
         run: node --test scripts/impact/*.test.mjs
-      - name: Test tooling
-        run: node --test scripts/tooling/*.test.mjs
       - name: Format
         run: pnpm format
       - name: Lint

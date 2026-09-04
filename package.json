@@ -6,7 +6,6 @@
   "scripts": {
     "build": "next build",
     "build-storybook": "storybook build",
-    "check:staged": "node scripts/tooling/check-staged.mjs",
     "ci:impact:select": "node scripts/impact/select-affected-e2e.mjs",
     "db:down": "docker compose down",
     "db:generate": "drizzle-kit generate",

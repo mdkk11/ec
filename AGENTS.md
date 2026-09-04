@@ -185,7 +185,6 @@ pnpm lint
 pnpm lint:fix
 pnpm lint:parity
 pnpm knip
-pnpm check:staged
 pnpm typecheck
 pnpm test:unit
 pnpm test:frontend
@@ -222,7 +221,7 @@ pnpm build-storybook
 - `lint:fix` はOxlintの安全な自動修正を明示的に適用する。
 - `lint:parity` はNext.js、React、Storybook、type-aware TypeScriptの代表ruleが実際に動くことを検査する。
 - `knip` はroot applicationとrepository-local Skillの未使用file、export、dependencyを検査する。
-- `check:staged` はGit indexのcopyへ非変更のformatとOxlintを実行し、working treeとindexを変更しない。
+- Lefthookはcommit前にstage済みの対象ファイルをOxfmtとOxlintで変更せず検査する。
 - `storybook:serve` はbuild済みStorybookをVRT用に起動する。
 - `test:e2e:selected` は選択結果が有効な場合だけ対象specを実行し、欠落・不正時は `test:e2e` へ倒す。
 

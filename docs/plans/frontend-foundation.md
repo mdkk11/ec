@@ -132,9 +132,8 @@
 
 - Lefthookを追加し、dependency側のinstall scriptでローカルのGit hookを登録する。
 - `pnpm-workspace.yaml` の `allowBuilds` に `lefthook: true` を追加する。Lefthook自身がCIではhook登録をスキップするため、rootの `prepare` scriptは重ねない。
-- `scripts/tooling/check-staged.mjs` は `git diff --cached --name-only --diff-filter=ACMR -z` で対象pathを取得し、`git checkout-index --all --prefix=<temporary-directory>/` でGit index全体を一時directoryへ展開する。rootの `node_modules` を一時directoryから参照できるようにしたうえで、stagedされたJS/TS/JSON/YAML/CSSのindex内容だけへ非変更のOxlintとOxfmt checkを実行する。
-- pre-commitは `scripts/tooling/check-staged.mjs` だけを呼ぶ。hookから `git add`、`lint:fix`、`format:fix` を実行せず、working treeとGit indexを変更しない。
-- 部分stageでは、staged側に違反がありunstaged側で修正済みのcaseを失敗させ、staged側が正常でunstaged側だけに違反があるcaseを成功させる。これによりcommit対象だけを判定する。
+- pre-commitはLefthook標準の `{staged_files}` でstage済みのJS/TS/JSON/YAML/CSSをOxfmtとOxlintへ直接渡し、非変更のcheckを並列実行する。
+- hookから `git add`、`lint:fix`、`format:fix` を実行せず、working treeとGit indexを変更しない。同じファイルに未stage差分がある場合はworking treeの内容も検査対象になる。
 - typecheck、Knip、unit/frontend/backend test、build、Storybook、E2E、VRTはhookへ入れず、CIを正式判定元にする。
 
 ### 4.7 GitHub ActionsとDependabot
@@ -212,7 +211,6 @@
 - `pnpm-workspace.yaml`
 - `docs/tooling/lint-parity.md`（追加）
 - `scripts/tooling/verify-lint-parity.mjs`（追加）
-- `scripts/tooling/check-staged.mjs`（追加）
 - `tsconfig.json`
 - `next.config.ts`
 - `.github/workflows/ci.yml`
@@ -234,7 +232,7 @@
 | --- | --- | --- | --- | --- | --- |
 | Runtimeと供給網 | `package.json`、`pnpm-workspace.yaml`、lockfile、GitHub Actions、Dependabot、impact selector | 既存のNode 24・pnpm 11構成 | 後続のdependency追加、local command、全CI jobがこのversion・release-age設定を使う | runtime path/version、fresh/frozen install、SHA pin、4 CI job | exact runtimeの取得またはCI setupが成立しない場合はNode正本を `.node-version` へ戻す。Action SHA固定とDependabotは独立して維持できる |
 | Oxfmt適用 | `.oxfmtrc.json`、`.editorconfig`、source/test/config、format command、CI | Runtimeと供給網 | 後続の静的品質変更は整形済みのfileを前提にする | format再実行で差分0、全import差分確認、VRT/E2E、4 CI job | import初期化順やTailwind表示が変わる場合は該当sortingを無効化して整形規則だけを維持する |
-| 静的品質 | Oxlint、TypeScript、Knip、typedRoutes、Lefthook、CI | Oxfmt適用 | `pnpm lint`、`pnpm typecheck`、`pnpm knip`、pre-commitの正式契約になる | lint parity、typecheck、Knip、index snapshot hook、全test/build、4 CI job | lint coverageが下がる場合は該当ESLint ruleだけを残す。strict optionがruntime変更を要求する場合はそのoptionを有効化せず再検討する |
+| 静的品質 | Oxlint、TypeScript、Knip、typedRoutes、Lefthook、CI | Oxfmt適用 | `pnpm lint`、`pnpm typecheck`、`pnpm knip`、pre-commitの正式契約になる | lint parity、typecheck、Knip、Lefthook、全test/build、4 CI job | lint coverageが下がる場合は該当ESLint ruleだけを残す。strict optionがruntime変更を要求する場合はそのoptionを有効化せず再検討する |
 
 ### 7.2 Runtimeと供給網
 
@@ -272,12 +270,10 @@
 6. `typedRoutes: true` を有効化し、typegen、typecheck、buildでLink/routerのroute型を確認する。
 7. Knipをroot applicationとrepository-local skillの2 workspace境界で設定し、実在entryを列挙する。各ignoreには生成元またはframework読込根拠をコメントする。clean checkout相当としてnested packageの `node_modules` がない状態で、root install後の `pnpm exec knip --debug` を実行し、2 workspaceの認識とunresolved import 0件を確認する。成功する場合は `knip: "knip"` とする。nested installが必要な場合は `knip:prepare` をnested packageのexact frozen installに固定し、`knip: "pnpm knip:prepare && knip"` とする。どちらの場合もCIは `pnpm knip` だけを正式commandとして呼び、root `pnpm-workspace.yaml` のpackagesにはnested packageを追加しない。
 8. Knipが報告したunused file/export/dependencyを1件ずつimport/package script/configと照合し、真のdead codeだけを削除する。アプリ機能や将来用interfaceは追加しない。
-9. Lefthookを追加し、`pnpm-workspace.yaml` でdependency install scriptを許可する。ローカルではdependency側のinstall scriptがGit hookを登録し、CIではLefthook自身の判定で登録をスキップする。pre-commitは `scripts/tooling/check-staged.mjs` を呼ぶ。
-10. `check-staged.mjs` はindex全体を `mkdtemp` 配下へ `git checkout-index` で展開し、root `node_modules` へのdirectory symlinkを一時directoryへ作る。rootのOxlint/Oxfmt executableを絶対pathで起動し、working directoryを一時directoryにして、staged対象pathのindex内容だけを検査する。finallyでsymlinkとtemporary directoryを削除する。
-11. 部分stageの検証では「staged側に違反・unstaged側は正常」が失敗し、「staged側は正常・unstaged側だけに違反」が成功することを確認する。両caseでworking tree、index、unstaged hunkのhashが実行前後で変わらないことも確認する。
-12. `static-and-unit` にformat、Oxlint、`lint:parity`、typecheck、Knip、SHA pin、既存selector/unit/frontendを統合する。
-13. selector test、README、AGENTS.mdのcommand契約を最終構成へ同期する。
-14. 全変更を適用した状態でローカル回帰確認と4 CI jobを成功させる。
+9. Lefthookを追加し、`pnpm-workspace.yaml` でdependency install scriptを許可する。ローカルではdependency側のinstall scriptがGit hookを登録し、CIではLefthook自身の判定で登録をスキップする。pre-commitは `{staged_files}` を使ってOxfmtとOxlintの非変更checkを直接実行する。
+10. `static-and-unit` にformat、Oxlint、`lint:parity`、typecheck、Knip、SHA pin、既存selector/unit/frontendを統合する。
+11. selector test、README、AGENTS.mdのcommand契約を最終構成へ同期する。
+12. 全変更を適用した状態でローカル回帰確認と4 CI jobを成功させる。
 
 ## 8. テスト・検証方法
 
@@ -325,7 +321,7 @@
 - Oxfmtの再実行で差分が出ないことを確認する。
 - import sorting後もside-effect importの相対位置が変わらないことをdiffで確認する。
 - Tailwind class sorting後に `pnpm test:vrt` を実行し、VRT画像を更新せず一致することを確認する。
-- staged側に違反・unstaged側が正常なcaseでhookが失敗し、staged側が正常・unstaged側だけに違反があるcaseでhookが成功することを確認する。どちらもworking treeとindexを変更しない。
+- 対象拡張子のstage済みファイルだけでOxfmtとOxlintが実行され、hookがworking treeとindexを変更しないことを確認する。
 - clean clone、通常の再install、CI installの3経路でLefthook binary準備が成功することを確認する。clean cloneと再installでは `.git/hooks/pre-commit` が登録され、CIではinstallがhook失敗を起こさないことを確認する。
 
 ### 8.4 全変更適用後の回帰確認
@@ -390,7 +386,7 @@ Next.js、Storybook、Playwright、Drizzle、repository-local skillにはframewo
 - Oxlintがtype-aware・deny-warningsの正式lintとなり、ESLintはparity完了時に削除される。fallbackが残る場合は実在gapだけである。
 - TypeScript 5.9の指定strict optionとNext.js typed routesが有効で、cast/ignoreによる無効化がない。
 - Knipがroot applicationとrepository-local skillの実在entryを検査し、広いignoreで結果を隠していない。
-- LefthookがGit indexの内容だけへ非変更の高速checkを行い、部分stageでもcommit対象を正しく判定する。CIが唯一の正式gateである。
+- Lefthookがstage済みの対象ファイルへ非変更の高速checkを行う。CIが唯一の正式gateである。
 - Lefthookのplatform binary準備とローカルのGit hook登録はallowlisted dependency install scriptが担当し、CIではhook登録をスキップする。fresh clone・CI・再installで成立する。
 - 既存4 required check、impact selection、E2E 1 worker/retries 0、browser matrix、test responsibilityが維持される。
 - package.json、README、AGENTS.md、CIのcommand契約が一致する。
