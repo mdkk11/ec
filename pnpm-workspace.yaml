@@ -1,13 +1,14 @@
 packages:
   - .
 
+saveExact: true
+minimumReleaseAge: 10080
+minimumReleaseAgeExcludePrune: true
+
 allowBuilds:
   esbuild: true
   msw: false
   unrs-resolver: true
-
-minimumReleaseAgeExclude:
-  - postcss@8.5.22
 
 overrides:
   postcss: 8.5.22
