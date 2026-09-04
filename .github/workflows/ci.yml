@@ -118,7 +118,7 @@ jobs:
     if: ${{ always() && !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.storybook_vrt != 'false') }}
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/playwright:v1.61.1-noble
+      image: mcr.microsoft.com/playwright:v1.62.1-noble
     timeout-minutes: 15
     steps:
       - name: Checkout
@@ -147,7 +147,7 @@ jobs:
     if: ${{ always() && !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.e2e != 'false') }}
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/playwright:v1.61.1-noble
+      image: mcr.microsoft.com/playwright:v1.62.1-noble
       options: --user 1001
     timeout-minutes: 20
     env:
