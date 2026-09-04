@@ -1,0 +1,9 @@
+pre-commit:
+  parallel: true
+  commands:
+    format:
+      glob: '*.{js,jsx,ts,tsx,mjs,cjs,mts,cts,json,jsonc,yaml,yml,css}'
+      run: pnpm exec oxfmt --check {staged_files}
+    lint:
+      glob: '*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}'
+      run: pnpm exec oxlint --deny-warnings {staged_files}

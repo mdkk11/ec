@@ -1,6 +1,6 @@
 import type { UserDto, UserRole } from '@/contracts/session'
 
-export type AuthorizationFailure = 'FORBIDDEN' | 'UNAUTHENTICATED'
+type AuthorizationFailure = 'FORBIDDEN' | 'UNAUTHENTICATED'
 
 export type AuthorizationResult =
   | { actor: UserDto; ok: true }

@@ -23,7 +23,7 @@ export async function authorizeAdminOrderRequest(
   }
 }
 
-export function adminOrderServiceErrorResponse(error: AdminOrderServiceError) {
+function adminOrderServiceErrorResponse(error: AdminOrderServiceError) {
   return apiErrorResponse(error.code === 'ORDER_NOT_FOUND' ? 404 : 409, error.code, error.message)
 }
 

@@ -26,7 +26,7 @@ export async function authorizeCartRequest(
   }
 }
 
-export function cartServiceErrorResponse(error: CartServiceError) {
+function cartServiceErrorResponse(error: CartServiceError) {
   if (error.code === 'QUANTITY_EXCEEDS_STOCK') {
     return apiErrorResponse(400, error.code, error.message, {
       quantity: [error.message],

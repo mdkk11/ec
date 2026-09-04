@@ -54,15 +54,10 @@ jobs:
           min_age: '7'
           verify: 'true'
           verify_min_age: 'true'
-      - name: Setup pnpm
-        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - name: Setup pnpm and Node.js
+        uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2
         with:
-          run_install: false
-      - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version-file: package.json
-          cache: pnpm
+          install: false
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Test impact selectors
@@ -71,8 +66,12 @@ jobs:
         run: pnpm format
       - name: Lint
         run: pnpm lint
+      - name: Verify lint responsibilities
+        run: pnpm lint:parity
       - name: Typecheck
         run: pnpm typecheck
+      - name: Find unused code
+        run: pnpm knip
       - name: Unit tests
         run: pnpm test:unit
       - name: Frontend integration tests
@@ -103,15 +102,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Setup pnpm
-        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - name: Setup pnpm and Node.js
+        uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2
         with:
-          run_install: false
-      - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version-file: package.json
-          cache: pnpm
+          install: false
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Prepare backend database
@@ -129,15 +123,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Setup pnpm
-        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - name: Setup pnpm and Node.js
+        uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2
         with:
-          run_install: false
-      - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version-file: package.json
-          cache: pnpm
+          install: false
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Storybook VRT
@@ -183,15 +172,10 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - name: Setup pnpm
-        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - name: Setup pnpm and Node.js
+        uses: pnpm/setup@84cb39b217b10273981911c288cd62326dc7c6d2 # v2.0.2
         with:
-          run_install: false
-      - name: Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version-file: package.json
-          cache: pnpm
+          install: false
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Select affected E2E specs

@@ -23,7 +23,7 @@ export async function authorizeOrderRequest(request: NextRequest): Promise<Autho
   }
 }
 
-export function orderServiceErrorResponse(error: OrderServiceError) {
+function orderServiceErrorResponse(error: OrderServiceError) {
   if (error.code === 'EMPTY_CART') {
     return apiErrorResponse(400, error.code, error.message)
   }

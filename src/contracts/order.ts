@@ -2,15 +2,9 @@ import { z } from 'zod'
 
 const moneySchema = z.number().int().nonnegative()
 
-export const orderStatusSchema = z.enum([
-  'received',
-  'processing',
-  'shipped',
-  'completed',
-  'cancelled',
-])
+const orderStatusSchema = z.enum(['received', 'processing', 'shipped', 'completed', 'cancelled'])
 
-export const orderItemSchema = z.object({
+const orderItemSchema = z.object({
   productId: z.uuid(),
   productName: z.string().min(1),
   unitPrice: moneySchema,
@@ -18,7 +12,7 @@ export const orderItemSchema = z.object({
   lineTotal: moneySchema,
 })
 
-export const orderSchema = z.object({
+const orderSchema = z.object({
   id: z.uuid(),
   status: orderStatusSchema,
   items: z.array(orderItemSchema),

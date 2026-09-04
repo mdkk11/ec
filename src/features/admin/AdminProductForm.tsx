@@ -1,6 +1,6 @@
 'use client'
 
-import type { FormEvent } from 'react'
+import type { SyntheticEvent } from 'react'
 
 import { Button } from '@/components/button/Button'
 import type { AdminProductDto } from '@/contracts/product'
@@ -30,7 +30,7 @@ type AdminProductFormProps = {
   mode: 'create' | 'edit'
   onAcceptLatest?: () => void
   onChange: (field: AdminProductFormField, value: boolean | string) => void
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void
+  onSubmit: (event: SyntheticEvent<HTMLFormElement, SubmitEvent>) => void
   pending?: boolean
   statusMessage?: string | null
   submitDisabled?: boolean

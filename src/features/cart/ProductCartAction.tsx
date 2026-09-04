@@ -85,19 +85,21 @@ export function ProductCartAction({
       <Button
         className="w-full"
         disabled={pending}
-        onClick={async () => {
-          setShowSuccess(false)
-          const cart = await operations.execute({
-            kind: 'add',
-            productId,
-            quantity: 1,
-          })
-          if (!cart) return
-          setShowSuccess(true)
-          if (toastTimeoutRef.current !== null) {
-            window.clearTimeout(toastTimeoutRef.current)
-          }
-          toastTimeoutRef.current = window.setTimeout(() => setShowSuccess(false), 4_000)
+        onClick={() => {
+          void (async () => {
+            setShowSuccess(false)
+            const cart = await operations.execute({
+              kind: 'add',
+              productId,
+              quantity: 1,
+            })
+            if (!cart) return
+            setShowSuccess(true)
+            if (toastTimeoutRef.current !== null) {
+              window.clearTimeout(toastTimeoutRef.current)
+            }
+            toastTimeoutRef.current = window.setTimeout(() => setShowSuccess(false), 4_000)
+          })()
         }}
       >
         {pending ? '追加中…' : '1点カートに追加'}

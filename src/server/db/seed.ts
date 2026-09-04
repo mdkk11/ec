@@ -9,7 +9,7 @@ import { hashPassword } from '@/server/auth/password'
 
 import { categories, coupons, orderItems, orders, products, users } from './schema'
 
-export const seedCredentials = {
+const seedCredentials = {
   admin: {
     email: 'admin@example.test',
     password: 'AdminPass123!',

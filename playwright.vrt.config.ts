@@ -29,7 +29,7 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   webServer: {
-    command: 'http-server storybook-static -a 127.0.0.1 -p 6006 -c-1 --silent',
+    command: 'pnpm storybook:serve',
     reuseExistingServer: false,
     timeout: 120_000,
     url: storybookUrl,

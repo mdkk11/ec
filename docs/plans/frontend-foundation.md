@@ -48,7 +48,7 @@
 ### 2.3 参照仕様
 
 - pnpmの `devEngines.runtime` はproject-local runtimeを解決し、lockfileへexact versionとchecksumを記録できる。
-- `actions/setup-node` は `node-version-file: package.json` の場合、`devEngines.runtime` を `engines.node` より優先して参照できる。
+- `pnpm/setup` は `packageManager` と `devEngines.runtime` を参照し、固定したpnpmとNode.jsを1 stepで準備できる。依存を使わない `changes` jobだけは `actions/setup-node` で同じNode.js versionを参照する。pnpm storeは約239MBのcache転送・展開がcacheなしのinstallより遅いため、cacheしない。
 - OxlintはNext.js、React、TypeScript、import、jsx-a11y等をbuilt-in pluginとして持ち、`oxlint-tsgolint` によるtype-aware lintを実行できる。
 - Storybook ruleは `eslint-plugin-storybook` をOxlintのJS pluginとして読み込める。ただしJS pluginはalphaで、type-aware ruleを実行できない。
 - Oxfmtのimport sorting、Tailwind class sortingはopt-inで、package.json field sortingは既定で有効、scripts sortingはopt-inである。side-effect import sortingは安全上無効が既定である。
@@ -73,8 +73,8 @@
 - `package.json` の `devEngines.runtime` をNode.js exact patchの単一正本とし、`name: "node"`、適格なNode 24 LTS exact version、`onFail: "download"` を設定する。
 - `engines.node: ">=24 <25"` はpackageの対応範囲として残す。exact実行環境と対応範囲の責任を分ける。
 - `packageManager` は公開後7日を経過したpnpm 11 exact versionへ更新し、ローカルとCIが参照するpnpm versionの単一正本にする。`engines.pnpm: ">=11 <12"` は対応範囲として残す。pnpm 11はlegacy `packageManager` の解決情報をlockfileへ保存しないため、pnpm versionのlockfile一致は完了条件にしない。
-- `.node-version` を削除し、全 `actions/setup-node` を `node-version-file: package.json` へ変更する。
-- `pnpm/action-setup` のversion重複指定を外し、`packageManager` をpnpm versionの単一正本にする。
+- `.node-version` を削除し、CIのNode.js versionを `package.json` の `devEngines.runtime` 参照へ統一する。
+- 依存を使うCI jobは `pnpm/setup` でpnpmとNode.jsをまとめて準備する。pnpm storeはcacheせず、pnpm versionは `packageManager` だけに置く。
 - `pnpm-workspace.yaml` に `saveExact: true`、`minimumReleaseAge: 10080`、`minimumReleaseAgeExcludePrune: true` を追加する。
 - 既存 `allowBuilds` を維持し、`dangerouslyAllowAllBuilds` は使わない。
 - `postcss@8.5.22` のoverrideとrelease-age除外が現在の解決に必要かlockfileとfresh installで確認する。解決中でも公開後7日を経過していればrelease-age除外は人手で削除し、overrideだけでinstallできることを確認する。解決対象から外れている場合はdependencyを `pnpm update/remove` した際のprune結果を反映する。
@@ -96,7 +96,7 @@
 
 ### 4.3 Oxlintへの移行
 
-- Oxlintを正式lintとし、`oxlint.config.ts` でbuilt-inのNext.js、React、TypeScript、import、jsx-a11y、Vitest/Node環境を構成する。
+- Oxlintを正式lintとし、`.oxlintrc.json` でbuilt-inのNext.js、React、TypeScript、import、jsx-a11y、Vitest/Node環境を構成する。
 - `oxlint-tsgolint` を追加し、CIの正式lintはtype-awareかつwarningを失敗扱いにする。
 - `lint:oxlint` はOxlintの全対象非変更check、`lint:fix` は開発者が明示実行するOxlint fix commandとする。
 - 現在のESLint effective configを、通常のTSX、Storybook story、Node configの代表fileごとに `eslint --print-config` で記録し、Next/TypeScript/Storybookの有効ruleをOxlint built-in ruleおよびJS plugin ruleへ対応付ける。
@@ -123,18 +123,17 @@
 ### 4.5 Knip
 
 - Knipを正式な未使用file/export/dependency検査として追加し、`knip` scriptを用意する。
-- root workspaceではNext.js App Router、Storybook、Vitest、Playwright、Drizzle、root scripts/configを実在するentry/projectとして `knip.jsonc` に列挙する。
+- root workspaceではNext.js App Router、Storybook、Vitest、Playwright、Drizzle、root scripts/configを実在するentry/projectとして `knip.json` に列挙する。
 - `.agents/skills/explained-code-review` はroot applicationへ混ぜず、独自 `package.json`、scripts、Playwright config、testsを持つ別Knip workspaceとして列挙する。clean CIでnested dependencyのinstallが必要と判明した場合は、そのexact frozen-installを `knip:prepare` として正式化し、`knip` を `pnpm knip:prepare && knip` に接続する。CIは常に `pnpm knip` だけを呼び、READMEとAGENTS.mdにもこの前処理を含むcommand契約を記載する。
 - generated bundle、schemaから生成されるartifact、frameworkが規約で読むentryだけを根拠付きで扱う。`ignoreDependencies: ["*"]`、全issue type無効化、`.agents/**` 全体ignoreのような設定は使わない。
 - false positiveは、import元、package script、framework configのどれがentryであるかを確認してから個別設定する。
 
 ### 4.6 Lefthook
 
-- Lefthookを追加し、install後にGit hookを準備する `prepare` scriptを設定する。
-- `pnpm-workspace.yaml` の `allowBuilds` に `lefthook: true` を追加する。dependency側install scriptはplatform binaryの準備、root `prepare: lefthook install` はrepositoryのGit hook登録だけを担当し、責任を重ねない。
-- `scripts/tooling/check-staged.mjs` は `git diff --cached --name-only --diff-filter=ACMR -z` で対象pathを取得し、`git checkout-index --all --prefix=<temporary-directory>/` でGit index全体を一時directoryへ展開する。rootの `node_modules` を一時directoryから参照できるようにしたうえで、stagedされたJS/TS/JSON/YAML/CSSのindex内容だけへ非変更のOxlintとOxfmt checkを実行する。
-- pre-commitは `scripts/tooling/check-staged.mjs` だけを呼ぶ。hookから `git add`、`lint:fix`、`format:fix` を実行せず、working treeとGit indexを変更しない。
-- 部分stageでは、staged側に違反がありunstaged側で修正済みのcaseを失敗させ、staged側が正常でunstaged側だけに違反があるcaseを成功させる。これによりcommit対象だけを判定する。
+- Lefthookを追加し、dependency側のinstall scriptでローカルのGit hookを登録する。
+- `pnpm-workspace.yaml` の `allowBuilds` に `lefthook: true` を追加する。Lefthook自身がCIではhook登録をスキップするため、rootの `prepare` scriptは重ねない。
+- pre-commitはLefthook標準の `{staged_files}` でstage済みのJS/TS/JSON/YAML/CSSをOxfmtとOxlintへ直接渡し、非変更のcheckを並列実行する。
+- hookから `git add`、`lint:fix`、`format:fix` を実行せず、working treeとGit indexを変更しない。同じファイルに未stage差分がある場合はworking treeの内容も検査対象になる。
 - typecheck、Knip、unit/frontend/backend test、build、Storybook、E2E、VRTはhookへ入れず、CIを正式判定元にする。
 
 ### 4.7 GitHub ActionsとDependabot
@@ -205,14 +204,13 @@
 
 - `package.json`
 - `pnpm-lock.yaml`
-- `oxlint.config.ts`（追加）
+- `.oxlintrc.json`（追加）
 - `eslint.config.js`（parity完了時は削除、実在gap時だけ縮小）
-- `knip.jsonc`（追加）
+- `knip.json`（追加）
 - `lefthook.yml`（追加）
 - `pnpm-workspace.yaml`
 - `docs/tooling/lint-parity.md`（追加）
 - `scripts/tooling/verify-lint-parity.mjs`（追加）
-- `scripts/tooling/check-staged.mjs`（追加）
 - `tsconfig.json`
 - `next.config.ts`
 - `.github/workflows/ci.yml`
@@ -234,7 +232,7 @@
 | --- | --- | --- | --- | --- | --- |
 | Runtimeと供給網 | `package.json`、`pnpm-workspace.yaml`、lockfile、GitHub Actions、Dependabot、impact selector | 既存のNode 24・pnpm 11構成 | 後続のdependency追加、local command、全CI jobがこのversion・release-age設定を使う | runtime path/version、fresh/frozen install、SHA pin、4 CI job | exact runtimeの取得またはCI setupが成立しない場合はNode正本を `.node-version` へ戻す。Action SHA固定とDependabotは独立して維持できる |
 | Oxfmt適用 | `.oxfmtrc.json`、`.editorconfig`、source/test/config、format command、CI | Runtimeと供給網 | 後続の静的品質変更は整形済みのfileを前提にする | format再実行で差分0、全import差分確認、VRT/E2E、4 CI job | import初期化順やTailwind表示が変わる場合は該当sortingを無効化して整形規則だけを維持する |
-| 静的品質 | Oxlint、TypeScript、Knip、typedRoutes、Lefthook、CI | Oxfmt適用 | `pnpm lint`、`pnpm typecheck`、`pnpm knip`、pre-commitの正式契約になる | lint parity、typecheck、Knip、index snapshot hook、全test/build、4 CI job | lint coverageが下がる場合は該当ESLint ruleだけを残す。strict optionがruntime変更を要求する場合はそのoptionを有効化せず再検討する |
+| 静的品質 | Oxlint、TypeScript、Knip、typedRoutes、Lefthook、CI | Oxfmt適用 | `pnpm lint`、`pnpm typecheck`、`pnpm knip`、pre-commitの正式契約になる | lint parity、typecheck、Knip、Lefthook、全test/build、4 CI job | lint coverageが下がる場合は該当ESLint ruleだけを残す。strict optionがruntime変更を要求する場合はそのoptionを有効化せず再検討する |
 
 ### 7.2 Runtimeと供給網
 
@@ -243,7 +241,7 @@
 3. fresh installで `pnpm-lock.yaml` のNode runtime version/checksumとdependency解決を更新し、既存override/allowBuildsを維持する。pnpm versionはlockfileへ記録されないため、`packageManager` と実行結果の一致だけを確認する。
 4. temporary `runtime:version` scriptで `process.version` と `process.execPath` をJSON出力し、`pnpm run` で実行する。versionがexact pinと一致し、`realpath(process.execPath)` がsystem `node` のrealpathと異なり、lockfileのruntime version/checksumと一致することを確認する。検証用scriptは確認後に削除する。
 5. registryに依存する7日待機の動作確認は実装時に一度だけ行う。`mkdtemp` 配下の独立package/workspaceで、実行時点で公開168時間未満のstable package/versionをregistryから選び、公開時刻を出力したうえで、通常解決の拒否、version限定excludeによる通過、`pnpm remove/update` でlockfileから外れた際のexclude pruneを確認する。temporary directoryは確認後に削除し、このprobeをCIへ入れない。
-6. `.node-version` を削除し、CIのsetup-nodeを `package.json` 参照、pnpm/action-setupを `packageManager` 参照へ統一する。
+6. `.node-version` を削除し、依存を使うCI jobは `pnpm/setup` から `packageManager` と `devEngines.runtime` を参照する。依存を使わない `changes` jobは `actions/setup-node` から同じNode.js versionを参照する。
 7. 全Action refを、公式release/tagが指すcommitをAPIで確認してfull SHAへ固定し、version commentを付ける。
 8. pinact-actionをfull SHAで追加し、`fix: "false"`、`verify: "true"`、`min_age: "7"`、`verify_min_age: "true"` で検証専用にする。tag参照、誤ったversion comment、公開後7日未満のAction refを一時fixtureで個別に拒否できることを確認する。
 9. Dependabotのnpm production/development minor-patch group、個別major、Actions group、週次、7日cooldownを追加する。
@@ -272,12 +270,10 @@
 6. `typedRoutes: true` を有効化し、typegen、typecheck、buildでLink/routerのroute型を確認する。
 7. Knipをroot applicationとrepository-local skillの2 workspace境界で設定し、実在entryを列挙する。各ignoreには生成元またはframework読込根拠をコメントする。clean checkout相当としてnested packageの `node_modules` がない状態で、root install後の `pnpm exec knip --debug` を実行し、2 workspaceの認識とunresolved import 0件を確認する。成功する場合は `knip: "knip"` とする。nested installが必要な場合は `knip:prepare` をnested packageのexact frozen installに固定し、`knip: "pnpm knip:prepare && knip"` とする。どちらの場合もCIは `pnpm knip` だけを正式commandとして呼び、root `pnpm-workspace.yaml` のpackagesにはnested packageを追加しない。
 8. Knipが報告したunused file/export/dependencyを1件ずつimport/package script/configと照合し、真のdead codeだけを削除する。アプリ機能や将来用interfaceは追加しない。
-9. Lefthookを追加し、`pnpm-workspace.yaml` でdependency install scriptを許可し、root `prepare` でGit hookを登録する。pre-commitは `scripts/tooling/check-staged.mjs` を呼ぶ。
-10. `check-staged.mjs` はindex全体を `mkdtemp` 配下へ `git checkout-index` で展開し、root `node_modules` へのdirectory symlinkを一時directoryへ作る。rootのOxlint/Oxfmt executableを絶対pathで起動し、working directoryを一時directoryにして、staged対象pathのindex内容だけを検査する。finallyでsymlinkとtemporary directoryを削除する。
-11. 部分stageの検証では「staged側に違反・unstaged側は正常」が失敗し、「staged側は正常・unstaged側だけに違反」が成功することを確認する。両caseでworking tree、index、unstaged hunkのhashが実行前後で変わらないことも確認する。
-12. `static-and-unit` にformat、Oxlint、`lint:parity`、typecheck、Knip、SHA pin、既存selector/unit/frontendを統合する。
-13. selector test、README、AGENTS.mdのcommand契約を最終構成へ同期する。
-14. 全変更を適用した状態でローカル回帰確認と4 CI jobを成功させる。
+9. Lefthookを追加し、`pnpm-workspace.yaml` でdependency install scriptを許可する。ローカルではdependency側のinstall scriptがGit hookを登録し、CIではLefthook自身の判定で登録をスキップする。pre-commitは `{staged_files}` を使ってOxfmtとOxlintの非変更checkを直接実行する。
+10. `static-and-unit` にformat、Oxlint、`lint:parity`、typecheck、Knip、SHA pin、既存selector/unit/frontendを統合する。
+11. selector test、README、AGENTS.mdのcommand契約を最終構成へ同期する。
+12. 全変更を適用した状態でローカル回帰確認と4 CI jobを成功させる。
 
 ## 8. テスト・検証方法
 
@@ -302,7 +298,7 @@
 ### 8.2 Runtime・供給網
 
 - `pnpm --version` が `packageManager` のexact versionと一致する。
-- pnpm script内の `process.version`、lockfileのNode runtime、全CI setup-nodeの解決versionが一致する。
+- pnpm script内の `process.version`、lockfileのNode runtime、`pnpm/setup` と `actions/setup-node` の解決versionが一致する。
 - pnpm script内の `realpath(process.execPath)` がsystem `node` のrealpathと異なり、project-local runtimeを使っていることを確認する。
 - activeな設定・script・利用手順に `.node-version` 参照が残らない。
 - registryを使う一回限りのprobeでは、実行時点で公開168時間未満のstable package/versionと公開時刻を出力し、`mkdtemp` fixture内だけで通常解決の拒否、version限定excludeの通過、`pnpm remove/update` 後のexclude pruneを確認する。時間経過や `pnpm install` だけでpruneされるとはみなさない。
@@ -325,7 +321,7 @@
 - Oxfmtの再実行で差分が出ないことを確認する。
 - import sorting後もside-effect importの相対位置が変わらないことをdiffで確認する。
 - Tailwind class sorting後に `pnpm test:vrt` を実行し、VRT画像を更新せず一致することを確認する。
-- staged側に違反・unstaged側が正常なcaseでhookが失敗し、staged側が正常・unstaged側だけに違反があるcaseでhookが成功することを確認する。どちらもworking treeとindexを変更しない。
+- 対象拡張子のstage済みファイルだけでOxfmtとOxlintが実行され、hookがworking treeとindexを変更しないことを確認する。
 - clean clone、通常の再install、CI installの3経路でLefthook binary準備が成功することを確認する。clean cloneと再installでは `.git/hooks/pre-commit` が登録され、CIではinstallがhook失敗を起こさないことを確認する。
 
 ### 8.4 全変更適用後の回帰確認
@@ -390,8 +386,8 @@ Next.js、Storybook、Playwright、Drizzle、repository-local skillにはframewo
 - Oxlintがtype-aware・deny-warningsの正式lintとなり、ESLintはparity完了時に削除される。fallbackが残る場合は実在gapだけである。
 - TypeScript 5.9の指定strict optionとNext.js typed routesが有効で、cast/ignoreによる無効化がない。
 - Knipがroot applicationとrepository-local skillの実在entryを検査し、広いignoreで結果を隠していない。
-- LefthookがGit indexの内容だけへ非変更の高速checkを行い、部分stageでもcommit対象を正しく判定する。CIが唯一の正式gateである。
-- Lefthookのplatform binary準備はallowlisted dependency install script、Git hook登録はroot `prepare` が担当し、fresh clone・CI・再installで成立する。
+- Lefthookがstage済みの対象ファイルへ非変更の高速checkを行う。CIが唯一の正式gateである。
+- Lefthookのplatform binary準備とローカルのGit hook登録はallowlisted dependency install scriptが担当し、CIではhook登録をスキップする。fresh clone・CI・再installで成立する。
 - 既存4 required check、impact selection、E2E 1 worker/retries 0、browser matrix、test responsibilityが維持される。
 - package.json、README、AGENTS.md、CIのcommand契約が一致する。
 - unit、frontend、backend、E2E、VRT、build、Storybook buildが全変更適用後に成功し、VRT画像、UI、API、DB、business ruleに意図した差分がない。

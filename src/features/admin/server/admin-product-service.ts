@@ -52,11 +52,14 @@ function toAdminProductDto(product: AdminProductRecord): AdminProductDto {
 }
 
 export class AdminProductServiceError extends Error {
+  readonly code: 'INVALID_CATEGORY' | 'PRODUCT_NOT_FOUND' | 'VERSION_CONFLICT'
+
   constructor(
-    readonly code: 'INVALID_CATEGORY' | 'PRODUCT_NOT_FOUND' | 'VERSION_CONFLICT',
+    code: 'INVALID_CATEGORY' | 'PRODUCT_NOT_FOUND' | 'VERSION_CONFLICT',
     message: string,
   ) {
     super(message)
+    this.code = code
     this.name = 'AdminProductServiceError'
   }
 }

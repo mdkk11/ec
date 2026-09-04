@@ -1,6 +1,6 @@
 'use client'
 
-import { isServer, QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { environmentManager, QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 
 import { SessionProvider, type SessionState } from '@/features/auth/SessionProvider'
@@ -23,7 +23,7 @@ function makeQueryClient() {
 let browserQueryClient: QueryClient | undefined
 
 function getQueryClient() {
-  if (isServer) return makeQueryClient()
+  if (environmentManager.isServer()) return makeQueryClient()
   browserQueryClient ??= makeQueryClient()
   return browserQueryClient
 }

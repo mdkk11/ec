@@ -1,7 +1,7 @@
 'use client'
 
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { type FormEvent, useEffect, useState } from 'react'
+import { type SyntheticEvent, useEffect, useState } from 'react'
 
 import {
   createAdminProductRequestSchema,
@@ -103,7 +103,7 @@ export function AdminProductsPage() {
     setFieldErrors((current) => ({ ...current, [field]: undefined }))
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: SyntheticEvent<HTMLFormElement, SubmitEvent>) {
     event.preventDefault()
     if (!adminId || requestCoordinator.isOperationRunning()) return
 

@@ -2,7 +2,7 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
-import { type FormEvent, useEffect, useState } from 'react'
+import { type SyntheticEvent, useEffect, useState } from 'react'
 
 import { Button } from '@/components/button/Button'
 import {
@@ -191,7 +191,7 @@ function AdminProductEditor({
     })
   }
 
-  async function handleMetadataSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleMetadataSubmit(event: SyntheticEvent<HTMLFormElement, SubmitEvent>) {
     event.preventDefault()
     if (requestCoordinator.isOperationRunning() || conflict) return
 
@@ -241,7 +241,7 @@ function AdminProductEditor({
     }
   }
 
-  async function handleStockSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleStockSubmit(event: SyntheticEvent<HTMLFormElement, SubmitEvent>) {
     event.preventDefault()
     if (requestCoordinator.isOperationRunning() || conflict) return
 
