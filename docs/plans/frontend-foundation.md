@@ -48,7 +48,7 @@
 ### 2.3 参照仕様
 
 - pnpmの `devEngines.runtime` はproject-local runtimeを解決し、lockfileへexact versionとchecksumを記録できる。
-- `actions/setup-node` は `node-version-file: package.json` の場合、`devEngines.runtime` を `engines.node` より優先して参照できる。
+- `pnpm/setup` は `packageManager` と `devEngines.runtime` を参照し、固定したpnpmとNode.jsを1 stepで準備できる。依存を使わない `changes` jobだけは `actions/setup-node` で同じNode.js versionを参照する。
 - OxlintはNext.js、React、TypeScript、import、jsx-a11y等をbuilt-in pluginとして持ち、`oxlint-tsgolint` によるtype-aware lintを実行できる。
 - Storybook ruleは `eslint-plugin-storybook` をOxlintのJS pluginとして読み込める。ただしJS pluginはalphaで、type-aware ruleを実行できない。
 - Oxfmtのimport sorting、Tailwind class sortingはopt-inで、package.json field sortingは既定で有効、scripts sortingはopt-inである。side-effect import sortingは安全上無効が既定である。
@@ -73,8 +73,8 @@
 - `package.json` の `devEngines.runtime` をNode.js exact patchの単一正本とし、`name: "node"`、適格なNode 24 LTS exact version、`onFail: "download"` を設定する。
 - `engines.node: ">=24 <25"` はpackageの対応範囲として残す。exact実行環境と対応範囲の責任を分ける。
 - `packageManager` は公開後7日を経過したpnpm 11 exact versionへ更新し、ローカルとCIが参照するpnpm versionの単一正本にする。`engines.pnpm: ">=11 <12"` は対応範囲として残す。pnpm 11はlegacy `packageManager` の解決情報をlockfileへ保存しないため、pnpm versionのlockfile一致は完了条件にしない。
-- `.node-version` を削除し、全 `actions/setup-node` を `node-version-file: package.json` へ変更する。
-- `pnpm/action-setup` のversion重複指定を外し、`packageManager` をpnpm versionの単一正本にする。
+- `.node-version` を削除し、CIのNode.js versionを `package.json` の `devEngines.runtime` 参照へ統一する。
+- 依存を使うCI jobは `pnpm/setup` でpnpmとNode.jsをまとめて準備し、pnpm storeをcacheする。pnpm versionは `packageManager` だけに置く。
 - `pnpm-workspace.yaml` に `saveExact: true`、`minimumReleaseAge: 10080`、`minimumReleaseAgeExcludePrune: true` を追加する。
 - 既存 `allowBuilds` を維持し、`dangerouslyAllowAllBuilds` は使わない。
 - `postcss@8.5.22` のoverrideとrelease-age除外が現在の解決に必要かlockfileとfresh installで確認する。解決中でも公開後7日を経過していればrelease-age除外は人手で削除し、overrideだけでinstallできることを確認する。解決対象から外れている場合はdependencyを `pnpm update/remove` した際のprune結果を反映する。
@@ -243,7 +243,7 @@
 3. fresh installで `pnpm-lock.yaml` のNode runtime version/checksumとdependency解決を更新し、既存override/allowBuildsを維持する。pnpm versionはlockfileへ記録されないため、`packageManager` と実行結果の一致だけを確認する。
 4. temporary `runtime:version` scriptで `process.version` と `process.execPath` をJSON出力し、`pnpm run` で実行する。versionがexact pinと一致し、`realpath(process.execPath)` がsystem `node` のrealpathと異なり、lockfileのruntime version/checksumと一致することを確認する。検証用scriptは確認後に削除する。
 5. registryに依存する7日待機の動作確認は実装時に一度だけ行う。`mkdtemp` 配下の独立package/workspaceで、実行時点で公開168時間未満のstable package/versionをregistryから選び、公開時刻を出力したうえで、通常解決の拒否、version限定excludeによる通過、`pnpm remove/update` でlockfileから外れた際のexclude pruneを確認する。temporary directoryは確認後に削除し、このprobeをCIへ入れない。
-6. `.node-version` を削除し、CIのsetup-nodeを `package.json` 参照、pnpm/action-setupを `packageManager` 参照へ統一する。
+6. `.node-version` を削除し、依存を使うCI jobは `pnpm/setup` から `packageManager` と `devEngines.runtime` を参照する。依存を使わない `changes` jobは `actions/setup-node` から同じNode.js versionを参照する。
 7. 全Action refを、公式release/tagが指すcommitをAPIで確認してfull SHAへ固定し、version commentを付ける。
 8. pinact-actionをfull SHAで追加し、`fix: "false"`、`verify: "true"`、`min_age: "7"`、`verify_min_age: "true"` で検証専用にする。tag参照、誤ったversion comment、公開後7日未満のAction refを一時fixtureで個別に拒否できることを確認する。
 9. Dependabotのnpm production/development minor-patch group、個別major、Actions group、週次、7日cooldownを追加する。
@@ -302,7 +302,7 @@
 ### 8.2 Runtime・供給網
 
 - `pnpm --version` が `packageManager` のexact versionと一致する。
-- pnpm script内の `process.version`、lockfileのNode runtime、全CI setup-nodeの解決versionが一致する。
+- pnpm script内の `process.version`、lockfileのNode runtime、`pnpm/setup` と `actions/setup-node` の解決versionが一致する。
 - pnpm script内の `realpath(process.execPath)` がsystem `node` のrealpathと異なり、project-local runtimeを使っていることを確認する。
 - activeな設定・script・利用手順に `.node-version` 参照が残らない。
 - registryを使う一回限りのprobeでは、実行時点で公開168時間未満のstable package/versionと公開時刻を出力し、`mkdtemp` fixture内だけで通常解決の拒否、version限定excludeの通過、`pnpm remove/update` 後のexclude pruneを確認する。時間経過や `pnpm install` だけでpruneされるとはみなさない。
