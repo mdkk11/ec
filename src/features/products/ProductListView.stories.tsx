@@ -39,9 +39,7 @@ export const Empty: Story = {
 export const CategorySelected: Story = {
   args: {
     categories: publicCategoryCatalog,
-    items: productListFixture.filter(
-      ({ category }) => category.slug === 'clothing',
-    ),
+    items: productListFixture.filter(({ category }) => category.slug === 'clothing'),
     selectedCategory: publicCategoryCatalog[0],
     status: 'success',
   },

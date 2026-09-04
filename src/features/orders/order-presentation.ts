@@ -17,8 +17,6 @@ export function orderStatusLabel(status: OrderStatus) {
 }
 
 export function formatOrderDate(createdAt: string) {
-  const date = Temporal.Instant.from(createdAt).toZonedDateTimeISO(
-    'Asia/Tokyo',
-  )
+  const date = Temporal.Instant.from(createdAt).toZonedDateTimeISO('Asia/Tokyo')
   return `${date.year}年${date.month}月${date.day}日 ${String(date.hour).padStart(2, '0')}:${String(date.minute).padStart(2, '0')}`
 }

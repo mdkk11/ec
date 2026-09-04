@@ -35,10 +35,7 @@ export async function POST(request: NextRequest) {
     const authorization = await authorizeAdminProductRequest(request)
     if (!authorization.ok) return authorization.response
 
-    const parsed = await parseJsonRequest(
-      request,
-      createAdminProductRequestSchema,
-    )
+    const parsed = await parseJsonRequest(request, createAdminProductRequestSchema)
     if (!parsed.ok) return parsed.response
 
     const product = await createAdminProduct(parsed.data, {

@@ -1,27 +1,14 @@
-import {
-  copyFile,
-  mkdir,
-  mkdtemp,
-  readFile,
-  rm,
-  writeFile,
-} from 'node:fs/promises'
+import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 
 import { sql } from 'drizzle-orm'
 import { describe, expect, it } from 'vitest'
 
-import {
-  categoryCatalog,
-  categoryIds,
-} from '@/features/categories/category-catalog'
+import { categoryCatalog, categoryIds } from '@/features/categories/category-catalog'
 import { createDatabaseClient } from '@/server/db/client'
 import { migrateDatabase, migrationsFolder } from '@/server/db/migrate'
-import {
-  backendDatabase,
-  testDatabaseUrl,
-} from '@/test/backend/database'
+import { backendDatabase, testDatabaseUrl } from '@/test/backend/database'
 
 const upgradeDatabaseName = 'mockshop_category_migration_test'
 
@@ -55,9 +42,7 @@ describe('DB基盤', () => {
     expect(['127.0.0.1', 'localhost']).toContain(testUrl.hostname)
     expect(testUrl.pathname).toBe('/mockshop_test')
 
-    const temporaryFolder = await mkdtemp(
-      resolve(tmpdir(), 'mockshop-category-migration-'),
-    )
+    const temporaryFolder = await mkdtemp(resolve(tmpdir(), 'mockshop-category-migration-'))
     const oldMigrationsFolder = resolve(temporaryFolder, 'drizzle')
     const oldMetaFolder = resolve(oldMigrationsFolder, 'meta')
     const upgradeUrl = new URL(testDatabaseUrl)
@@ -65,18 +50,14 @@ describe('DB基盤', () => {
     let upgradeDatabase: ReturnType<typeof createDatabaseClient> | undefined
 
     try {
-      await backendDatabase.pool.query(
-        `drop database if exists "${upgradeDatabaseName}"`,
-      )
+      await backendDatabase.pool.query(`drop database if exists "${upgradeDatabaseName}"`)
       await backendDatabase.pool.query(`create database "${upgradeDatabaseName}"`)
 
       await mkdir(oldMetaFolder, { recursive: true })
       const journal = JSON.parse(
         await readFile(resolve(migrationsFolder, 'meta/_journal.json'), 'utf8'),
       ) as { entries: { tag: string }[]; version: string; dialect: string }
-      const oldEntries = journal.entries.filter(({ tag }) =>
-        /^000[0-5]_/u.test(tag),
-      )
+      const oldEntries = journal.entries.filter(({ tag }) => /^000[0-5]_/u.test(tag))
       for (const { tag } of oldEntries) {
         await copyFile(
           resolve(migrationsFolder, `${tag}.sql`),
@@ -121,10 +102,9 @@ describe('DB基盤', () => {
       )
       expect(product.rows).toEqual([{ category_id: categoryIds.other }])
       await expect(
-        upgradeDatabase.pool.query(
-          'update products set category_id = null where id = $1',
-          [productId],
-        ),
+        upgradeDatabase.pool.query('update products set category_id = null where id = $1', [
+          productId,
+        ]),
       ).rejects.toThrow()
       await expect(
         upgradeDatabase.pool.query('delete from categories where id = $1', [categoryIds.other]),
@@ -135,9 +115,7 @@ describe('DB基盤', () => {
         'select pg_terminate_backend(pid) from pg_stat_activity where datname = $1',
         [upgradeDatabaseName],
       )
-      await backendDatabase.pool.query(
-        `drop database if exists "${upgradeDatabaseName}"`,
-      )
+      await backendDatabase.pool.query(`drop database if exists "${upgradeDatabaseName}"`)
       await rm(temporaryFolder, { force: true, recursive: true })
     }
   })

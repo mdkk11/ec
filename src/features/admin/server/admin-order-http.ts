@@ -1,20 +1,12 @@
 import type { NextRequest } from 'next/server'
 
-import {
-  orderListResponseSchema,
-  orderResponseSchema,
-} from '@/contracts/order'
+import { orderListResponseSchema, orderResponseSchema } from '@/contracts/order'
 import { requireAdminRequest } from '@/server/auth/request-actor'
-import {
-  apiErrorResponse,
-  noStoreJsonResponse,
-} from '@/server/http/json'
+import { apiErrorResponse, noStoreJsonResponse } from '@/server/http/json'
 
 import { AdminOrderServiceError } from './admin-order-service'
 
-type AuthorizationResult =
-  | { ok: true }
-  | { ok: false; response: Response }
+type AuthorizationResult = { ok: true } | { ok: false; response: Response }
 
 export async function authorizeAdminOrderRequest(
   request: NextRequest,
@@ -26,19 +18,13 @@ export async function authorizeAdminOrderRequest(
     response: apiErrorResponse(
       authorization.code === 'UNAUTHENTICATED' ? 401 : 403,
       authorization.code === 'UNAUTHENTICATED' ? 'UNAUTHENTICATED' : 'FORBIDDEN',
-      authorization.code === 'UNAUTHENTICATED'
-        ? 'ログインが必要です。'
-        : '管理者権限が必要です。',
+      authorization.code === 'UNAUTHENTICATED' ? 'ログインが必要です。' : '管理者権限が必要です。',
     ),
   }
 }
 
 export function adminOrderServiceErrorResponse(error: AdminOrderServiceError) {
-  return apiErrorResponse(
-    error.code === 'ORDER_NOT_FOUND' ? 404 : 409,
-    error.code,
-    error.message,
-  )
+  return apiErrorResponse(error.code === 'ORDER_NOT_FOUND' ? 404 : 409, error.code, error.message)
 }
 
 export function adminOrderRouteErrorResponse(error: unknown) {

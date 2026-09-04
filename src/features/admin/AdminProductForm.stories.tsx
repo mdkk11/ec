@@ -1,10 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite'
 
 import { adminProductFixture } from './admin-product-fixtures'
-import {
-  AdminProductForm,
-  type AdminProductFormValues,
-} from './AdminProductForm'
+import { AdminProductForm, type AdminProductFormValues } from './AdminProductForm'
 
 const values: AdminProductFormValues = {
   categoryId: adminProductFixture.categoryId,
@@ -32,7 +29,9 @@ const meta = {
         <div className="mx-auto max-w-3xl">
           <p className="label text-accent">ADMINISTRATION</p>
           <h1 className="mt-4 font-serif text-4xl">商品編集</h1>
-          <div className="mt-8"><Story /></div>
+          <div className="mt-8">
+            <Story />
+          </div>
         </div>
       </main>
     ),

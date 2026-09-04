@@ -1,15 +1,7 @@
 import { createHash } from 'node:crypto'
 
-import type {
-  AppliedCouponDto,
-  CartDto,
-  CartItemDto,
-  CheckoutIssueDto,
-} from '@/contracts/cart'
-import {
-  calculateDiscountAmount,
-  evaluateCoupon,
-} from '@/features/coupons/coupon-calculation'
+import type { AppliedCouponDto, CartDto, CartItemDto, CheckoutIssueDto } from '@/contracts/cart'
+import { calculateDiscountAmount, evaluateCoupon } from '@/features/coupons/coupon-calculation'
 import { Temporal } from '@/lib/date-time/temporal'
 
 export type CartCouponRecord = {
@@ -75,10 +67,7 @@ function couponDto(coupon: CartCouponRecord): AppliedCouponDto {
   }
 }
 
-export function calculateCart(
-  record: CartRecord,
-  evaluatedAt: Temporal.Instant,
-): CartDto {
+export function calculateCart(record: CartRecord, evaluatedAt: Temporal.Instant): CartDto {
   const sortedItems = [...record.items].sort((left, right) =>
     left.productId.localeCompare(right.productId),
   )
@@ -93,10 +82,7 @@ export function calculateCart(
     quantity: item.quantity,
     unitPrice: item.unitPrice,
   }))
-  const subtotal = items.reduce(
-    (sum, item) => addMoney(sum, item.lineTotal),
-    0,
-  )
+  const subtotal = items.reduce((sum, item) => addMoney(sum, item.lineTotal), 0)
   const issues: CheckoutIssueDto[] = []
   for (const item of sortedItems) {
     if (!item.isPublished) {
@@ -119,10 +105,7 @@ export function calculateCart(
     if (couponIssue) {
       issues.push({ code: couponIssue })
     } else {
-      discountAmount = calculateDiscountAmount(
-        subtotal,
-        record.coupon.discountPercent,
-      )
+      discountAmount = calculateDiscountAmount(subtotal, record.coupon.discountPercent)
     }
   }
   const total = subtotal - discountAmount
@@ -195,7 +178,5 @@ export function createCheckoutToken(input: {
     total: input.total,
   }
 
-  return createHash('sha256')
-    .update(JSON.stringify(canonical))
-    .digest('hex')
+  return createHash('sha256').update(JSON.stringify(canonical)).digest('hex')
 }

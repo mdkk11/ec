@@ -19,21 +19,15 @@ import {
 } from '@/lib/api-client/admin-product'
 import { ApiClientError } from '@/lib/api-client/request-json'
 
+import { adminProductsQueryKey, replaceAdminProduct } from './admin-product-query'
 import {
   AdminProductForm,
   type AdminProductFieldErrors,
   type AdminProductFormField,
   type AdminProductFormValues,
 } from './AdminProductForm'
-import {
-  AdminLoginRequired,
-  AdminProductStatusPage,
-} from './AdminProductStatusPage'
 import { AdminProductEditLoadingView } from './AdminProductLoadingViews'
-import {
-  adminProductsQueryKey,
-  replaceAdminProduct,
-} from './admin-product-query'
+import { AdminLoginRequired, AdminProductStatusPage } from './AdminProductStatusPage'
 import { useAdminRequestCoordinator } from './use-admin-request-coordinator'
 
 type PendingOperation = 'metadata' | 'refresh' | 'stock' | null
@@ -60,9 +54,7 @@ function valuesFromProduct(product: AdminProductDto): AdminProductFormValues {
   }
 }
 
-function collectMetadataErrors(error: {
-  issues: { message: string; path: PropertyKey[] }[]
-}) {
+function collectMetadataErrors(error: { issues: { message: string; path: PropertyKey[] }[] }) {
   const errors: AdminProductFieldErrors = {}
   for (const issue of error.issues) {
     const field = issue.path[0]
@@ -73,7 +65,8 @@ function collectMetadataErrors(error: {
       field !== 'price' &&
       field !== 'imagePath' &&
       field !== 'isPublished'
-    ) continue
+    )
+      continue
     errors[field] ??= []
     errors[field]?.push(issue.message)
   }
@@ -191,10 +184,7 @@ function AdminProductEditor({
           isPublished: updated.isPublished,
           name: updated.name,
           price: String(updated.price),
-          stock:
-            draft.stock === String(current.stock)
-              ? String(updated.stock)
-              : draft.stock,
+          stock: draft.stock === String(current.stock) ? String(updated.stock) : draft.stock,
         }
       }
       return { ...draft, stock: String(updated.stock) }
@@ -203,10 +193,7 @@ function AdminProductEditor({
 
   async function handleMetadataSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (
-      requestCoordinator.isOperationRunning() ||
-      conflict
-    ) return
+    if (requestCoordinator.isOperationRunning() || conflict) return
 
     const parsed = parseMetadata(values)
     if (!parsed.success) {
@@ -256,10 +243,7 @@ function AdminProductEditor({
 
   async function handleStockSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (
-      requestCoordinator.isOperationRunning() ||
-      conflict
-    ) return
+    if (requestCoordinator.isOperationRunning() || conflict) return
 
     const parsed = updateAdminProductStockRequestSchema.safeParse({
       expectedVersion: product.version,
@@ -278,11 +262,7 @@ function AdminProductEditor({
     await queryClient.cancelQueries({ queryKey })
     if (!requestCoordinator.isCurrentOperation(revision)) return
     try {
-      const { product: updated } = await updateAdminProductStock(
-        product.id,
-        parsed.data,
-        signal,
-      )
+      const { product: updated } = await updateAdminProductStock(product.id, parsed.data, signal)
       if (!requestCoordinator.isCurrentOperation(revision)) return
       applySuccessfulProduct(updated, product, 'stock')
       setStatusMessage('在庫数を更新しました。')
@@ -334,16 +314,15 @@ function AdminProductEditor({
   const waitingForPreviousProductOperation = operationRunning && pending === null
 
   return (
-    <section
-      aria-busy={operationRunning}
-      className="page-wrap py-12 sm:py-16 lg:py-20"
-    >
+    <section aria-busy={operationRunning} className="page-wrap py-12 sm:py-16 lg:py-20">
       {waitingForPreviousProductOperation ? (
         <p className="sr-only" role="status">
           別の商品を更新しています。完了するまでお待ちください。
         </p>
       ) : null}
-      <Link className="text-sm underline underline-offset-4" href="/admin/products">商品管理へ戻る</Link>
+      <Link className="text-sm underline underline-offset-4" href="/admin/products">
+        商品管理へ戻る
+      </Link>
       <p className="label mt-8 text-accent">ADMINISTRATION</p>
       <h1 className="mt-4 font-serif text-4xl sm:text-5xl">{product.name}</h1>
       <p className="mt-3 text-sm text-muted">version {product.version}</p>
@@ -351,8 +330,15 @@ function AdminProductEditor({
       {conflict?.refreshFailed ? (
         <section className="mt-8 border border-accent bg-[#fff8f5] p-5" role="alert">
           <h2 className="font-serif text-2xl">最新値を取得できませんでした</h2>
-          <p className="mt-2 text-sm leading-6 text-muted">入力内容は保持しています。最新値を取得するまで更新は送信できません。</p>
-          <Button className="mt-5" disabled={pending !== null} onClick={() => void retryConflictRefresh()} variant="secondary">
+          <p className="mt-2 text-sm leading-6 text-muted">
+            入力内容は保持しています。最新値を取得するまで更新は送信できません。
+          </p>
+          <Button
+            className="mt-5"
+            disabled={pending !== null}
+            onClick={() => void retryConflictRefresh()}
+            variant="secondary"
+          >
             最新値を再取得
           </Button>
         </section>
@@ -374,9 +360,7 @@ function AdminProductEditor({
               onSubmit={(event) => void handleMetadataSubmit(event)}
               pending={pending === 'metadata' || pending === 'refresh'}
               statusMessage={statusMessage}
-              submitDisabled={
-                metadataUnchanged || pending !== null || operationRunning
-              }
+              submitDisabled={metadataUnchanged || pending !== null || operationRunning}
               values={values}
             />
           </div>
@@ -390,7 +374,9 @@ function AdminProductEditor({
             noValidate
             onSubmit={(event) => void handleStockSubmit(event)}
           >
-            <label className="text-sm font-semibold" htmlFor="edit-product-stock">在庫数</label>
+            <label className="text-sm font-semibold" htmlFor="edit-product-stock">
+              在庫数
+            </label>
             <input
               aria-describedby={stockError ? 'edit-product-stock-error' : undefined}
               aria-invalid={stockError ? true : undefined}
@@ -404,9 +390,19 @@ function AdminProductEditor({
               type="number"
               value={values.stock}
             />
-            {stockError ? <p className="mt-2 text-sm text-accent" id="edit-product-stock-error" role="alert">{stockError}</p> : null}
-            <p className="mt-4 text-sm leading-6 text-muted">注文や取消でも商品versionが更新されます。</p>
-            <Button className="mt-6 w-full" disabled={blocked || pending !== null || operationRunning || stockUnchanged} type="submit">
+            {stockError ? (
+              <p className="mt-2 text-sm text-accent" id="edit-product-stock-error" role="alert">
+                {stockError}
+              </p>
+            ) : null}
+            <p className="mt-4 text-sm leading-6 text-muted">
+              注文や取消でも商品versionが更新されます。
+            </p>
+            <Button
+              className="mt-6 w-full"
+              disabled={blocked || pending !== null || operationRunning || stockUnchanged}
+              type="submit"
+            >
               {pending === 'stock' ? '在庫を更新しています…' : '在庫を更新'}
             </Button>
           </form>
@@ -446,11 +442,23 @@ export function AdminProductEditPage({ productId }: { productId: string }) {
     )
   }
   if (sessionState.status === 'error') {
-    return <AdminProductStatusPage action={() => window.location.reload()} role="alert" title="認証状態を確認できませんでした">時間をおいてもう一度お試しください。</AdminProductStatusPage>
+    return (
+      <AdminProductStatusPage
+        action={() => window.location.reload()}
+        role="alert"
+        title="認証状態を確認できませんでした"
+      >
+        時間をおいてもう一度お試しください。
+      </AdminProductStatusPage>
+    )
   }
   if (sessionState.status === 'anonymous') return <AdminLoginRequired />
   if (sessionState.user.role !== 'admin') {
-    return <AdminProductStatusPage title="商品管理を利用できません">この画面は管理者専用です。</AdminProductStatusPage>
+    return (
+      <AdminProductStatusPage title="商品管理を利用できません">
+        この画面は管理者専用です。
+      </AdminProductStatusPage>
+    )
   }
   if (query.isPending) {
     return (
@@ -458,14 +466,24 @@ export function AdminProductEditPage({ productId }: { productId: string }) {
     )
   }
   if (!query.data) {
-    return <AdminProductStatusPage action={() => void query.refetch()} role="alert" title="商品を読み込めませんでした">時間をおいてもう一度お試しください。</AdminProductStatusPage>
+    return (
+      <AdminProductStatusPage
+        action={() => void query.refetch()}
+        role="alert"
+        title="商品を読み込めませんでした"
+      >
+        時間をおいてもう一度お試しください。
+      </AdminProductStatusPage>
+    )
   }
 
   const product = query.data.find((item) => item.id === productId)
   if (!product) {
     return (
       <AdminProductStatusPage title="商品が見つかりませんでした">
-        <Link className="button-secondary mt-4" href="/admin/products">商品管理へ戻る</Link>
+        <Link className="button-secondary mt-4" href="/admin/products">
+          商品管理へ戻る
+        </Link>
       </AdminProductStatusPage>
     )
   }

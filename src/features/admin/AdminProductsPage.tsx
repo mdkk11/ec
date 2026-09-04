@@ -8,12 +8,10 @@ import {
   type CreateAdminProductRequest,
 } from '@/contracts/product'
 import { useSession } from '@/features/auth/SessionProvider'
-import {
-  createAdminProduct,
-  getAdminProducts,
-} from '@/lib/api-client/admin-product'
+import { createAdminProduct, getAdminProducts } from '@/lib/api-client/admin-product'
 import { ApiClientError } from '@/lib/api-client/request-json'
 
+import { adminProductsQueryKey } from './admin-product-query'
 import {
   AdminProductForm,
   type AdminProductFieldErrors,
@@ -22,11 +20,7 @@ import {
 } from './AdminProductForm'
 import { AdminProductList } from './AdminProductList'
 import { AdminProductsLoadingView } from './AdminProductLoadingViews'
-import {
-  AdminLoginRequired,
-  AdminProductStatusPage,
-} from './AdminProductStatusPage'
-import { adminProductsQueryKey } from './admin-product-query'
+import { AdminLoginRequired, AdminProductStatusPage } from './AdminProductStatusPage'
 import { useAdminRequestCoordinator } from './use-admin-request-coordinator'
 
 const initialValues: AdminProductFormValues = {
@@ -39,9 +33,7 @@ const initialValues: AdminProductFormValues = {
   stock: '0',
 }
 
-function collectFieldErrors(error: {
-  issues: { message: string; path: PropertyKey[] }[]
-}) {
+function collectFieldErrors(error: { issues: { message: string; path: PropertyKey[] }[] }) {
   const errors: AdminProductFieldErrors = {}
   for (const issue of error.issues) {
     const field = issue.path[0]
@@ -53,7 +45,8 @@ function collectFieldErrors(error: {
       field !== 'imagePath' &&
       field !== 'isPublished' &&
       field !== 'stock'
-    ) continue
+    )
+      continue
     errors[field] ??= []
     errors[field]?.push(issue.message)
   }
@@ -131,10 +124,7 @@ export function AdminProductsPage() {
     if (!requestCoordinator.isCurrentOperation(revision)) return
 
     try {
-      const { product } = await createAdminProduct(
-        parsed.data as CreateAdminProductRequest,
-        signal,
-      )
+      const { product } = await createAdminProduct(parsed.data as CreateAdminProductRequest, signal)
       if (!requestCoordinator.isCurrentOperation(revision)) return
       queryClient.setQueryData(queryKey, (items: typeof query.data) => [
         product,
@@ -167,11 +157,23 @@ export function AdminProductsPage() {
     )
   }
   if (sessionState.status === 'error') {
-    return <AdminProductStatusPage action={() => window.location.reload()} role="alert" title="認証状態を確認できませんでした">時間をおいてもう一度お試しください。</AdminProductStatusPage>
+    return (
+      <AdminProductStatusPage
+        action={() => window.location.reload()}
+        role="alert"
+        title="認証状態を確認できませんでした"
+      >
+        時間をおいてもう一度お試しください。
+      </AdminProductStatusPage>
+    )
   }
   if (sessionState.status === 'anonymous') return <AdminLoginRequired />
   if (sessionState.user.role !== 'admin') {
-    return <AdminProductStatusPage title="商品管理を利用できません">この画面は管理者専用です。</AdminProductStatusPage>
+    return (
+      <AdminProductStatusPage title="商品管理を利用できません">
+        この画面は管理者専用です。
+      </AdminProductStatusPage>
+    )
   }
   if (query.isPending) {
     return (
@@ -179,7 +181,17 @@ export function AdminProductsPage() {
     )
   }
   if (!query.data) {
-    return <AdminProductStatusPage action={() => void query.refetch()} role="alert" title="商品を読み込めませんでした">{query.error instanceof ApiClientError && query.error.kind === 'network' ? 'サーバーへ接続できませんでした。' : '時間をおいてもう一度お試しください。'}</AdminProductStatusPage>
+    return (
+      <AdminProductStatusPage
+        action={() => void query.refetch()}
+        role="alert"
+        title="商品を読み込めませんでした"
+      >
+        {query.error instanceof ApiClientError && query.error.kind === 'network'
+          ? 'サーバーへ接続できませんでした。'
+          : '時間をおいてもう一度お試しください。'}
+      </AdminProductStatusPage>
+    )
   }
 
   return (
@@ -195,7 +207,9 @@ export function AdminProductsPage() {
 
         <section>
           <h2 className="font-serif text-3xl">新しい商品</h2>
-          <p className="mt-2 text-sm leading-6 text-muted">作成時は非公開です。内容を確認してから公開できます。</p>
+          <p className="mt-2 text-sm leading-6 text-muted">
+            作成時は非公開です。内容を確認してから公開できます。
+          </p>
           <div className="mt-6">
             <AdminProductForm
               errorMessage={errorMessage}

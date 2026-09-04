@@ -1,9 +1,6 @@
 import type { NextRequest } from 'next/server'
 
-import {
-  productIdSchema,
-  updateAdminProductStockRequestSchema,
-} from '@/contracts/product'
+import { productIdSchema, updateAdminProductStockRequestSchema } from '@/contracts/product'
 import {
   adminProductRouteErrorResponse,
   adminProductSuccessResponse,
@@ -12,10 +9,7 @@ import {
 import { updateAdminProductStock } from '@/features/admin/server/admin-product-service'
 import { Temporal } from '@/lib/date-time/temporal'
 import { getRuntimeDatabase } from '@/server/db/runtime'
-import {
-  apiErrorResponse,
-  parseJsonRequest,
-} from '@/server/http/json'
+import { apiErrorResponse, parseJsonRequest } from '@/server/http/json'
 
 type RouteContext = {
   params: Promise<{ productId: string }>
@@ -29,24 +23,16 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     const { productId } = await context.params
     const parsedProductId = productIdSchema.safeParse(productId)
     if (!parsedProductId.success) {
-      return apiErrorResponse(
-        400,
-        'VALIDATION_ERROR',
-        '商品IDの形式を確認してください。',
-      )
+      return apiErrorResponse(400, 'VALIDATION_ERROR', '商品IDの形式を確認してください。')
     }
 
-    const parsed = await parseJsonRequest(
-      request,
-      updateAdminProductStockRequestSchema,
-    )
+    const parsed = await parseJsonRequest(request, updateAdminProductStockRequestSchema)
     if (!parsed.ok) return parsed.response
 
-    const product = await updateAdminProductStock(
-      parsedProductId.data,
-      parsed.data,
-      { db: getRuntimeDatabase().db, now: Temporal.Now.instant() },
-    )
+    const product = await updateAdminProductStock(parsedProductId.data, parsed.data, {
+      db: getRuntimeDatabase().db,
+      now: Temporal.Now.instant(),
+    })
     return adminProductSuccessResponse(product)
   } catch (error) {
     return adminProductRouteErrorResponse(error)

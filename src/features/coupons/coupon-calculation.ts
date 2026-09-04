@@ -25,21 +25,13 @@ function assertMoney(value: number) {
   }
 }
 
-export function calculateDiscountAmount(
-  subtotal: number,
-  discountPercent: number,
-) {
+export function calculateDiscountAmount(subtotal: number, discountPercent: number) {
   assertMoney(subtotal)
-  if (
-    !Number.isSafeInteger(discountPercent) ||
-    discountPercent < 1 ||
-    discountPercent > 100
-  ) {
+  if (!Number.isSafeInteger(discountPercent) || discountPercent < 1 || discountPercent > 100) {
     throw new RangeError('割引率は1以上100以下の整数で指定してください。')
   }
 
-  const discount =
-    (BigInt(subtotal) * BigInt(discountPercent)) / 100n
+  const discount = (BigInt(subtotal) * BigInt(discountPercent)) / 100n
   if (discount > BigInt(Number.MAX_SAFE_INTEGER)) {
     throw new RangeError('クーポンの割引額が安全な整数範囲を超えています。')
   }

@@ -7,25 +7,15 @@ import {
   ProductServiceError,
 } from '@/features/products/server/product-service'
 import { getRuntimeDatabase } from '@/server/db/runtime'
-import {
-  apiErrorResponse,
-  noStoreJsonResponse,
-} from '@/server/http/json'
+import { apiErrorResponse, noStoreJsonResponse } from '@/server/http/json'
 
-export async function GET(
-  request = new NextRequest('http://localhost/api/products'),
-) {
+export async function GET(request = new NextRequest('http://localhost/api/products')) {
   const categoryValues = request.nextUrl.searchParams.getAll('category')
   const parsedQuery = productCategoryQuerySchema.safeParse({
-    category:
-      categoryValues.length < 2 ? categoryValues[0] : categoryValues,
+    category: categoryValues.length < 2 ? categoryValues[0] : categoryValues,
   })
   if (!parsedQuery.success) {
-    return apiErrorResponse(
-      400,
-      'VALIDATION_ERROR',
-      'カテゴリの指定を確認してください。',
-    )
+    return apiErrorResponse(400, 'VALIDATION_ERROR', 'カテゴリの指定を確認してください。')
   }
 
   try {

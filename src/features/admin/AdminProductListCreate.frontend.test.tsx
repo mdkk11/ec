@@ -5,12 +5,8 @@ import { describe, expect, it } from 'vitest'
 
 import { server } from '@/test/msw/server'
 
+import { listResponse, product, renderWithProviders } from './admin-product-frontend-test-helpers'
 import { AdminProductsPage } from './AdminProductsPage'
-import {
-  listResponse,
-  product,
-  renderWithProviders,
-} from './admin-product-frontend-test-helpers'
 
 const customer = {
   email: 'customer@example.test',
@@ -24,9 +20,7 @@ describe('管理商品一覧・作成', () => {
 
     const status = screen.getByRole('status')
     const busyRegion = document.querySelector('[aria-busy="true"]')
-    expect(status).toHaveTextContent(
-      '認証状態を確認しています。しばらくお待ちください。',
-    )
+    expect(status).toHaveTextContent('認証状態を確認しています。しばらくお待ちください。')
     expect(status).toHaveAttribute('aria-live', 'polite')
     expect(busyRegion).not.toBeNull()
     expect(busyRegion).not.toContainElement(status)
@@ -44,9 +38,10 @@ describe('管理商品一覧・作成', () => {
 
     expect(screen.getByRole('heading', { name: '商品管理' })).toBeVisible()
     expect(await screen.findByText('管理テスト商品')).toBeVisible()
-    expect(
-      screen.getByRole('img', { name: '管理テスト商品' }),
-    ).toHaveAttribute('src', expect.stringContaining(product.imagePath))
+    expect(screen.getByRole('img', { name: '管理テスト商品' })).toHaveAttribute(
+      'src',
+      expect.stringContaining(product.imagePath),
+    )
     expect(screen.getByText(/在庫 8.*version 1/u)).toBeVisible()
     expect(screen.getByRole('link', { name: '編集する' })).toHaveAttribute(
       'href',
@@ -64,7 +59,9 @@ describe('管理商品一覧・作成', () => {
 
   it('ADMIN-016: 一覧取得中は商品管理の構造とloading状態を伝える', async () => {
     let release: (() => void) | undefined
-    const gate = new Promise<void>((resolve) => { release = resolve })
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
     server.use(
       http.get('/api/admin/products', async () => {
         await gate
@@ -75,9 +72,7 @@ describe('管理商品一覧・作成', () => {
 
     const status = screen.getByRole('status')
     const busyRegion = document.querySelector('[aria-busy="true"]')
-    expect(status).toHaveTextContent(
-      '商品を読み込んでいます。しばらくお待ちください。',
-    )
+    expect(status).toHaveTextContent('商品を読み込んでいます。しばらくお待ちください。')
     expect(busyRegion).not.toBeNull()
     expect(busyRegion).not.toContainElement(status)
     expect(screen.getByRole('heading', { name: '商品管理' })).toBeVisible()
@@ -91,9 +86,7 @@ describe('管理商品一覧・作成', () => {
     server.use(http.get('/api/admin/products', () => HttpResponse.error()))
     renderWithProviders(<AdminProductsPage />)
 
-    expect(
-      await screen.findByRole('heading', { name: '商品を読み込めませんでした' }),
-    ).toBeVisible()
+    expect(await screen.findByRole('heading', { name: '商品を読み込めませんでした' })).toBeVisible()
     expect(screen.getByRole('alert')).toHaveTextContent('サーバーへ接続できませんでした')
 
     server.use(http.get('/api/admin/products', () => listResponse([product])))
@@ -112,13 +105,9 @@ describe('管理商品一覧・作成', () => {
     )
     renderWithProviders(<AdminProductsPage />)
 
-    expect(
-      await screen.findByRole('heading', { name: '商品を読み込めませんでした' }),
-    ).toBeVisible()
+    expect(await screen.findByRole('heading', { name: '商品を読み込めませんでした' })).toBeVisible()
     expect(screen.getByRole('button', { name: '再試行' })).toBeEnabled()
-    expect(screen.getByRole('alert')).toHaveTextContent(
-      '時間をおいてもう一度お試しください',
-    )
+    expect(screen.getByRole('alert')).toHaveTextContent('時間をおいてもう一度お試しください')
   })
 
   it('ADMIN-002: 負数・小数をfield errorにし、HTTP送信せず最初の項目へfocusする', async () => {
@@ -152,8 +141,16 @@ describe('管理商品一覧・作成', () => {
   it('ADMIN-001: 送信中の重複操作を防ぎ、作成商品を一覧へ追加する', async () => {
     let requestCount = 0
     let release: (() => void) | undefined
-    const gate = new Promise<void>((resolve) => { release = resolve })
-    const created = { ...product, id: '30000000-0000-4000-8000-000000000099', isPublished: false, name: '新しい管理商品', stock: 2 }
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    const created = {
+      ...product,
+      id: '30000000-0000-4000-8000-000000000099',
+      isPublished: false,
+      name: '新しい管理商品',
+      stock: 2,
+    }
     server.use(
       http.get('/api/admin/products', () => listResponse([product])),
       http.post('/api/admin/products', async () => {
@@ -208,22 +205,18 @@ describe('管理商品一覧・作成', () => {
 
   it('未認証・customerでは管理APIを呼ばない', async () => {
     let requestCount = 0
-    server.use(http.get('/api/admin/products', () => {
-      requestCount += 1
-      return listResponse([product])
-    }))
-
-    const anonymousView = renderWithProviders(
-      <AdminProductsPage />,
-      { status: 'anonymous' },
+    server.use(
+      http.get('/api/admin/products', () => {
+        requestCount += 1
+        return listResponse([product])
+      }),
     )
+
+    const anonymousView = renderWithProviders(<AdminProductsPage />, { status: 'anonymous' })
     expect(screen.getByText('商品管理にはログインが必要です')).toBeVisible()
     anonymousView.unmount()
 
-    renderWithProviders(
-      <AdminProductsPage />,
-      { status: 'authenticated', user: customer },
-    )
+    renderWithProviders(<AdminProductsPage />, { status: 'authenticated', user: customer })
     expect(screen.getByText('この画面は管理者専用です。')).toBeVisible()
     expect(requestCount).toBe(0)
   })

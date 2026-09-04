@@ -37,10 +37,7 @@ function Breadcrumbs({ product }: { product?: ProductDetailDto }) {
         </li>
         <li aria-hidden="true">/</li>
         <li>
-          <Link
-            className="underline-offset-4 hover:underline"
-            href="/products"
-          >
+          <Link className="underline-offset-4 hover:underline" href="/products">
             ALL ITEMS
           </Link>
         </li>
@@ -71,10 +68,7 @@ export function ProductDetailView(props: ProductDetailViewProps) {
         <p aria-live="polite" className="sr-only" role="status">
           商品を読み込んでいます…
         </p>
-        <section
-          aria-busy="true"
-          className="page-wrap py-12 sm:py-16 lg:py-20"
-        >
+        <section aria-busy="true" className="page-wrap py-12 sm:py-16 lg:py-20">
           <Breadcrumbs />
           <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-14">
             <Skeleton className="aspect-[3/4] w-full" />
@@ -86,9 +80,7 @@ export function ProductDetailView(props: ProductDetailViewProps) {
               <Skeleton className="mt-7 h-5 w-20" />
               <Skeleton className="mt-7 h-12 w-full" />
               <div className="mt-9 border-t border-line pt-7">
-                <h2 className="text-xs font-semibold tracking-[0.1em]">
-                  商品説明
-                </h2>
+                <h2 className="text-xs font-semibold tracking-[0.1em]">商品説明</h2>
                 <div className="mt-4 space-y-3">
                   <Skeleton className="h-4 w-full" />
                   <Skeleton className="h-4 w-full" />
@@ -109,9 +101,7 @@ export function ProductDetailView(props: ProductDetailViewProps) {
         <Breadcrumbs />
         <div className="mx-auto max-w-xl py-24 text-center">
           <p className="label text-accent">404</p>
-          <h1 className="mt-3 font-serif text-4xl sm:text-5xl">
-            商品が見つかりませんでした
-          </h1>
+          <h1 className="mt-3 font-serif text-4xl sm:text-5xl">商品が見つかりませんでした</h1>
           <p className="mt-5 text-sm leading-7 text-muted">
             URLが正しくないか、現在は公開されていない可能性があります。
           </p>
@@ -129,12 +119,9 @@ export function ProductDetailView(props: ProductDetailViewProps) {
         <Breadcrumbs />
         <div className="mx-auto max-w-xl py-24 text-center">
           <div aria-live="assertive" role="alert">
-            <h1 className="font-serif text-4xl sm:text-5xl">
-              商品を読み込めませんでした
-            </h1>
+            <h1 className="font-serif text-4xl sm:text-5xl">商品を読み込めませんでした</h1>
             <p className="mt-5 text-sm leading-7 text-muted">
-              {props.message ??
-                '商品を取得できませんでした。時間をおいてもう一度お試しください。'}
+              {props.message ?? '商品を取得できませんでした。時間をおいてもう一度お試しください。'}
             </p>
           </div>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
@@ -165,17 +152,13 @@ export function ProductDetailView(props: ProductDetailViewProps) {
         </div>
         <div className="self-start lg:sticky lg:top-8">
           <p className="label text-accent">PRODUCT</p>
-          <h1 className="mt-4 font-serif text-4xl leading-tight sm:text-5xl">
-            {product.name}
-          </h1>
-          <p className="mt-5 text-lg tabular-nums">
-            {formatPrice(product.price)}
-          </p>
+          <h1 className="mt-4 font-serif text-4xl leading-tight sm:text-5xl">{product.name}</h1>
+          <p className="mt-5 text-lg tabular-nums">{formatPrice(product.price)}</p>
           <p className="mt-7 text-sm text-muted">在庫 {product.stock}点</p>
           {props.purchaseAction}
           <div className="mt-9 border-t border-line pt-7">
             <h2 className="text-xs font-semibold tracking-[0.1em]">商品説明</h2>
-            <p className="mt-4 whitespace-pre-line text-sm leading-8 text-muted">
+            <p className="mt-4 text-sm leading-8 whitespace-pre-line text-muted">
               {product.description}
             </p>
           </div>

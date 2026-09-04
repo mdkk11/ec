@@ -22,8 +22,7 @@ const refreshMessages: Record<string, string> = {
   CHECKOUT_CHANGED:
     '注文内容が変更されました。最新の内容を確認し、もう一度注文を確定してください。',
   EMPTY_CART: 'カートの内容が変更されました。最新の状態を確認してください。',
-  STOCK_CONFLICT:
-    '在庫が変更されました。最新のカートを確認し、数量を調整してください。',
+  STOCK_CONFLICT: '在庫が変更されました。最新のカートを確認し、数量を調整してください。',
 }
 
 export function decideCheckoutError(error: unknown): CheckoutErrorDecision {
@@ -67,7 +66,6 @@ export function checkoutFeedbackAfterRefresh(
   }
   return {
     ...initialCheckoutFeedback,
-    message:
-      '最新のカートを取得しました。注文履歴も確認してから、もう一度お試しください。',
+    message: '最新のカートを取得しました。注文履歴も確認してから、もう一度お試しください。',
   }
 }

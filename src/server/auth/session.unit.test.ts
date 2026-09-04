@@ -33,9 +33,7 @@ describe('session tokenとCookie', () => {
   it('7日後の有効期限とCookie属性を返す', () => {
     const now = Temporal.Instant.from('2026-07-24T00:00:00Z')
 
-    expect(createSessionExpiration(now).toString()).toBe(
-      '2026-07-31T00:00:00Z',
-    )
+    expect(createSessionExpiration(now).toString()).toBe('2026-07-31T00:00:00Z')
     expect(createSessionCookieOptions('development')).toEqual({
       httpOnly: true,
       maxAge: SESSION_DURATION_SECONDS,
@@ -48,8 +46,7 @@ describe('session tokenとCookie', () => {
   })
 
   it('専用dist・許可したE2E DBが一致するHTTP serverだけSecureを解除する', () => {
-    const e2eDatabaseUrl =
-      'postgresql://mockshop:mockshop@127.0.0.1:5434/mockshop_e2e'
+    const e2eDatabaseUrl = 'postgresql://mockshop:mockshop@127.0.0.1:5434/mockshop_e2e'
 
     expect(
       createSessionCookieOptions('production', {
@@ -59,8 +56,7 @@ describe('session tokenとCookie', () => {
         NEXT_DIST_DIR: '.next-e2e',
       }).secure,
     ).toBe(false)
-    const ciDatabaseUrl =
-      'postgresql://mockshop:mockshop@postgres:5432/mockshop_e2e'
+    const ciDatabaseUrl = 'postgresql://mockshop:mockshop@postgres:5432/mockshop_e2e'
     expect(
       createSessionCookieOptions('production', {
         DATABASE_URL: ciDatabaseUrl,

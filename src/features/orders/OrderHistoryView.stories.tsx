@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite'
 
-import { OrderHistoryView } from './OrderHistoryView'
 import { orderFixture } from './order-fixtures'
+import { OrderHistoryView } from './OrderHistoryView'
 
 const meta = {
   component: OrderHistoryView,

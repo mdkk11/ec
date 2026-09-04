@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw'
-import { z } from 'zod'
 import { describe, expect, it } from 'vitest'
+import { z } from 'zod'
 
 import { server } from '@/test/msw/server'
 
@@ -16,9 +16,9 @@ describe('API client smoke', () => {
       }),
     )
 
-    await expect(
-      requestJson('/api/test/smoke', smokeResponseSchema),
-    ).resolves.toEqual({ message: '接続できました' })
+    await expect(requestJson('/api/test/smoke', smokeResponseSchema)).resolves.toEqual({
+      message: '接続できました',
+    })
   })
 
   it('bodyのない204レスポンスを成功として扱う', async () => {

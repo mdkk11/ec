@@ -6,15 +6,12 @@ import type { ReactNode } from 'react'
 import { describe, expect, it } from 'vitest'
 
 import type { OrderDto } from '@/contracts/order'
-import {
-  SessionProvider,
-  type SessionState,
-} from '@/features/auth/SessionProvider'
+import { SessionProvider, type SessionState } from '@/features/auth/SessionProvider'
 import { server } from '@/test/msw/server'
 
-import { AdminOrdersPage } from './AdminOrdersPage'
 import { adminOrderFixture } from './admin-order-fixtures'
 import { adminOrdersQueryKey } from './admin-order-query'
+import { AdminOrdersPage } from './AdminOrdersPage'
 
 const admin = {
   email: 'admin@example.test',
@@ -28,10 +25,7 @@ const customer = {
 }
 const adminState: SessionState = { status: 'authenticated', user: admin }
 
-function renderWithProviders(
-  children: ReactNode,
-  initialSessionState: SessionState = adminState,
-) {
+function renderWithProviders(children: ReactNode, initialSessionState: SessionState = adminState) {
   const client = new QueryClient({
     defaultOptions: {
       mutations: { retry: false },
@@ -42,9 +36,7 @@ function renderWithProviders(
     client,
     ...render(
       <QueryClientProvider client={client}>
-        <SessionProvider initialState={initialSessionState}>
-          {children}
-        </SessionProvider>
+        <SessionProvider initialState={initialSessionState}>{children}</SessionProvider>
       </QueryClientProvider>,
     ),
   }
@@ -60,9 +52,7 @@ describe('管理注文一覧', () => {
 
     const status = screen.getByRole('status')
     const busyRegion = document.querySelector('[aria-busy="true"]')
-    expect(status).toHaveTextContent(
-      '認証状態を確認しています。しばらくお待ちください。',
-    )
+    expect(status).toHaveTextContent('認証状態を確認しています。しばらくお待ちください。')
     expect(busyRegion).not.toBeNull()
     expect(busyRegion).not.toContainElement(status)
     expect(screen.getByRole('heading', { name: '注文管理' })).toBeVisible()
@@ -87,9 +77,7 @@ describe('管理注文一覧', () => {
 
     expect(await screen.findByText(adminOrderFixture.id)).toBeVisible()
     expect(screen.getByText('受付')).toBeVisible()
-    const select = screen.getByLabelText(
-      `注文 ${adminOrderFixture.id} の変更先状態`,
-    )
+    const select = screen.getByLabelText(`注文 ${adminOrderFixture.id} の変更先状態`)
     await user.selectOptions(select, 'processing')
     await user.click(screen.getByRole('button', { name: '状態を更新' }))
 
@@ -120,9 +108,7 @@ describe('管理注文一覧', () => {
 
     const status = screen.getByRole('status')
     const busyRegion = document.querySelector('[aria-busy="true"]')
-    expect(status).toHaveTextContent(
-      '注文一覧を読み込んでいます。しばらくお待ちください。',
-    )
+    expect(status).toHaveTextContent('注文一覧を読み込んでいます。しばらくお待ちください。')
     expect(busyRegion).not.toBeNull()
     expect(busyRegion).not.toContainElement(status)
     expect(screen.getByRole('heading', { name: '注文管理' })).toBeVisible()
@@ -144,9 +130,7 @@ describe('管理注文一覧', () => {
     )
     renderWithProviders(<AdminOrdersPage />)
 
-    expect(
-      await screen.findByText('注文一覧を読み込めませんでした'),
-    ).toBeVisible()
+    expect(await screen.findByText('注文一覧を読み込めませんでした')).toBeVisible()
     server.use(http.get('/api/admin/orders', () => listResponse([adminOrderFixture])))
     await userEvent.click(screen.getByRole('button', { name: '再試行' }))
     expect(await screen.findByText(adminOrderFixture.id)).toBeVisible()
@@ -156,24 +140,16 @@ describe('管理注文一覧', () => {
     server.use(http.get('/api/admin/orders', () => HttpResponse.error()))
     renderWithProviders(<AdminOrdersPage />)
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'サーバーへ接続できませんでした',
-    )
+    expect(await screen.findByRole('alert')).toHaveTextContent('サーバーへ接続できませんでした')
   })
 
   it('未認証・customerでは管理APIを呼ばない', () => {
     const anonymousState: SessionState = { status: 'anonymous' }
-    const { unmount } = renderWithProviders(
-      <AdminOrdersPage />,
-      anonymousState,
-    )
+    const { unmount } = renderWithProviders(<AdminOrdersPage />, anonymousState)
     expect(screen.getByText('注文管理にはログインが必要です')).toBeVisible()
     unmount()
 
-    renderWithProviders(
-      <AdminOrdersPage />,
-      { status: 'authenticated', user: customer },
-    )
+    renderWithProviders(<AdminOrdersPage />, { status: 'authenticated', user: customer })
     expect(screen.getByText('この画面は管理者専用です。')).toBeVisible()
   })
 })
@@ -240,9 +216,7 @@ describe('管理注文の更新中・競合', () => {
     expect(screen.getByText('現在は「処理中」です。')).toBeVisible()
     expect(updateCount).toBe(1)
     await user.click(screen.getByRole('button', { name: '最新状態を確認' }))
-    expect(
-      screen.getByLabelText(`注文 ${adminOrderFixture.id} の変更先状態`),
-    ).toHaveValue('')
+    expect(screen.getByLabelText(`注文 ${adminOrderFixture.id} の変更先状態`)).toHaveValue('')
     expect(updateCount).toBe(1)
   })
 
@@ -291,9 +265,7 @@ describe('管理注文の更新中・競合', () => {
     releaseBackground?.()
     await background
     await waitFor(() => {
-      const cached = client.getQueryData<OrderDto[]>(
-        adminOrdersQueryKey(admin.id),
-      )
+      const cached = client.getQueryData<OrderDto[]>(adminOrdersQueryKey(admin.id))
       expect(cached?.[0]).toMatchObject({ status: 'processing', version: 2 })
     })
   })

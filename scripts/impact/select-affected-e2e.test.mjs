@@ -11,9 +11,7 @@ import {
   validateMap,
 } from './select-affected-e2e.mjs'
 
-const map = validateMap(
-  JSON.parse(readFileSync('config/impact/e2e-map.json', 'utf8')),
-)
+const map = validateMap(JSON.parse(readFileSync('config/impact/e2e-map.json', 'utf8')))
 
 const graph = validateGraph({
   modules: [
@@ -48,35 +46,24 @@ const graph = validateGraph({
 
 test('glob matching treats route brackets literally', () => {
   assert.equal(
-    matchesAny('src/app/products/[productId]/page.tsx', [
-      'src/app/products/[productId]/**',
-    ]),
+    matchesAny('src/app/products/[productId]/page.tsx', ['src/app/products/[productId]/**']),
     true,
   )
 })
 
 test('mapped specs must all be collected by a Playwright project', () => {
   assert.doesNotThrow(() =>
-    validateCollectedSpecs(
-      ['tests/e2e/cart.spec.ts'],
-      '[chromium-cart] › cart.spec.ts:3:1 › cart',
-    ),
+    validateCollectedSpecs(['tests/e2e/cart.spec.ts'], '[chromium-cart] › cart.spec.ts:3:1 › cart'),
   )
-  assert.throws(
-    () => validateCollectedSpecs(['tests/e2e/cart.spec.ts'], ''),
-    /did not collect/u,
-  )
+  assert.throws(() => validateCollectedSpecs(['tests/e2e/cart.spec.ts'], ''), /did not collect/u)
 })
 
 test('reverse closure reaches page roots through aliases and relative imports', () => {
-  assert.deepEqual(
-    reverseClosure(graph, ['src/features/cart/cart-calculation.ts']),
-    [
-      'src/app/cart/page.tsx',
-      'src/features/cart/CartPage.tsx',
-      'src/features/cart/cart-calculation.ts',
-    ],
-  )
+  assert.deepEqual(reverseClosure(graph, ['src/features/cart/cart-calculation.ts']), [
+    'src/app/cart/page.tsx',
+    'src/features/cart/CartPage.tsx',
+    'src/features/cart/cart-calculation.ts',
+  ])
 })
 
 test('known UI changes select mapped specs while safe docs stay ignored', () => {
@@ -170,10 +157,7 @@ test('deleted or otherwise unrepresented source paths fall back to full', () => 
   const selection = selectAffectedE2e({
     map,
     graph,
-    changedFiles: [
-      'src/features/cart/CartPage.tsx',
-      'src/runtime/deleted-helper.ts',
-    ],
+    changedFiles: ['src/features/cart/CartPage.tsx', 'src/runtime/deleted-helper.ts'],
   })
   assert.equal(selection.mode, 'full')
 })

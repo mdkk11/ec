@@ -1,5 +1,5 @@
-import { readFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
@@ -42,6 +42,5 @@ export function runCli(env = process.env) {
 }
 
 const isMain =
-  process.argv[1] &&
-  path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))
+  process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))
 if (isMain) process.exitCode = runCli()

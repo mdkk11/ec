@@ -23,35 +23,20 @@ test('selected mode invokes Playwright once with every selected spec', () => {
     }),
     [
       'pnpm',
-      [
-        'exec',
-        'playwright',
-        'test',
-        'tests/e2e/cart.spec.ts',
-        'tests/e2e/app-shell.spec.ts',
-      ],
+      ['exec', 'playwright', 'test', 'tests/e2e/cart.spec.ts', 'tests/e2e/app-shell.spec.ts'],
     ],
   )
-  assert.deepEqual(
-    buildE2eCommand({ IMPACT_E2E_SELECTION: selectionPath }),
-    [
-      'pnpm',
-      [
-        'exec',
-        'playwright',
-        'test',
-        'tests/e2e/cart.spec.ts',
-        'tests/e2e/app-shell.spec.ts',
-      ],
-    ],
-  )
+  assert.deepEqual(buildE2eCommand({ IMPACT_E2E_SELECTION: selectionPath }), [
+    'pnpm',
+    ['exec', 'playwright', 'test', 'tests/e2e/cart.spec.ts', 'tests/e2e/app-shell.spec.ts'],
+  ])
 })
 
 test('missing or invalid selection falls back to the existing full command', () => {
-  assert.deepEqual(
-    buildE2eCommand({ IMPACT_E2E_SELECTION: '/missing/selection.json' }),
-    ['pnpm', ['test:e2e']],
-  )
+  assert.deepEqual(buildE2eCommand({ IMPACT_E2E_SELECTION: '/missing/selection.json' }), [
+    'pnpm',
+    ['test:e2e'],
+  ])
   assert.deepEqual(
     buildE2eCommand({
       IMPACT_E2E_MODE: 'selected',

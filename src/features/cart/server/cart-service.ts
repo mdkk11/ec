@@ -6,19 +6,14 @@ import type {
   NormalizedApplyCouponRequest,
   UpdateCartItemRequest,
 } from '@/contracts/cart'
-import {
-  evaluateCoupon,
-  normalizeCouponCode,
-} from '@/features/coupons/coupon-calculation'
+import { evaluateCoupon, normalizeCouponCode } from '@/features/coupons/coupon-calculation'
 import { Temporal } from '@/lib/date-time/temporal'
 import { cartItems, carts, coupons, products } from '@/server/db/schema'
 
 import { calculateCart } from '../cart-calculation'
 
 type CartDatabase = NodePgDatabase
-type CartTransaction = Parameters<
-  Parameters<CartDatabase['transaction']>[0]
->[0]
+type CartTransaction = Parameters<Parameters<CartDatabase['transaction']>[0]>[0]
 type CartExecutor = CartDatabase | CartTransaction
 
 export type CartServiceErrorCode =
@@ -47,11 +42,7 @@ type CartDependencies = {
   userId: string
 }
 
-async function ensureAndLockCart(
-  tx: CartTransaction,
-  userId: string,
-  now: string,
-) {
+async function ensureAndLockCart(tx: CartTransaction, userId: string, now: string) {
   await tx
     .insert(carts)
     .values({ createdAt: now, updatedAt: now, userId })
@@ -123,11 +114,7 @@ async function loadCart(
   )
 }
 
-async function incrementCartVersion(
-  tx: CartTransaction,
-  cartId: string,
-  now: string,
-) {
+async function incrementCartVersion(tx: CartTransaction, cartId: string, now: string) {
   const [updated] = await tx
     .update(carts)
     .set({
@@ -145,11 +132,7 @@ async function incrementCartVersion(
   return updated
 }
 
-export async function getCart({
-  db,
-  now,
-  userId,
-}: CartDependencies) {
+export async function getCart({ db, now, userId }: CartDependencies) {
   return db.transaction(async (tx) => {
     const cart = await ensureAndLockCart(tx, userId, now.toString())
     return loadCart(tx, cart, now)
@@ -174,10 +157,7 @@ export async function addCartItem(
       .for('update')
 
     if (!product?.isPublished) {
-      throw new CartServiceError(
-        'PRODUCT_NOT_FOUND',
-        '商品が見つかりませんでした。',
-      )
+      throw new CartServiceError('PRODUCT_NOT_FOUND', '商品が見つかりませんでした。')
     }
 
     const [existingItem] = await tx
@@ -186,20 +166,12 @@ export async function addCartItem(
         quantity: cartItems.quantity,
       })
       .from(cartItems)
-      .where(
-        and(
-          eq(cartItems.cartId, cart.id),
-          eq(cartItems.productId, product.id),
-        ),
-      )
+      .where(and(eq(cartItems.cartId, cart.id), eq(cartItems.productId, product.id)))
       .limit(1)
 
     const nextQuantity = (existingItem?.quantity ?? 0) + input.quantity
     if (nextQuantity > product.stock) {
-      throw new CartServiceError(
-        'QUANTITY_EXCEEDS_STOCK',
-        '注文可能な数量を超えています。',
-      )
+      throw new CartServiceError('QUANTITY_EXCEEDS_STOCK', '注文可能な数量を超えています。')
     }
 
     if (existingItem) {
@@ -241,38 +213,23 @@ export async function updateCartItem(
       .for('update')
 
     if (!item) {
-      throw new CartServiceError(
-        'CART_ITEM_NOT_FOUND',
-        'カート明細が見つかりませんでした。',
-      )
+      throw new CartServiceError('CART_ITEM_NOT_FOUND', 'カート明細が見つかりませんでした。')
     }
     if (!item.isPublished) {
-      throw new CartServiceError(
-        'PRODUCT_NOT_FOUND',
-        '商品が見つかりませんでした。',
-      )
+      throw new CartServiceError('PRODUCT_NOT_FOUND', '商品が見つかりませんでした。')
     }
     if (input.quantity > item.stock) {
-      throw new CartServiceError(
-        'QUANTITY_EXCEEDS_STOCK',
-        '注文可能な数量を超えています。',
-      )
+      throw new CartServiceError('QUANTITY_EXCEEDS_STOCK', '注文可能な数量を超えています。')
     }
     if (input.quantity === item.quantity) return loadCart(tx, cart, now)
 
-    await tx
-      .update(cartItems)
-      .set({ quantity: input.quantity })
-      .where(eq(cartItems.id, item.id))
+    await tx.update(cartItems).set({ quantity: input.quantity }).where(eq(cartItems.id, item.id))
     const updatedCart = await incrementCartVersion(tx, cart.id, nowIso)
     return loadCart(tx, updatedCart, now)
   })
 }
 
-export async function deleteCartItem(
-  itemId: string,
-  { db, now, userId }: CartDependencies,
-) {
+export async function deleteCartItem(itemId: string, { db, now, userId }: CartDependencies) {
   return db.transaction(async (tx) => {
     const nowIso = now.toString()
     const cart = await ensureAndLockCart(tx, userId, nowIso)
@@ -282,10 +239,7 @@ export async function deleteCartItem(
       .returning({ id: cartItems.id })
 
     if (deleted.length === 0) {
-      throw new CartServiceError(
-        'CART_ITEM_NOT_FOUND',
-        'カート明細が見つかりませんでした。',
-      )
+      throw new CartServiceError('CART_ITEM_NOT_FOUND', 'カート明細が見つかりませんでした。')
     }
 
     const updatedCart = await incrementCartVersion(tx, cart.id, nowIso)
@@ -293,7 +247,12 @@ export async function deleteCartItem(
   })
 }
 
-function couponErrorMessage(code: Exclude<CartServiceErrorCode, 'CART_ITEM_NOT_FOUND' | 'PRODUCT_NOT_FOUND' | 'QUANTITY_EXCEEDS_STOCK'>) {
+function couponErrorMessage(
+  code: Exclude<
+    CartServiceErrorCode,
+    'CART_ITEM_NOT_FOUND' | 'PRODUCT_NOT_FOUND' | 'QUANTITY_EXCEEDS_STOCK'
+  >,
+) {
   switch (code) {
     case 'COUPON_INACTIVE':
       return 'このクーポンは現在利用できません。'
@@ -324,10 +283,7 @@ export async function applyCoupon(
       .for('share')
 
     if (!coupon) {
-      throw new CartServiceError(
-        'COUPON_NOT_FOUND',
-        couponErrorMessage('COUPON_NOT_FOUND'),
-      )
+      throw new CartServiceError('COUPON_NOT_FOUND', couponErrorMessage('COUPON_NOT_FOUND'))
     }
 
     const condition = evaluateCoupon(
@@ -362,11 +318,7 @@ export async function applyCoupon(
   })
 }
 
-export async function removeCoupon({
-  db,
-  now,
-  userId,
-}: CartDependencies) {
+export async function removeCoupon({ db, now, userId }: CartDependencies) {
   return db.transaction(async (tx) => {
     const nowIso = now.toString()
     const cart = await ensureAndLockCart(tx, userId, nowIso)

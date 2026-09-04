@@ -11,9 +11,7 @@ import { backendDatabase } from '@/test/backend/database'
 
 const productUrl = 'http://localhost:3000/api/products'
 
-async function insertProduct(
-  overrides: Partial<typeof products.$inferInsert> = {},
-) {
+async function insertProduct(overrides: Partial<typeof products.$inferInsert> = {}) {
   const id = overrides.id ?? crypto.randomUUID()
   const createdAt = overrides.createdAt ?? '2026-03-01T00:00:00Z'
   const { categoryId = categoryIds.other, ...changes } = overrides
@@ -38,10 +36,9 @@ async function insertProduct(
 }
 
 function productRequest(id: string) {
-  return getProduct(
-    new NextRequest(`${productUrl}/${id}`),
-    { params: Promise.resolve({ productId: id }) },
-  )
+  return getProduct(new NextRequest(`${productUrl}/${id}`), {
+    params: Promise.resolve({ productId: id }),
+  })
 }
 
 describe('公開商品API', () => {
@@ -111,9 +108,7 @@ describe('公開商品API', () => {
       isPublished: false,
     })
 
-    const response = await listProducts(
-      new NextRequest(`${productUrl}?category=clothing`),
-    )
+    const response = await listProducts(new NextRequest(`${productUrl}?category=clothing`))
     const body = await response.json()
 
     expect(response.status).toBe(200)
@@ -122,21 +117,16 @@ describe('公開商品API', () => {
       earlierTieId,
       laterTieId,
     ])
-    expect(body.items.every(
-      (item: { category: { slug: string } }) =>
-        item.category.slug === 'clothing',
-    )).toBe(true)
+    expect(
+      body.items.every((item: { category: { slug: string } }) => item.category.slug === 'clothing'),
+    ).toBe(true)
   })
 
   it('PRODUCT-016/017: 実在する空categoryを200、不明slugを404、空・重複queryを400にする', async () => {
     await seedCategories(backendDatabase.db)
 
-    const empty = await listProducts(
-      new NextRequest(`${productUrl}?category=home-living`),
-    )
-    const unknown = await listProducts(
-      new NextRequest(`${productUrl}?category=unknown-category`),
-    )
+    const empty = await listProducts(new NextRequest(`${productUrl}?category=home-living`))
+    const unknown = await listProducts(new NextRequest(`${productUrl}?category=unknown-category`))
     const invalidRequests = [
       new NextRequest(`${productUrl}?category=`),
       new NextRequest(`${productUrl}?category=clothing&category=shoes`),
@@ -186,11 +176,10 @@ describe('公開商品API', () => {
 
     expect(unpublishedResponse.status).toBe(404)
     expect(missingResponse.status).toBe(404)
-    expect(await unpublishedResponse.json()).toEqual(
-      await missingResponse.json(),
-    )
-    expect(await productRequest(unpublishedId).then((response) => response.json()))
-      .toMatchObject({ code: 'PRODUCT_NOT_FOUND' })
+    expect(await unpublishedResponse.json()).toEqual(await missingResponse.json())
+    expect(await productRequest(unpublishedId).then((response) => response.json())).toMatchObject({
+      code: 'PRODUCT_NOT_FOUND',
+    })
   })
 
   it('UUID形式が不正な商品IDを400で拒否する', async () => {
@@ -204,9 +193,7 @@ describe('公開商品API', () => {
 
   it('API-001: DB上の商品が公開DTO契約に違反する場合は500にする', async () => {
     const id = await insertProduct({ name: '' })
-    const consoleError = vi
-      .spyOn(console, 'error')
-      .mockImplementation(() => undefined)
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
 
     try {
       const listResponse = await listProducts()

@@ -1,11 +1,7 @@
 import 'server-only'
-
 import { cookies } from 'next/headers'
 
-import {
-  orderListResponseSchema,
-  orderResponseSchema,
-} from '@/contracts/order'
+import { orderListResponseSchema, orderResponseSchema } from '@/contracts/order'
 import { Temporal } from '@/lib/date-time/temporal'
 import { requireCustomer } from '@/server/auth/authorization'
 import { SESSION_COOKIE_NAME } from '@/server/auth/session-cookie'
@@ -35,10 +31,7 @@ async function resolveOrderPageAccess(): Promise<OrderPageAccess> {
     }
   }
   return {
-    status:
-      authorization.code === 'UNAUTHENTICATED'
-        ? 'unauthenticated'
-        : 'forbidden',
+    status: authorization.code === 'UNAUTHENTICATED' ? 'unauthenticated' : 'forbidden',
   }
 }
 

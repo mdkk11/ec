@@ -19,9 +19,7 @@ export function ProductCard({ product }: { product: ProductDto }) {
           <Image
             alt={product.name}
             className={`object-cover transition-transform duration-500 ease-out motion-reduce:transition-none ${
-              outOfStock
-                ? 'opacity-70 grayscale-[20%]'
-                : 'group-hover:scale-[1.025]'
+              outOfStock ? 'opacity-70 grayscale-[20%]' : 'group-hover:scale-[1.025]'
             }`}
             fill
             sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
@@ -35,9 +33,7 @@ export function ProductCard({ product }: { product: ProductDto }) {
         </div>
         <div className="pt-4">
           <h2 className="text-sm leading-6">{product.name}</h2>
-          <p className="mt-2 text-sm tabular-nums text-muted">
-            {formatPrice(product.price)}
-          </p>
+          <p className="mt-2 text-sm text-muted tabular-nums">{formatPrice(product.price)}</p>
         </div>
       </Link>
     </article>

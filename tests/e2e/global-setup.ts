@@ -1,8 +1,5 @@
 import { createDatabaseClient } from '@/server/db/client'
-import {
-  loadDatabaseEnvironment,
-  requireDatabaseEnvironment,
-} from '@/server/db/environment'
+import { loadDatabaseEnvironment, requireDatabaseEnvironment } from '@/server/db/environment'
 import { migrateDatabase } from '@/server/db/migrate'
 import { seedE2EFixtures } from '@/server/db/seed'
 import { resetTestDatabase } from '@/server/db/test-lifecycle'

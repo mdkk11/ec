@@ -1,13 +1,7 @@
-import {
-  productIdSchema,
-  productResponseSchema,
-} from '@/contracts/product'
+import { productIdSchema, productResponseSchema } from '@/contracts/product'
 import { findPublishedProduct } from '@/features/products/server/product-service'
 import { getRuntimeDatabase } from '@/server/db/runtime'
-import {
-  apiErrorResponse,
-  noStoreJsonResponse,
-} from '@/server/http/json'
+import { apiErrorResponse, noStoreJsonResponse } from '@/server/http/json'
 
 type ProductRouteContext = {
   params: Promise<{ productId: string }>
@@ -17,11 +11,7 @@ export async function GET(_request: Request, context: ProductRouteContext) {
   const { productId } = await context.params
   const parsedProductId = productIdSchema.safeParse(productId)
   if (!parsedProductId.success) {
-    return apiErrorResponse(
-      400,
-      'VALIDATION_ERROR',
-      '商品IDの形式を確認してください。',
-    )
+    return apiErrorResponse(400, 'VALIDATION_ERROR', '商品IDの形式を確認してください。')
   }
 
   try {
@@ -29,11 +19,7 @@ export async function GET(_request: Request, context: ProductRouteContext) {
       db: getRuntimeDatabase().db,
     })
     if (!product) {
-      return apiErrorResponse(
-        404,
-        'PRODUCT_NOT_FOUND',
-        '商品が見つかりませんでした。',
-      )
+      return apiErrorResponse(404, 'PRODUCT_NOT_FOUND', '商品が見つかりませんでした。')
     }
 
     const responseBody = productResponseSchema.parse({ product })

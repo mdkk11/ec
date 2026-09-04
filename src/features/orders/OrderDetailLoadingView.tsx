@@ -8,19 +8,14 @@ export function OrderDetailLoadingView() {
       <p aria-live="polite" className="sr-only" role="status">
         注文詳細を読み込んでいます。しばらくお待ちください。
       </p>
-      <section
-        aria-busy="true"
-        className="page-wrap py-12 sm:py-16 lg:py-20"
-      >
+      <section aria-busy="true" className="page-wrap py-12 sm:py-16 lg:py-20">
         <p className="label text-accent">ORDER DETAIL</p>
         <h1 className="mt-4 font-serif text-4xl sm:text-5xl">注文詳細</h1>
 
         <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-14">
           <div>
             <div className="border-b border-line pb-6">
-              <p className="text-xs font-semibold tracking-[0.08em] text-muted">
-                注文番号
-              </p>
+              <p className="text-xs font-semibold tracking-[0.08em] text-muted">注文番号</p>
               <Skeleton className="mt-2 h-5 w-full max-w-80" />
               <Skeleton className="mt-3 h-5 w-40" />
             </div>
@@ -48,15 +43,23 @@ export function OrderDetailLoadingView() {
             <dl className="mt-6 space-y-4 text-sm">
               <div className="flex justify-between gap-4">
                 <dt className="text-muted">商品小計</dt>
-                <dd><Skeleton className="h-5 w-20" /></dd>
+                <dd>
+                  <Skeleton className="h-5 w-20" />
+                </dd>
               </div>
               <div className="flex justify-between gap-4">
-                <dt><Skeleton className="h-5 w-28" /></dt>
-                <dd><Skeleton className="h-5 w-20" /></dd>
+                <dt>
+                  <Skeleton className="h-5 w-28" />
+                </dt>
+                <dd>
+                  <Skeleton className="h-5 w-20" />
+                </dd>
               </div>
               <div className="flex justify-between gap-4 border-t border-line pt-4 text-base font-semibold">
                 <dt>合計</dt>
-                <dd><Skeleton className="h-6 w-24" /></dd>
+                <dd>
+                  <Skeleton className="h-6 w-24" />
+                </dd>
               </div>
             </dl>
             <Link className="button-secondary mt-6 w-full" href="/orders">

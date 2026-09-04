@@ -5,18 +5,12 @@ import { useEffect, useState } from 'react'
 
 import type { OrderDto, OrderStatus } from '@/contracts/order'
 import { useSession } from '@/features/auth/SessionProvider'
-import {
-  getAdminOrders,
-  updateAdminOrderStatus,
-} from '@/lib/api-client/admin-order'
+import { getAdminOrders, updateAdminOrderStatus } from '@/lib/api-client/admin-order'
 import { ApiClientError } from '@/lib/api-client/request-json'
 
-import { AdminOrderTable } from './AdminOrderTable'
-import {
-  AdminLoginRequired,
-  AdminProductStatusPage,
-} from './AdminProductStatusPage'
 import { adminOrdersQueryKey, replaceAdminOrder } from './admin-order-query'
+import { AdminOrderTable } from './AdminOrderTable'
+import { AdminLoginRequired, AdminProductStatusPage } from './AdminProductStatusPage'
 import { useAdminRequestCoordinator } from './use-admin-request-coordinator'
 
 type ConflictState = {
@@ -43,9 +37,9 @@ export function AdminOrdersPage() {
       }),
     queryKey,
   })
-  const [selectedStatuses, setSelectedStatuses] = useState<
-    Record<string, OrderStatus | undefined>
-  >({})
+  const [selectedStatuses, setSelectedStatuses] = useState<Record<string, OrderStatus | undefined>>(
+    {},
+  )
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null)
   const [conflict, setConflict] = useState<ConflictState | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -93,7 +87,8 @@ export function AdminOrdersPage() {
       requestCoordinator.isOperationRunning() ||
       pendingOrderId ||
       conflict?.orderId === orderId
-    ) return
+    )
+      return
     const requestedStatus = selectedStatuses[orderId]
     const current = query.data?.find((item) => item.id === orderId)
     if (!requestedStatus || !current) return
@@ -183,11 +178,7 @@ export function AdminOrdersPage() {
     )
   }
 
-  const tableStatus = query.isPending
-    ? 'loading'
-    : query.data
-      ? 'success'
-      : 'error'
+  const tableStatus = query.isPending ? 'loading' : query.data ? 'success' : 'error'
 
   return (
     <section className="page-wrap py-12 sm:py-16 lg:py-20">

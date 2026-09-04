@@ -1,8 +1,5 @@
 import { createDatabaseClient } from '@/server/db/client'
-import {
-  loadDatabaseEnvironment,
-  requireDatabaseEnvironment,
-} from '@/server/db/environment'
+import { loadDatabaseEnvironment, requireDatabaseEnvironment } from '@/server/db/environment'
 
 loadDatabaseEnvironment()
 

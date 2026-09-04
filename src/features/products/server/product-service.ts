@@ -45,9 +45,7 @@ function toProductDto(product: PublicProductRecord): ProductDto {
   }
 }
 
-function toProductDetailDto(
-  product: PublicProductRecord,
-): ProductDetailDto {
+function toProductDetailDto(product: PublicProductRecord): ProductDetailDto {
   return { ...toProductDto(product), stock: product.stock }
 }
 
@@ -60,9 +58,10 @@ export class ProductServiceError extends Error {
   }
 }
 
-export async function listPublishedProducts(
-  { categorySlug, db }: ProductDependencies & { categorySlug?: string },
-) {
+export async function listPublishedProducts({
+  categorySlug,
+  db,
+}: ProductDependencies & { categorySlug?: string }) {
   let categoryId: string | undefined
   if (categorySlug) {
     const [category] = await db
@@ -80,10 +79,7 @@ export async function listPublishedProducts(
     .innerJoin(categories, eq(products.categoryId, categories.id))
     .where(
       categoryId
-        ? and(
-            eq(products.isPublished, true),
-            eq(products.categoryId, categoryId),
-          )
+        ? and(eq(products.isPublished, true), eq(products.categoryId, categoryId))
         : eq(products.isPublished, true),
     )
     .orderBy(desc(products.createdAt), asc(products.id))
@@ -91,20 +87,12 @@ export async function listPublishedProducts(
   return records.map(toProductDto)
 }
 
-export async function findPublishedProduct(
-  productId: string,
-  { db }: ProductDependencies,
-) {
+export async function findPublishedProduct(productId: string, { db }: ProductDependencies) {
   const [record] = await db
     .select(publicProductSelection)
     .from(products)
     .innerJoin(categories, eq(products.categoryId, categories.id))
-    .where(
-      and(
-        eq(products.id, productId),
-        eq(products.isPublished, true),
-      ),
-    )
+    .where(and(eq(products.id, productId), eq(products.isPublished, true)))
     .limit(1)
 
   return record ? toProductDetailDto(record) : null

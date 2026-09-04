@@ -107,10 +107,7 @@ export async function createAdminProduct(
   return toAdminProductDto(record)
 }
 
-async function throwUpdateFailure(
-  productId: string,
-  db: NodePgDatabase,
-): Promise<never> {
+async function throwUpdateFailure(productId: string, db: NodePgDatabase): Promise<never> {
   const [existing] = await db
     .select({ id: products.id })
     .from(products)
@@ -118,10 +115,7 @@ async function throwUpdateFailure(
     .limit(1)
 
   if (!existing) {
-    throw new AdminProductServiceError(
-      'PRODUCT_NOT_FOUND',
-      '商品が見つかりませんでした。',
-    )
+    throw new AdminProductServiceError('PRODUCT_NOT_FOUND', '商品が見つかりませんでした。')
   }
   throw new AdminProductServiceError(
     'VERSION_CONFLICT',
@@ -143,12 +137,7 @@ export async function updateAdminProduct(
       updatedAt: now.toString(),
       version: sql`${products.version} + 1`,
     })
-    .where(
-      and(
-        eq(products.id, productId),
-        eq(products.version, expectedVersion),
-      ),
-    )
+    .where(and(eq(products.id, productId), eq(products.version, expectedVersion)))
     .returning(adminProductSelection)
 
   if (!record) return throwUpdateFailure(productId, db)
@@ -167,12 +156,7 @@ export async function updateAdminProductStock(
       updatedAt: now.toString(),
       version: sql`${products.version} + 1`,
     })
-    .where(
-      and(
-        eq(products.id, productId),
-        eq(products.version, input.expectedVersion),
-      ),
-    )
+    .where(and(eq(products.id, productId), eq(products.version, input.expectedVersion)))
     .returning(adminProductSelection)
 
   if (!record) return throwUpdateFailure(productId, db)

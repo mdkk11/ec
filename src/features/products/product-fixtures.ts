@@ -15,8 +15,7 @@ export const productFixture: ProductDetailDto = {
 export const outOfStockProductFixture: ProductDetailDto = {
   availability: 'out_of_stock',
   category: { name: 'バッグ・服飾小物', slug: 'bags-accessories' },
-  description:
-    'しなやかなレザーと控えめな金具を組み合わせた、日常使いのためのデイバッグです。',
+  description: 'しなやかなレザーと控えめな金具を組み合わせた、日常使いのためのデイバッグです。',
   id: '30000000-0000-4000-8000-000000000002',
   imagePath: '/images/home/leather-day-bag.jpg',
   name: 'ソフトレザー デイバッグ',

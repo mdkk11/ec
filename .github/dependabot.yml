@@ -5,7 +5,7 @@ updates:
     schedule:
       interval: weekly
       day: monday
-      time: "09:00"
+      time: '09:00'
       timezone: Asia/Tokyo
     cooldown:
       default-days: 7
@@ -13,14 +13,14 @@ updates:
       production-minor-patch:
         dependency-type: production
         patterns:
-          - "*"
+          - '*'
         update-types:
           - minor
           - patch
       development-minor-patch:
         dependency-type: development
         patterns:
-          - "*"
+          - '*'
         update-types:
           - minor
           - patch
@@ -30,11 +30,11 @@ updates:
     schedule:
       interval: weekly
       day: monday
-      time: "09:00"
+      time: '09:00'
       timezone: Asia/Tokyo
     cooldown:
       default-days: 7
     groups:
       github-actions:
         patterns:
-          - "*"
+          - '*'

@@ -21,11 +21,7 @@ export async function GET(
     const { orderId } = await params
     const parsedId = orderIdSchema.safeParse(orderId)
     if (!parsedId.success) {
-      return apiErrorResponse(
-        404,
-        'ORDER_NOT_FOUND',
-        '注文が見つかりませんでした。',
-      )
+      return apiErrorResponse(404, 'ORDER_NOT_FOUND', '注文が見つかりませんでした。')
     }
 
     const order = await findOrder(parsedId.data, {
@@ -33,19 +29,14 @@ export async function GET(
       userId: authorization.userId,
     })
     if (!order) {
-      return apiErrorResponse(
-        404,
-        'ORDER_NOT_FOUND',
-        '注文が見つかりませんでした。',
-      )
+      return apiErrorResponse(404, 'ORDER_NOT_FOUND', '注文が見つかりませんでした。')
     }
 
     return orderSuccessResponse(order)
   } catch (error) {
     return orderRouteErrorResponse(error, {
       logMessage: '注文詳細の取得に失敗しました。',
-      responseMessage:
-        '注文詳細を取得できませんでした。時間をおいてもう一度お試しください。',
+      responseMessage: '注文詳細を取得できませんでした。時間をおいてもう一度お試しください。',
     })
   }
 }

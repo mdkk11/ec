@@ -2,26 +2,17 @@ import { eq } from 'drizzle-orm'
 import { NextRequest } from 'next/server'
 import { describe, expect, it } from 'vitest'
 
-import { GET as getCartRoute } from '@/app/api/cart/route'
 import {
   DELETE as deleteCartItemRoute,
   PATCH as updateCartItemRoute,
 } from '@/app/api/cart/items/[itemId]/route'
 import { POST as addCartItemRoute } from '@/app/api/cart/items/route'
+import { GET as getCartRoute } from '@/app/api/cart/route'
 import { addCartItem } from '@/features/cart/server/cart-service'
 import { Temporal } from '@/lib/date-time/temporal'
 import { hashSessionToken } from '@/server/auth/session-token'
-import {
-  cartItems,
-  carts,
-  products,
-  sessions,
-  users,
-} from '@/server/db/schema'
-import {
-  seedAuthenticationUsers,
-  seedCatalogProducts,
-} from '@/server/db/seed'
+import { cartItems, carts, products, sessions, users } from '@/server/db/schema'
+import { seedAuthenticationUsers, seedCatalogProducts } from '@/server/db/seed'
 import { backendDatabase } from '@/test/backend/database'
 
 const cartUrl = 'http://localhost:3000/api/cart'
@@ -73,17 +64,15 @@ function addItem(cookie: string, quantity = 1, id = productId) {
 }
 
 function updateItem(cookie: string, itemId: string, quantity: number) {
-  return updateCartItemRoute(
-    request('PATCH', `/items/${itemId}`, cookie, { quantity }),
-    { params: Promise.resolve({ itemId }) },
-  )
+  return updateCartItemRoute(request('PATCH', `/items/${itemId}`, cookie, { quantity }), {
+    params: Promise.resolve({ itemId }),
+  })
 }
 
 function deleteItem(cookie: string, itemId: string) {
-  return deleteCartItemRoute(
-    request('DELETE', `/items/${itemId}`, cookie),
-    { params: Promise.resolve({ itemId }) },
-  )
+  return deleteCartItemRoute(request('DELETE', `/items/${itemId}`, cookie), {
+    params: Promise.resolve({ itemId }),
+  })
 }
 
 describe('カートAPI', () => {
@@ -131,10 +120,7 @@ describe('カートAPI', () => {
 
   it('CART-003: 在庫超過を400にして数量とversionを維持する', async () => {
     await prepareCatalogAndUsers()
-    await backendDatabase.db
-      .update(products)
-      .set({ stock: 3 })
-      .where(eq(products.id, productId))
+    await backendDatabase.db.update(products).set({ stock: 3 }).where(eq(products.id, productId))
     const cookie = await createCookie()
     const added = await addItem(cookie, 2)
     const itemId = (await added.json()).cart.items[0].id as string
@@ -148,9 +134,7 @@ describe('カートAPI', () => {
     await expect(backendDatabase.db.select().from(cartItems)).resolves.toMatchObject([
       { quantity: 2 },
     ])
-    await expect(backendDatabase.db.select().from(carts)).resolves.toMatchObject([
-      { version: 2 },
-    ])
+    await expect(backendDatabase.db.select().from(carts)).resolves.toMatchObject([{ version: 2 }])
   })
 
   it('CART-004/CART-010: 非公開中は明細を保持してissueを返し、再公開後にtokenを返す', async () => {
@@ -162,9 +146,7 @@ describe('カートAPI', () => {
       .set({ isPublished: false })
       .where(eq(products.id, productId))
 
-    const unavailableResponse = await getCartRoute(
-      request('GET', '', cookie),
-    )
+    const unavailableResponse = await getCartRoute(request('GET', '', cookie))
     const unavailableCart = (await unavailableResponse.json()).cart
 
     expect(unavailableCart.items).toHaveLength(1)
@@ -224,10 +206,7 @@ describe('カートAPI', () => {
       code: 'CART_ITEM_NOT_FOUND',
     })
     await expect(
-      backendDatabase.db
-        .select()
-        .from(cartItems)
-        .where(eq(cartItems.id, otherItem!.id)),
+      backendDatabase.db.select().from(cartItems).where(eq(cartItems.id, otherItem!.id)),
     ).resolves.toMatchObject([{ quantity: 1 }])
   })
 
@@ -235,16 +214,8 @@ describe('カートAPI', () => {
     await prepareCatalogAndUsers()
     const cookie = await createCookie()
 
-    const unpublishedResponse = await addItem(
-      cookie,
-      1,
-      unpublishedProductId,
-    )
-    const missingResponse = await addItem(
-      cookie,
-      1,
-      '99999999-9999-4999-8999-999999999999',
-    )
+    const unpublishedResponse = await addItem(cookie, 1, unpublishedProductId)
+    const missingResponse = await addItem(cookie, 1, '99999999-9999-4999-8999-999999999999')
 
     expect(unpublishedResponse.status).toBe(404)
     expect(missingResponse.status).toBe(404)
@@ -303,9 +274,7 @@ describe('カートAPI', () => {
         method: 'POST',
       }),
     )
-    const nullResponse = await addCartItemRoute(
-      request('POST', '/items', cookie, null),
-    )
+    const nullResponse = await addCartItemRoute(request('POST', '/items', cookie, null))
     const schemaResponse = await addItem(cookie, 0)
 
     expect(malformedResponse.status).toBe(400)

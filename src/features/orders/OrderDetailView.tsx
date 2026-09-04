@@ -3,10 +3,7 @@ import Link from 'next/link'
 import type { OrderDto } from '@/contracts/order'
 import { formatPrice } from '@/features/products/format-price'
 
-import {
-  formatOrderDate,
-  orderStatusLabel,
-} from './order-presentation'
+import { formatOrderDate, orderStatusLabel } from './order-presentation'
 
 export function OrderDetailView({
   order,
@@ -32,13 +29,9 @@ export function OrderDetailView({
       <div className="mt-10 grid gap-10 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-14">
         <div>
           <div className="border-b border-line pb-6">
-            <p className="text-xs font-semibold tracking-[0.08em] text-muted">
-              注文番号
-            </p>
-            <p className="mt-2 break-all font-mono text-sm">{order.id}</p>
-            <p className="mt-3 text-sm text-muted">
-              {formatOrderDate(order.createdAt)}
-            </p>
+            <p className="text-xs font-semibold tracking-[0.08em] text-muted">注文番号</p>
+            <p className="mt-2 font-mono text-sm break-all">{order.id}</p>
+            <p className="mt-3 text-sm text-muted">{formatOrderDate(order.createdAt)}</p>
           </div>
           <ul>
             {order.items.map((item) => (
@@ -52,9 +45,7 @@ export function OrderDetailView({
                     {formatPrice(item.unitPrice)} × {item.quantity}
                   </p>
                 </div>
-                <p className="font-semibold tabular-nums">
-                  {formatPrice(item.lineTotal)}
-                </p>
+                <p className="font-semibold tabular-nums">{formatPrice(item.lineTotal)}</p>
               </li>
             ))}
           </ul>
@@ -72,16 +63,12 @@ export function OrderDetailView({
             {order.couponCode ? (
               <>
                 <div className="flex justify-between gap-4">
-                  <dt className="text-muted">
-                    クーポン {order.couponCode}
-                  </dt>
+                  <dt className="text-muted">クーポン {order.couponCode}</dt>
                   <dd>{order.discountPercent}%</dd>
                 </div>
                 <div className="flex justify-between gap-4">
                   <dt className="text-muted">割引</dt>
-                  <dd className="tabular-nums">
-                    −{formatPrice(order.discountAmount)}
-                  </dd>
+                  <dd className="tabular-nums">−{formatPrice(order.discountAmount)}</dd>
                 </div>
               </>
             ) : null}
@@ -90,10 +77,7 @@ export function OrderDetailView({
               <dd className="tabular-nums">{formatPrice(order.total)}</dd>
             </div>
           </dl>
-          <Link
-            className="button-secondary mt-6 w-full"
-            href="/orders"
-          >
+          <Link className="button-secondary mt-6 w-full" href="/orders">
             注文履歴を見る
           </Link>
         </aside>

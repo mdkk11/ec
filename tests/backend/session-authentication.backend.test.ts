@@ -3,17 +3,14 @@ import { NextRequest } from 'next/server'
 import { describe, expect, it } from 'vitest'
 
 import { DELETE, GET, POST } from '@/app/api/session/route'
+import { hashSessionToken } from '@/server/auth/session-token'
 import { sessions, users } from '@/server/db/schema'
 import { seedAuthenticationUsers } from '@/server/db/seed'
-import { hashSessionToken } from '@/server/auth/session-token'
 import { backendDatabase } from '@/test/backend/database'
 
 const sessionUrl = 'http://localhost:3000/api/session'
 
-function postLogin(
-  password = 'CustomerPass123!',
-  email = '  CUSTOMER@EXAMPLE.TEST ',
-) {
+function postLogin(password = 'CustomerPass123!', email = '  CUSTOMER@EXAMPLE.TEST ') {
   return POST(
     new NextRequest(sessionUrl, {
       body: JSON.stringify({
@@ -71,9 +68,7 @@ describe('session API', () => {
     expect(records[0]?.tokenHash).toBe(hashSessionToken(token))
     expect(records[0]?.tokenHash).not.toContain(token)
 
-    const currentSessionResponse = await GET(
-      requestWithCookie('GET', `mockshop_session=${token}`),
-    )
+    const currentSessionResponse = await GET(requestWithCookie('GET', `mockshop_session=${token}`))
     expect(currentSessionResponse.status).toBe(200)
     expect(await currentSessionResponse.json()).toEqual(body)
   })
@@ -82,10 +77,7 @@ describe('session API', () => {
     await seedAuthenticationUsers(backendDatabase.db)
 
     const wrongPasswordResponse = await postLogin('wrong-password')
-    const unknownEmailResponse = await postLogin(
-      'wrong-password',
-      'unknown@example.test',
-    )
+    const unknownEmailResponse = await postLogin('wrong-password', 'unknown@example.test')
 
     expect(wrongPasswordResponse.status).toBe(401)
     expect(unknownEmailResponse.status).toBe(401)
@@ -135,9 +127,7 @@ describe('session API', () => {
       userId: '10000000-0000-4000-8000-000000000001',
     })
 
-    const response = await GET(
-      requestWithCookie('GET', `mockshop_session=${token}`),
-    )
+    const response = await GET(requestWithCookie('GET', `mockshop_session=${token}`))
 
     expect(response.status).toBe(401)
   })
@@ -152,9 +142,7 @@ describe('session API', () => {
       userId: '10000000-0000-4000-8000-000000000001',
     })
 
-    const response = await DELETE(
-      requestWithCookie('DELETE', `mockshop_session=${token}`),
-    )
+    const response = await DELETE(requestWithCookie('DELETE', `mockshop_session=${token}`))
 
     expect(response.status).toBe(401)
     expect(response.headers.get('set-cookie')).toContain('Max-Age=0')

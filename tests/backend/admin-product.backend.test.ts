@@ -2,12 +2,8 @@ import { eq } from 'drizzle-orm'
 import { NextRequest } from 'next/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import {
-  PATCH as updateAdminProductRoute,
-} from '@/app/api/admin/products/[productId]/route'
-import {
-  PATCH as updateAdminProductStockRoute,
-} from '@/app/api/admin/products/[productId]/stock/route'
+import { PATCH as updateAdminProductRoute } from '@/app/api/admin/products/[productId]/route'
+import { PATCH as updateAdminProductStockRoute } from '@/app/api/admin/products/[productId]/stock/route'
 import {
   GET as listAdminProductsRoute,
   POST as createAdminProductRoute,
@@ -17,14 +13,11 @@ import { GET as getCartRoute } from '@/app/api/cart/route'
 import { POST as createOrderRoute } from '@/app/api/orders/route'
 import { GET as getPublishedProductRoute } from '@/app/api/products/[productId]/route'
 import { GET as listPublishedProductsRoute } from '@/app/api/products/route'
-import { Temporal } from '@/lib/date-time/temporal'
 import { categoryIds } from '@/features/categories/category-catalog'
+import { Temporal } from '@/lib/date-time/temporal'
 import { hashSessionToken } from '@/server/auth/session-token'
 import { products, sessions } from '@/server/db/schema'
-import {
-  seedAuthenticationUsers,
-  seedCatalogProducts,
-} from '@/server/db/seed'
+import { seedAuthenticationUsers, seedCatalogProducts } from '@/server/db/seed'
 import { backendDatabase } from '@/test/backend/database'
 
 const apiBaseUrl = 'http://localhost:3000/api'
@@ -49,12 +42,7 @@ async function createCookie(userId: string) {
   return `mockshop_session=${token}`
 }
 
-function request(
-  method: 'GET' | 'PATCH' | 'POST',
-  path: string,
-  cookie = '',
-  body?: unknown,
-) {
+function request(method: 'GET' | 'PATCH' | 'POST', path: string, cookie = '', body?: unknown) {
   return new NextRequest(`${apiBaseUrl}${path}`, {
     body: body === undefined ? undefined : JSON.stringify(body),
     headers: {
@@ -65,15 +53,10 @@ function request(
   })
 }
 
-function updateProduct(
-  cookie: string,
-  id: string,
-  body: unknown,
-) {
-  return updateAdminProductRoute(
-    request('PATCH', `/admin/products/${id}`, cookie, body),
-    { params: Promise.resolve({ productId: id }) },
-  )
+function updateProduct(cookie: string, id: string, body: unknown) {
+  return updateAdminProductRoute(request('PATCH', `/admin/products/${id}`, cookie, body), {
+    params: Promise.resolve({ productId: id }),
+  })
 }
 
 function updateStock(cookie: string, id: string, body: unknown) {
@@ -127,8 +110,7 @@ describe('管理商品API', () => {
     const listBody = await listResponse.json()
     expect(listResponse.status).toBe(200)
     expect(listBody.items[0].id).toBe(createdBody.product.id)
-    expect(listBody.items.some((item: { name: string }) => item.name === '非公開の商品'))
-      .toBe(true)
+    expect(listBody.items.some((item: { name: string }) => item.name === '非公開の商品')).toBe(true)
   })
 
   it('不明カテゴリの商品作成を400 field errorで拒否する', async () => {
@@ -176,9 +158,7 @@ describe('管理商品API', () => {
 
     const responses = [
       await listAdminProductsRoute(request('GET', '/admin/products')),
-      await createAdminProductRoute(
-        request('POST', '/admin/products', customerCookie, createBody),
-      ),
+      await createAdminProductRoute(request('POST', '/admin/products', customerCookie, createBody)),
       await updateProduct(customerCookie, productId, {
         expectedVersion: 1,
         name: '不正更新',
@@ -189,12 +169,7 @@ describe('管理商品API', () => {
       }),
     ]
 
-    expect(responses.map((response) => response.status)).toEqual([
-      401,
-      403,
-      403,
-      403,
-    ])
+    expect(responses.map((response) => response.status)).toEqual([401, 403, 403, 403])
     expect(await backendDatabase.db.select().from(products)).toEqual(before)
   })
 
@@ -246,9 +221,7 @@ describe('管理商品API', () => {
       { params: Promise.resolve({ productId }) },
     )
 
-    expect(
-      publicListBody.items.some((item: { id: string }) => item.id === productId),
-    ).toBe(false)
+    expect(publicListBody.items.some((item: { id: string }) => item.id === productId)).toBe(false)
     expect(publicDetail.status).toBe(404)
   })
 
@@ -309,10 +282,12 @@ describe('管理商品API', () => {
         .select({ categoryId: products.categoryId, version: products.version })
         .from(products)
         .where(eq(products.id, productId)),
-    ).resolves.toEqual([{
-      categoryId: categoryIds['bags-accessories'],
-      version: 2,
-    }])
+    ).resolves.toEqual([
+      {
+        categoryId: categoryIds['bags-accessories'],
+        version: 2,
+      },
+    ])
   })
 
   it('ADMIN-005: 他の在庫更新後に古いexpectedVersionを409にする', async () => {
@@ -350,9 +325,7 @@ describe('管理商品API', () => {
       }),
     )
     expect(addResponse.status).toBe(201)
-    const cartResponse = await getCartRoute(
-      request('GET', '/cart', customerCookie),
-    )
+    const cartResponse = await getCartRoute(request('GET', '/cart', customerCookie))
     const cartBody = await cartResponse.json()
     const orderResponse = await createOrderRoute(
       request('POST', '/orders', customerCookie, {
@@ -383,11 +356,10 @@ describe('管理商品API', () => {
       expectedVersion: 1,
       name: '更新商品',
     })
-    const missing = await updateProduct(
-      adminCookie,
-      '99999999-9999-4999-8999-999999999999',
-      { expectedVersion: 1, name: '更新商品' },
-    )
+    const missing = await updateProduct(adminCookie, '99999999-9999-4999-8999-999999999999', {
+      expectedVersion: 1,
+      name: '更新商品',
+    })
 
     expect(invalid.status).toBe(400)
     expect(missing.status).toBe(404)

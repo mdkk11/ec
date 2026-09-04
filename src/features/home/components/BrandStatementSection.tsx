@@ -1,6 +1,10 @@
 export function BrandStatementSection() {
   return (
-    <section aria-labelledby="journal-heading" className="section-space bg-ink text-white" id="journal">
+    <section
+      aria-labelledby="journal-heading"
+      className="section-space bg-ink text-white"
+      id="journal"
+    >
       <div className="page-wrap grid gap-12 py-20 sm:py-28 lg:grid-cols-12 lg:items-center lg:py-36">
         <div className="lg:col-span-4">
           <p className="label text-white/55">OUR POINT OF VIEW</p>

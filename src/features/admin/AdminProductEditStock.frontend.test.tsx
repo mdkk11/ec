@@ -7,7 +7,6 @@ import { describe, expect, it } from 'vitest'
 import type { AdminProductDto } from '@/contracts/product'
 import { server } from '@/test/msw/server'
 
-import { AdminProductEditPage } from './AdminProductEditPage'
 import {
   admin,
   listResponse,
@@ -15,27 +14,23 @@ import {
   renderWithProviders,
 } from './admin-product-frontend-test-helpers'
 import { adminProductsQueryKey } from './admin-product-query'
+import { AdminProductEditPage } from './AdminProductEditPage'
 
 describe('管理商品編集・在庫', () => {
   it('AUTH-014: 認証待機中は商品編集の構造と認証状態を通知する', () => {
-    renderWithProviders(
-      <AdminProductEditPage productId={product.id} />,
-      { status: 'loading' },
-    )
+    renderWithProviders(<AdminProductEditPage productId={product.id} />, { status: 'loading' })
 
     const status = screen.getByRole('status')
     const busyRegion = document.querySelector('[aria-busy="true"]')
-    expect(status).toHaveTextContent(
-      '認証状態を確認しています。しばらくお待ちください。',
-    )
+    expect(status).toHaveTextContent('認証状態を確認しています。しばらくお待ちください。')
     expect(busyRegion).not.toBeNull()
     expect(busyRegion).not.toContainElement(status)
-    expect(
-      screen.getByRole('heading', { name: '商品情報と公開状態' }),
-    ).toBeVisible()
+    expect(screen.getByRole('heading', { name: '商品情報と公開状態' })).toBeVisible()
     expect(screen.getByRole('heading', { name: '在庫' })).toBeVisible()
-    expect(screen.getByRole('link', { name: '商品管理へ戻る' }))
-      .toHaveAttribute('href', '/admin/products')
+    expect(screen.getByRole('link', { name: '商品管理へ戻る' })).toHaveAttribute(
+      'href',
+      '/admin/products',
+    )
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
@@ -56,14 +51,10 @@ describe('管理商品編集・在庫', () => {
 
     const status = screen.getByRole('status')
     const busyRegion = document.querySelector('[aria-busy="true"]')
-    expect(status).toHaveTextContent(
-      '商品を読み込んでいます。しばらくお待ちください。',
-    )
+    expect(status).toHaveTextContent('商品を読み込んでいます。しばらくお待ちください。')
     expect(busyRegion).not.toBeNull()
     expect(busyRegion).not.toContainElement(status)
-    expect(
-      screen.getByRole('heading', { name: '商品情報と公開状態' }),
-    ).toBeVisible()
+    expect(screen.getByRole('heading', { name: '商品情報と公開状態' })).toBeVisible()
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
 
@@ -77,11 +68,7 @@ describe('管理商品編集・在庫', () => {
       id: '30000000-0000-4000-8000-000000000002',
       name: '切替先の商品',
     }
-    server.use(
-      http.get('/api/admin/products', () =>
-        listResponse([product, anotherProduct]),
-      ),
-    )
+    server.use(http.get('/api/admin/products', () => listResponse([product, anotherProduct])))
 
     function ProductSwitcher() {
       const [productId, setProductId] = useState(product.id)
@@ -118,9 +105,7 @@ describe('管理商品編集・在庫', () => {
       releaseUpdate = resolve
     })
     server.use(
-      http.get('/api/admin/products', () =>
-        listResponse([product, anotherProduct]),
-      ),
+      http.get('/api/admin/products', () => listResponse([product, anotherProduct])),
       http.patch('/api/admin/products/:productId', async () => {
         await updateGate
         return HttpResponse.json({ product: updated })
@@ -275,10 +260,7 @@ describe('管理商品編集・在庫', () => {
         return listResponse(listCount === 1 ? [product] : [latest])
       }),
       http.patch('/api/admin/products/:productId/stock', () =>
-        HttpResponse.json(
-          { code: 'VERSION_CONFLICT', message: '競合しました。' },
-          { status: 409 },
-        ),
+        HttpResponse.json({ code: 'VERSION_CONFLICT', message: '競合しました。' }, { status: 409 }),
       ),
     )
     const user = userEvent.setup()
@@ -308,10 +290,7 @@ describe('管理商品編集・在庫', () => {
         return listResponse(listCount === 1 ? [product] : [latest])
       }),
       http.patch('/api/admin/products/:productId', () =>
-        HttpResponse.json(
-          { code: 'VERSION_CONFLICT', message: '競合しました。' },
-          { status: 409 },
-        ),
+        HttpResponse.json({ code: 'VERSION_CONFLICT', message: '競合しました。' }, { status: 409 }),
       ),
     )
     const user = userEvent.setup()
@@ -333,7 +312,9 @@ describe('管理商品編集・在庫', () => {
   it('古いbackground GETがmutation成功後のcacheとversionを巻き戻さない', async () => {
     let listCount = 0
     let releaseOld: (() => void) | undefined
-    const oldGate = new Promise<void>((resolve) => { releaseOld = resolve })
+    const oldGate = new Promise<void>((resolve) => {
+      releaseOld = resolve
+    })
     const updated = { ...product, name: '最新の商品名', version: 2 }
     server.use(
       http.get('/api/admin/products', async () => {
@@ -341,14 +322,10 @@ describe('管理商品編集・在庫', () => {
         if (listCount === 2) await oldGate
         return listResponse([product])
       }),
-      http.patch('/api/admin/products/:productId', () =>
-        HttpResponse.json({ product: updated }),
-      ),
+      http.patch('/api/admin/products/:productId', () => HttpResponse.json({ product: updated })),
     )
     const user = userEvent.setup()
-    const { client } = renderWithProviders(
-      <AdminProductEditPage productId={product.id} />,
-    )
+    const { client } = renderWithProviders(<AdminProductEditPage productId={product.id} />)
     const nameInput = await screen.findByLabelText('商品名')
 
     const background = client.refetchQueries({
@@ -363,9 +340,7 @@ describe('管理商品編集・在庫', () => {
     releaseOld?.()
     await background
     await waitFor(() => {
-      const cached = client.getQueryData<AdminProductDto[]>(
-        adminProductsQueryKey(admin.id),
-      )
+      const cached = client.getQueryData<AdminProductDto[]>(adminProductsQueryKey(admin.id))
       expect(cached?.[0]).toMatchObject({ name: updated.name, version: 2 })
     })
   })
@@ -393,9 +368,7 @@ describe('管理商品編集・在庫', () => {
       }),
     )
     const user = userEvent.setup()
-    const { client } = renderWithProviders(
-      <AdminProductEditPage productId={product.id} />,
-    )
+    const { client } = renderWithProviders(<AdminProductEditPage productId={product.id} />)
     const nameInput = await screen.findByLabelText('商品名')
     await user.clear(nameInput)
     await user.type(nameInput, updated.name)
@@ -411,9 +384,7 @@ describe('管理商品編集・在庫', () => {
     releaseBackground?.()
     await background
     await waitFor(() => {
-      const cached = client.getQueryData<AdminProductDto[]>(
-        adminProductsQueryKey(admin.id),
-      )
+      const cached = client.getQueryData<AdminProductDto[]>(adminProductsQueryKey(admin.id))
       expect(cached?.[0]).toMatchObject({
         name: updated.name,
         version: 2,
@@ -434,10 +405,7 @@ describe('管理商品編集・在庫', () => {
             )
       }),
       http.patch('/api/admin/products/:productId/stock', () =>
-        HttpResponse.json(
-          { code: 'VERSION_CONFLICT', message: '競合しました。' },
-          { status: 409 },
-        ),
+        HttpResponse.json({ code: 'VERSION_CONFLICT', message: '競合しました。' }, { status: 409 }),
       ),
     )
     const user = userEvent.setup()
@@ -448,8 +416,6 @@ describe('管理商品編集・在庫', () => {
     await user.type(stockInput, '10')
     await user.click(screen.getByRole('button', { name: '在庫を更新' }))
 
-    expect(
-      await screen.findByText('商品管理にはログインが必要です'),
-    ).toBeVisible()
+    expect(await screen.findByText('商品管理にはログインが必要です')).toBeVisible()
   })
 })

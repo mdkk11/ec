@@ -23,8 +23,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     return cartRouteErrorResponse(error, {
       logMessage: 'カートの取得に失敗しました。',
-      responseMessage:
-        'カートを取得できませんでした。時間をおいてもう一度お試しください。',
+      responseMessage: 'カートを取得できませんでした。時間をおいてもう一度お試しください。',
     })
   }
 }

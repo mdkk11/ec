@@ -16,9 +16,7 @@ describe('session contract', () => {
   })
 
   it('空欄と長すぎる入力を拒否する', () => {
-    expect(
-      loginRequestSchema.safeParse({ email: '', password: '' }).success,
-    ).toBe(false)
+    expect(loginRequestSchema.safeParse({ email: '', password: '' }).success).toBe(false)
     expect(
       loginRequestSchema.safeParse({
         email: `${'a'.repeat(244)}@example.test`,

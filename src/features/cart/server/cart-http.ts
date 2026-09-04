@@ -2,16 +2,11 @@ import type { NextRequest } from 'next/server'
 
 import { cartResponseSchema } from '@/contracts/cart'
 import { requireCustomerRequest } from '@/server/auth/request-actor'
-import {
-  apiErrorResponse,
-  noStoreJsonResponse,
-} from '@/server/http/json'
+import { apiErrorResponse, noStoreJsonResponse } from '@/server/http/json'
 
 import { CartServiceError } from './cart-service'
 
-type CartAuthorizationResult =
-  | { ok: true; userId: string }
-  | { ok: false; response: Response }
+type CartAuthorizationResult = { ok: true; userId: string } | { ok: false; response: Response }
 
 export async function authorizeCartRequest(
   request: NextRequest,
@@ -26,16 +21,8 @@ export async function authorizeCartRequest(
     ok: false,
     response:
       authorization.code === 'UNAUTHENTICATED'
-        ? apiErrorResponse(
-            401,
-            authorization.code,
-            'ログインが必要です。',
-          )
-        : apiErrorResponse(
-            403,
-            authorization.code,
-            'カートは購入者専用です。',
-          ),
+        ? apiErrorResponse(401, authorization.code, 'ログインが必要です。')
+        : apiErrorResponse(403, authorization.code, 'カートは購入者専用です。'),
   }
 }
 
@@ -71,17 +58,10 @@ export function cartRouteErrorResponse(
   }
 
   console.error(logMessage, error)
-  return apiErrorResponse(
-    500,
-    'INTERNAL_ERROR',
-    responseMessage,
-  )
+  return apiErrorResponse(500, 'INTERNAL_ERROR', responseMessage)
 }
 
-export function cartSuccessResponse(
-  cart: unknown,
-  status: 200 | 201 = 200,
-) {
+export function cartSuccessResponse(cart: unknown, status: 200 | 201 = 200) {
   const body = cartResponseSchema.parse({ cart })
   return noStoreJsonResponse(body, status)
 }

@@ -7,13 +7,9 @@ import { useSession } from '@/features/auth/SessionProvider'
 import { orderFixture } from '@/features/orders/order-fixtures'
 import { server } from '@/test/msw/server'
 
-import { CartPage } from './CartPage'
 import { cartFixture, stockConflictCartFixture } from './cart-fixtures'
-import {
-  cartResponse,
-  customer,
-  renderWithProviders,
-} from './cart-frontend-test-helpers'
+import { cartResponse, customer, renderWithProviders } from './cart-frontend-test-helpers'
+import { CartPage } from './CartPage'
 
 const router = vi.hoisted(() => ({
   push: vi.fn(),
@@ -36,10 +32,7 @@ const secondCustomer = {
 function CustomerSwitcher() {
   const { setAuthenticated } = useSession()
   return (
-    <button
-      onClick={() => setAuthenticated(secondCustomer)}
-      type="button"
-    >
+    <button onClick={() => setAuthenticated(secondCustomer)} type="button">
       利用者を切り替える
     </button>
   )
@@ -70,21 +63,13 @@ describe('カート画面', () => {
 
     expect(requestCount).toBe(1)
     expect(checkout).toBeDisabled()
-    expect(
-      screen.getByLabelText(
-        'リネンブレンド オーバーシャツの数量',
-      ),
-    ).toBeDisabled()
+    expect(screen.getByLabelText('リネンブレンド オーバーシャツの数量')).toBeDisabled()
     expect(screen.getByLabelText('クーポンコード')).toBeDisabled()
-    expect(screen.getByRole('status')).toHaveTextContent(
-      '注文を確定しています',
-    )
+    expect(screen.getByRole('status')).toHaveTextContent('注文を確定しています')
 
     releaseOrder?.()
     await waitFor(() =>
-      expect(router.push).toHaveBeenCalledWith(
-        `/orders/${orderFixture.id}/complete`,
-      ),
+      expect(router.push).toHaveBeenCalledWith(`/orders/${orderFixture.id}/complete`),
     )
   })
 
@@ -94,19 +79,14 @@ describe('カート画面', () => {
     server.use(
       http.get('/api/cart', () => {
         cartRequestCount += 1
-        return cartResponse(
-          cartRequestCount === 1
-            ? cartFixture
-            : stockConflictCartFixture,
-        )
+        return cartResponse(cartRequestCount === 1 ? cartFixture : stockConflictCartFixture)
       }),
       http.post('/api/orders', () => {
         orderRequestCount += 1
         return HttpResponse.json(
           {
             code: 'STOCK_CONFLICT',
-            message:
-              '在庫が変更されました。最新のカートを確認してください。',
+            message: '在庫が変更されました。最新のカートを確認してください。',
           },
           { status: 409 },
         )
@@ -114,9 +94,7 @@ describe('カート画面', () => {
     )
     renderWithProviders(<CartPage />)
 
-    await userEvent.click(
-      await screen.findByRole('button', { name: '注文を確定する' }),
-    )
+    await userEvent.click(await screen.findByRole('button', { name: '注文を確定する' }))
 
     expect(
       await screen.findByText(
@@ -132,15 +110,13 @@ describe('カート画面', () => {
   it.each([
     {
       code: 'CHECKOUT_CHANGED',
-      expected:
-        '注文内容が変更されました。最新の内容を確認し、もう一度注文を確定してください。',
+      expected: '注文内容が変更されました。最新の内容を確認し、もう一度注文を確定してください。',
       scenario: 'ORDER-006/013/014',
       status: 409,
     },
     {
       code: 'EMPTY_CART',
-      expected:
-        'カートの内容が変更されました。最新の状態を確認してください。',
+      expected: 'カートの内容が変更されました。最新の状態を確認してください。',
       scenario: 'ORDER-002',
       status: 400,
     },
@@ -160,17 +136,12 @@ describe('カート画面', () => {
         }),
         http.post('/api/orders', () => {
           orderRequestCount += 1
-          return HttpResponse.json(
-            { code, message: '注文内容を再確認してください。' },
-            { status },
-          )
+          return HttpResponse.json({ code, message: '注文内容を再確認してください。' }, { status })
         }),
       )
       renderWithProviders(<CartPage />)
 
-      await userEvent.click(
-        await screen.findByRole('button', { name: '注文を確定する' }),
-      )
+      await userEvent.click(await screen.findByRole('button', { name: '注文を確定する' }))
 
       expect(await screen.findByText(expected)).toBeVisible()
       expect(cartRequestCount).toBe(2)
@@ -184,16 +155,13 @@ describe('カート画面', () => {
     server.use(
       http.get('/api/cart', () => {
         cartRequestCount += 1
-        return cartRequestCount === 1
-          ? cartResponse(cartFixture)
-          : HttpResponse.error()
+        return cartRequestCount === 1 ? cartResponse(cartFixture) : HttpResponse.error()
       }),
       http.post('/api/orders', () =>
         HttpResponse.json(
           {
             code: 'STOCK_CONFLICT',
-            message:
-              '在庫が変更されました。最新のカートを確認してください。',
+            message: '在庫が変更されました。最新のカートを確認してください。',
           },
           { status: 409 },
         ),
@@ -239,18 +207,14 @@ describe('カート画面', () => {
     )
     const { client } = renderWithProviders(<CartPage />)
 
-    await userEvent.click(
-      await screen.findByRole('button', { name: '注文を確定する' }),
-    )
+    await userEvent.click(await screen.findByRole('button', { name: '注文を確定する' }))
 
     expect(
       await screen.findByRole('heading', {
         name: 'カートを見るにはログインが必要です',
       }),
     ).toBeVisible()
-    expect(
-      client.getQueryData(['cart', customer.id]),
-    ).toBeUndefined()
+    expect(client.getQueryData(['cart', customer.id])).toBeUndefined()
   })
 
   it.each([
@@ -261,8 +225,7 @@ describe('カート画面', () => {
         HttpResponse.json(
           {
             code: 'INTERNAL_ERROR',
-            message:
-              '注文を確定できませんでした。時間をおいてもう一度お試しください。',
+            message: '注文を確定できませんでした。時間をおいてもう一度お試しください。',
           },
           { status: 500 },
         ),
@@ -272,10 +235,7 @@ describe('カート画面', () => {
       expected: '注文結果を確認できませんでした',
       requiresConfirmation: true,
       response: () =>
-        HttpResponse.json(
-          { order: { id: 'invalid-order-response' } },
-          { status: 201 },
-        ),
+        HttpResponse.json({ order: { id: 'invalid-order-response' } }, { status: 201 }),
       type: '不正response',
     },
     {
@@ -299,17 +259,14 @@ describe('カート画面', () => {
       await userEvent.click(checkout)
 
       expect(await screen.findByRole('alert')).toHaveTextContent(expected)
-      expect(
-        screen.getByText('リネンブレンド オーバーシャツ'),
-      ).toBeVisible()
+      expect(screen.getByText('リネンブレンド オーバーシャツ')).toBeVisible()
       if (requiresConfirmation) {
         expect(checkout).toBeDisabled()
-        expect(
-          screen.getByRole('link', { name: '注文履歴を確認' }),
-        ).toHaveAttribute('href', '/orders')
-        expect(
-          screen.getByRole('button', { name: '最新のカートを再取得' }),
-        ).toBeEnabled()
+        expect(screen.getByRole('link', { name: '注文履歴を確認' })).toHaveAttribute(
+          'href',
+          '/orders',
+        )
+        expect(screen.getByRole('button', { name: '最新のカートを再取得' })).toBeEnabled()
       } else {
         expect(checkout).toBeEnabled()
       }
@@ -340,20 +297,12 @@ describe('カート画面', () => {
       </>,
     )
 
-    await userEvent.click(
-      await screen.findByRole('button', { name: '注文を確定する' }),
-    )
-    await userEvent.click(
-      screen.getByRole('button', { name: '利用者を切り替える' }),
-    )
+    await userEvent.click(await screen.findByRole('button', { name: '注文を確定する' }))
+    await userEvent.click(screen.getByRole('button', { name: '利用者を切り替える' }))
     await waitFor(() => expect(cartRequestCount).toBe(2))
 
     releaseOrder?.()
-    await waitFor(() =>
-      expect(
-        screen.getByText('リネンブレンド オーバーシャツ'),
-      ).toBeVisible(),
-    )
+    await waitFor(() => expect(screen.getByText('リネンブレンド オーバーシャツ')).toBeVisible())
     expect(router.push).not.toHaveBeenCalled()
   })
 
@@ -371,9 +320,7 @@ describe('カート画面', () => {
     )
     const { unmount } = renderWithProviders(<CartPage />)
 
-    await userEvent.click(
-      await screen.findByRole('button', { name: '注文を確定する' }),
-    )
+    await userEvent.click(await screen.findByRole('button', { name: '注文を確定する' }))
     unmount()
     releaseOrder?.()
 
@@ -399,23 +346,15 @@ describe('カート画面', () => {
     })
     await userEvent.click(checkout)
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      '注文結果を確認できませんでした',
-    )
-    expect(
-      screen.getByText('リネンブレンド オーバーシャツ'),
-    ).toBeVisible()
+    expect(await screen.findByRole('alert')).toHaveTextContent('注文結果を確認できませんでした')
+    expect(screen.getByText('リネンブレンド オーバーシャツ')).toBeVisible()
     expect(checkout).toBeDisabled()
 
-    await userEvent.click(
-      screen.getByRole('button', { name: '最新のカートを再取得' }),
-    )
+    await userEvent.click(screen.getByRole('button', { name: '最新のカートを再取得' }))
     await waitFor(() => expect(checkout).toBeEnabled())
 
     await userEvent.click(checkout)
     await waitFor(() => expect(orderRequestCount).toBe(2))
-    expect(router.push).toHaveBeenCalledWith(
-      `/orders/${orderFixture.id}/complete`,
-    )
+    expect(router.push).toHaveBeenCalledWith(`/orders/${orderFixture.id}/complete`)
   })
 })

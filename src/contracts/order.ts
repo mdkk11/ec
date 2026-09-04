@@ -51,9 +51,5 @@ export const orderListResponseSchema = z.object({
 export type OrderStatus = z.infer<typeof orderStatusSchema>
 export type OrderItemDto = z.infer<typeof orderItemSchema>
 export type OrderDto = z.infer<typeof orderSchema>
-export type CreateOrderRequest = z.infer<
-  typeof createOrderRequestSchema
->
-export type UpdateAdminOrderStatusRequest = z.infer<
-  typeof updateAdminOrderStatusRequestSchema
->
+export type CreateOrderRequest = z.infer<typeof createOrderRequestSchema>
+export type UpdateAdminOrderStatusRequest = z.infer<typeof updateAdminOrderStatusRequestSchema>

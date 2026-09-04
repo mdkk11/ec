@@ -1,16 +1,9 @@
 import 'server-only'
-
-import {
-  productListResponseSchema,
-  productResponseSchema,
-} from '@/contracts/product'
+import { productListResponseSchema, productResponseSchema } from '@/contracts/product'
 import { publicCategoryCatalog } from '@/features/categories/category-catalog'
 import { getRuntimeDatabase } from '@/server/db/runtime'
 
-import {
-  findPublishedProduct,
-  listPublishedProducts,
-} from './product-service'
+import { findPublishedProduct, listPublishedProducts } from './product-service'
 
 export async function loadProductListPageData(categorySlug?: string) {
   const items = await listPublishedProducts({
@@ -21,8 +14,7 @@ export async function loadProductListPageData(categorySlug?: string) {
   return {
     categories: publicCategoryCatalog,
     items: productListResponseSchema.parse({ items }).items,
-    selectedCategory:
-      publicCategoryCatalog.find(({ slug }) => slug === categorySlug) ?? null,
+    selectedCategory: publicCategoryCatalog.find(({ slug }) => slug === categorySlug) ?? null,
   }
 }
 

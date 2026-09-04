@@ -16,10 +16,7 @@ export async function POST(request: NextRequest) {
     const authorization = await authorizeCartRequest(request)
     if (!authorization.ok) return authorization.response
 
-    const parsed = await parseJsonRequest(
-      request,
-      addCartItemRequestSchema,
-    )
+    const parsed = await parseJsonRequest(request, addCartItemRequestSchema)
     if (!parsed.ok) return parsed.response
 
     const cart = await addCartItem(parsed.data, {
@@ -31,8 +28,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return cartRouteErrorResponse(error, {
       logMessage: 'カートへの商品追加に失敗しました。',
-      responseMessage:
-        '商品を追加できませんでした。時間をおいてもう一度お試しください。',
+      responseMessage: '商品を追加できませんでした。時間をおいてもう一度お試しください。',
     })
   }
 }

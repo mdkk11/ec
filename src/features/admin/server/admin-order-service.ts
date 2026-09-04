@@ -1,34 +1,14 @@
-import {
-  and,
-  asc,
-  desc,
-  eq,
-  inArray,
-  sql,
-} from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import type {
-  OrderDto,
-  OrderItemDto,
-  UpdateAdminOrderStatusRequest,
-} from '@/contracts/order'
+import type { OrderDto, OrderItemDto, UpdateAdminOrderStatusRequest } from '@/contracts/order'
 import { canTransitionOrderStatus } from '@/features/orders/order-status-transition'
-import {
-  toOrderDto,
-  toOrderItemDto,
-} from '@/features/orders/server/order-service'
+import { toOrderDto, toOrderItemDto } from '@/features/orders/server/order-service'
 import { Temporal } from '@/lib/date-time/temporal'
-import {
-  orderItems,
-  orders,
-  products,
-} from '@/server/db/schema'
+import { orderItems, orders, products } from '@/server/db/schema'
 
 type AdminOrderDatabase = NodePgDatabase
-type AdminOrderTransaction = Parameters<
-  Parameters<AdminOrderDatabase['transaction']>[0]
->[0]
+type AdminOrderTransaction = Parameters<Parameters<AdminOrderDatabase['transaction']>[0]>[0]
 
 type AdminOrderDependencies = {
   db: AdminOrderDatabase
@@ -51,10 +31,7 @@ export class AdminOrderServiceError extends Error {
 }
 
 function orderNotFound(): never {
-  throw new AdminOrderServiceError(
-    'ORDER_NOT_FOUND',
-    '注文が見つかりませんでした。',
-  )
+  throw new AdminOrderServiceError('ORDER_NOT_FOUND', '注文が見つかりませんでした。')
 }
 
 function versionConflict(): never {
@@ -71,10 +48,7 @@ function invalidStatusTransition(): never {
   )
 }
 
-async function findOrderItems(
-  db: AdminOrderDatabase | AdminOrderTransaction,
-  orderIds: string[],
-) {
+async function findOrderItems(db: AdminOrderDatabase | AdminOrderTransaction, orderIds: string[]) {
   if (orderIds.length === 0) return []
   return db
     .select()
@@ -103,10 +77,7 @@ function groupOrderItems(
 }
 
 export async function listAdminOrders({ db }: Pick<AdminOrderDependencies, 'db'>) {
-  const records = await db
-    .select()
-    .from(orders)
-    .orderBy(desc(orders.createdAt), desc(orders.id))
+  const records = await db.select().from(orders).orderBy(desc(orders.createdAt), desc(orders.id))
 
   if (records.length === 0) return []
 
@@ -115,15 +86,10 @@ export async function listAdminOrders({ db }: Pick<AdminOrderDependencies, 'db'>
     records.map(({ id }) => id),
   )
   const itemsByOrder = groupOrderItems(items)
-  return records.map((order) =>
-    toOrderDto(order, itemsByOrder.get(order.id) ?? []),
-  )
+  return records.map((order) => toOrderDto(order, itemsByOrder.get(order.id) ?? []))
 }
 
-async function loadOrderItems(
-  tx: AdminOrderTransaction,
-  orderId: string,
-) {
+async function loadOrderItems(tx: AdminOrderTransaction, orderId: string) {
   return tx
     .select()
     .from(orderItems)
@@ -137,11 +103,7 @@ export async function updateAdminOrderStatus(
   { db, now }: AdminOrderDependencies,
 ): Promise<OrderDto> {
   return db.transaction(async (tx) => {
-    const [current] = await tx
-      .select()
-      .from(orders)
-      .where(eq(orders.id, orderId))
-      .for('update')
+    const [current] = await tx.select().from(orders).where(eq(orders.id, orderId)).for('update')
 
     if (!current) orderNotFound()
     if (current.version !== input.expectedVersion) versionConflict()
@@ -168,11 +130,7 @@ export async function updateAdminOrderStatus(
       .returning()
 
     if (!updated) {
-      const [latest] = await tx
-        .select()
-        .from(orders)
-        .where(eq(orders.id, orderId))
-        .for('update')
+      const [latest] = await tx.select().from(orders).where(eq(orders.id, orderId)).for('update')
 
       if (!latest) orderNotFound()
       if (latest.version !== input.expectedVersion) versionConflict()

@@ -4,10 +4,7 @@ import { HttpResponse } from 'msw'
 import type { ReactNode } from 'react'
 
 import type { AdminProductDto } from '@/contracts/product'
-import {
-  SessionProvider,
-  type SessionState,
-} from '@/features/auth/SessionProvider'
+import { SessionProvider, type SessionState } from '@/features/auth/SessionProvider'
 
 export const admin = {
   email: 'admin@example.test',
@@ -45,9 +42,7 @@ export function renderWithProviders(
     client,
     ...render(
       <QueryClientProvider client={client}>
-        <SessionProvider initialState={initialSessionState}>
-          {children}
-        </SessionProvider>
+        <SessionProvider initialState={initialSessionState}>{children}</SessionProvider>
       </QueryClientProvider>,
     ),
   }

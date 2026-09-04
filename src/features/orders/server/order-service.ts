@@ -1,19 +1,7 @@
-import {
-  and,
-  asc,
-  desc,
-  eq,
-  gte,
-  inArray,
-  sql,
-} from 'drizzle-orm'
+import { and, asc, desc, eq, gte, inArray, sql } from 'drizzle-orm'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-import type {
-  CreateOrderRequest,
-  OrderDto,
-  OrderItemDto,
-} from '@/contracts/order'
+import type { CreateOrderRequest, OrderDto, OrderItemDto } from '@/contracts/order'
 import {
   calculateCart,
   createCheckoutToken,
@@ -21,19 +9,10 @@ import {
   type CartRecord,
 } from '@/features/cart/cart-calculation'
 import { Temporal } from '@/lib/date-time/temporal'
-import {
-  cartItems,
-  carts,
-  coupons,
-  orderItems,
-  orders,
-  products,
-} from '@/server/db/schema'
+import { cartItems, carts, coupons, orderItems, orders, products } from '@/server/db/schema'
 
 type OrderDatabase = NodePgDatabase
-type OrderTransaction = Parameters<
-  Parameters<OrderDatabase['transaction']>[0]
->[0]
+type OrderTransaction = Parameters<Parameters<OrderDatabase['transaction']>[0]>[0]
 
 type OrderDependencies = {
   db: OrderDatabase
@@ -41,10 +20,7 @@ type OrderDependencies = {
   userId: string
 }
 
-export type OrderServiceErrorCode =
-  | 'CHECKOUT_CHANGED'
-  | 'EMPTY_CART'
-  | 'STOCK_CONFLICT'
+export type OrderServiceErrorCode = 'CHECKOUT_CHANGED' | 'EMPTY_CART' | 'STOCK_CONFLICT'
 
 export class OrderServiceError extends Error {
   readonly code: OrderServiceErrorCode
@@ -64,10 +40,7 @@ function checkoutChanged(): never {
 }
 
 function emptyCart(): never {
-  throw new OrderServiceError(
-    'EMPTY_CART',
-    'カートに商品がありません。',
-  )
+  throw new OrderServiceError('EMPTY_CART', 'カートに商品がありません。')
 }
 
 function stockConflict(): never {
@@ -78,14 +51,16 @@ function stockConflict(): never {
 }
 
 function normalizeCoupon(
-  coupon: {
-    code: string
-    discountPercent: number
-    endsAt: string
-    isActive: boolean
-    minimumSubtotal: number
-    startsAt: string
-  } | undefined,
+  coupon:
+    | {
+        code: string
+        discountPercent: number
+        endsAt: string
+        isActive: boolean
+        minimumSubtotal: number
+        startsAt: string
+      }
+    | undefined,
 ): CartCouponRecord | null {
   if (!coupon) return null
   return {
@@ -118,12 +93,7 @@ export function toOrderDto(
     discountAmount: number
     discountPercent: number | null
     id: string
-    status:
-      | 'received'
-      | 'processing'
-      | 'shipped'
-      | 'completed'
-      | 'cancelled'
+    status: 'received' | 'processing' | 'shipped' | 'completed' | 'cancelled'
     subtotal: number
     total: number
     version: number
@@ -217,9 +187,7 @@ async function lockCheckoutState(
     throw new Error('適用中のクーポンを取得できませんでした。')
   }
 
-  const itemByProductId = new Map(
-    itemRows.map((item) => [item.productId, item]),
-  )
+  const itemByProductId = new Map(itemRows.map((item) => [item.productId, item]))
   const items = productRows.map((product) => {
     const item = itemByProductId.get(product.id)
     if (!item) throw new Error('カート明細を取得できませんでした。')
@@ -256,8 +224,7 @@ export async function createOrder(
 
     if (
       calculated.issues.some(
-        ({ code }) =>
-          code === 'PRODUCT_UNAVAILABLE' || code.startsWith('COUPON_'),
+        ({ code }) => code === 'PRODUCT_UNAVAILABLE' || code.startsWith('COUPON_'),
       )
     ) {
       checkoutChanged()
@@ -273,9 +240,7 @@ export async function createOrder(
     })
     if (currentToken !== input.checkoutToken) checkoutChanged()
 
-    if (
-      calculated.issues.some(({ code }) => code === 'STOCK_CONFLICT')
-    ) {
+    if (calculated.issues.some(({ code }) => code === 'STOCK_CONFLICT')) {
       stockConflict()
     }
 
@@ -288,12 +253,7 @@ export async function createOrder(
           updatedAt: nowIso,
           version: sql`${products.version} + 1`,
         })
-        .where(
-          and(
-            eq(products.id, item.productId),
-            gte(products.stock, item.quantity),
-          ),
-        )
+        .where(and(eq(products.id, item.productId), gte(products.stock, item.quantity)))
         .returning({ id: products.id })
 
       if (updated.length === 0) stockConflict()
@@ -341,17 +301,11 @@ export async function createOrder(
       throw new Error('注文後のカートを更新できませんでした。')
     }
 
-    return toOrderDto(
-      created,
-      snapshots.map(toOrderItemDto),
-    )
+    return toOrderDto(created, snapshots.map(toOrderItemDto))
   })
 }
 
-export async function listOrders({
-  db,
-  userId,
-}: Pick<OrderDependencies, 'db' | 'userId'>) {
+export async function listOrders({ db, userId }: Pick<OrderDependencies, 'db' | 'userId'>) {
   const records = await db
     .select()
     .from(orders)
@@ -378,9 +332,7 @@ export async function listOrders({
     itemsByOrder.set(item.orderId, current)
   }
 
-  return records.map((order) =>
-    toOrderDto(order, itemsByOrder.get(order.id) ?? []),
-  )
+  return records.map((order) => toOrderDto(order, itemsByOrder.get(order.id) ?? []))
 }
 
 export async function findOrder(

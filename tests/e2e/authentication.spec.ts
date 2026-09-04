@@ -5,10 +5,7 @@ test('AUTH-001/004/008/012: 購入者が一度だけログインし、ログア�
 }) => {
   let loginRequestCount = 0
   page.on('request', (request) => {
-    if (
-      request.method() === 'POST' &&
-      new URL(request.url()).pathname === '/api/session'
-    ) {
+    if (request.method() === 'POST' && new URL(request.url()).pathname === '/api/session') {
       loginRequestCount += 1
     }
   })

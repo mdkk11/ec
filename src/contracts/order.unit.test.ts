@@ -42,9 +42,7 @@ describe('注文API契約', () => {
   })
 
   it('注文スナップショットの正常値を受け付ける', () => {
-    expect(orderResponseSchema.safeParse({ order: validOrder }).success).toBe(
-      true,
-    )
+    expect(orderResponseSchema.safeParse({ order: validOrder }).success).toBe(true)
   })
 
   it.each([
@@ -52,10 +50,7 @@ describe('注文API契約', () => {
     ['不正な状態', { status: 'refunded' }],
     ['不正な注文ID', { id: 'not-an-order-id' }],
     ['小数の数量', { items: [{ ...validOrder.items[0], quantity: 1.5 }] }],
-    [
-      '不正な商品ID',
-      { items: [{ ...validOrder.items[0], productId: 'not-a-product-id' }] },
-    ],
+    ['不正な商品ID', { items: [{ ...validOrder.items[0], productId: 'not-a-product-id' }] }],
     ['不正な日時', { createdAt: '2026/07/30' }],
     ['0以下のversion', { version: 0 }],
   ])('%sを拒否する', (_name, override) => {
@@ -80,8 +75,6 @@ describe('注文API契約', () => {
     ['0以下のversion', { expectedVersion: 0, status: 'processing' }],
     ['小数のversion', { expectedVersion: 1.5, status: 'processing' }],
   ])('%sを管理注文更新requestで拒否する', (_name, input) => {
-    expect(updateAdminOrderStatusRequestSchema.safeParse(input).success).toBe(
-      false,
-    )
+    expect(updateAdminOrderStatusRequestSchema.safeParse(input).success).toBe(false)
   })
 })

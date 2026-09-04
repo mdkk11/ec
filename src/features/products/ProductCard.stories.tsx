@@ -1,10 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite'
 
-import {
-  longProductFixture,
-  outOfStockProductFixture,
-  productFixture,
-} from './product-fixtures'
+import { longProductFixture, outOfStockProductFixture, productFixture } from './product-fixtures'
 import { ProductCard } from './ProductCard'
 
 const meta = {

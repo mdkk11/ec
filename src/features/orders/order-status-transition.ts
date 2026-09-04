@@ -12,9 +12,6 @@ export function getAllowedOrderStatuses(status: OrderStatus) {
   return transitions[status]
 }
 
-export function canTransitionOrderStatus(
-  from: OrderStatus,
-  to: OrderStatus,
-) {
+export function canTransitionOrderStatus(from: OrderStatus, to: OrderStatus) {
   return transitions[from].includes(to)
 }

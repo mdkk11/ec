@@ -1,8 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-test('CART-001/005/014: 商品詳細から追加し、カートで数量変更・削除する', async ({
-  page,
-}) => {
+test('CART-001/005/014: 商品詳細から追加し、カートで数量変更・削除する', async ({ page }) => {
   await page.goto('/login')
   await page.getByLabel('メールアドレス').fill('customer@example.test')
   await page.getByLabel('パスワード').fill('CustomerPass123!')
@@ -11,10 +9,7 @@ test('CART-001/005/014: 商品詳細から追加し、カートで数量変更�
 
   let addRequestCount = 0
   page.on('request', (request) => {
-    if (
-      request.method() === 'POST' &&
-      new URL(request.url()).pathname === '/api/cart/items'
-    ) {
+    if (request.method() === 'POST' && new URL(request.url()).pathname === '/api/cart/items') {
       addRequestCount += 1
     }
   })
@@ -32,9 +27,10 @@ test('CART-001/005/014: 商品詳細から追加し、カートで数量変更�
       name: 'リネンブレンド オーバーシャツ',
     }),
   ).toBeVisible()
-  await expect(
-    page.getByRole('img', { name: 'リネンブレンド オーバーシャツ' }),
-  ).toHaveAttribute('src', /linen-overshirt/u)
+  await expect(page.getByRole('img', { name: 'リネンブレンド オーバーシャツ' })).toHaveAttribute(
+    'src',
+    /linen-overshirt/u,
+  )
 
   const quantityInput = page.getByRole('combobox', {
     exact: true,
@@ -50,11 +46,7 @@ test('CART-001/005/014: 商品詳細から追加し、カートで数量変更�
   await expect(quantityInput).toHaveValue('2')
   await expect(page.getByText('¥57,200').first()).toBeVisible()
 
-  await page
-    .getByRole('button', { name: 'リネンブレンド オーバーシャツを削除' })
-    .click()
+  await page.getByRole('button', { name: 'リネンブレンド オーバーシャツを削除' }).click()
   await expect(page.getByText('カートは空です')).toBeVisible()
-  await expect(
-    page.getByRole('link', { name: '商品一覧を見る' }),
-  ).toBeVisible()
+  await expect(page.getByRole('link', { name: '商品一覧を見る' })).toBeVisible()
 })

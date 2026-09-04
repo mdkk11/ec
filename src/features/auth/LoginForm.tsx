@@ -1,15 +1,8 @@
 'use client'
 
-import {
-  type FormEvent,
-  useRef,
-  useState,
-} from 'react'
+import { type FormEvent, useRef, useState } from 'react'
 
-import {
-  loginRequestSchema,
-  type UserDto,
-} from '@/contracts/session'
+import { loginRequestSchema, type UserDto } from '@/contracts/session'
 import { ApiClientError } from '@/lib/api-client/request-json'
 import { login } from '@/lib/api-client/session'
 
@@ -73,9 +66,7 @@ export function LoginForm({ onAuthenticated }: LoginFormProps) {
             : 'ログインできませんでした。入力内容を保ったまま、もう一度お試しください。',
         )
       } else {
-        setFormError(
-          'ログインできませんでした。入力内容を保ったまま、もう一度お試しください。',
-        )
+        setFormError('ログインできませんでした。入力内容を保ったまま、もう一度お試しください。')
       }
     } finally {
       submittingRef.current = false
@@ -93,7 +84,7 @@ export function LoginForm({ onAuthenticated }: LoginFormProps) {
           aria-describedby={fieldErrors.email ? 'email-error' : undefined}
           aria-invalid={fieldErrors.email ? true : undefined}
           autoComplete="email"
-          className="mt-2 min-h-12 w-full border border-line bg-surface px-4 text-base outline-none transition focus:border-ink focus:ring-2 focus:ring-ink/20"
+          className="mt-2 min-h-12 w-full border border-line bg-surface px-4 text-base transition outline-none focus:border-ink focus:ring-2 focus:ring-ink/20"
           id="email"
           maxLength={254}
           onChange={(event) => setEmail(event.target.value)}
@@ -116,7 +107,7 @@ export function LoginForm({ onAuthenticated }: LoginFormProps) {
           aria-describedby={fieldErrors.password ? 'password-error' : undefined}
           aria-invalid={fieldErrors.password ? true : undefined}
           autoComplete="current-password"
-          className="mt-2 min-h-12 w-full border border-line bg-surface px-4 text-base outline-none transition focus:border-ink focus:ring-2 focus:ring-ink/20"
+          className="mt-2 min-h-12 w-full border border-line bg-surface px-4 text-base transition outline-none focus:border-ink focus:ring-2 focus:ring-ink/20"
           id="password"
           maxLength={256}
           onChange={(event) => setPassword(event.target.value)}

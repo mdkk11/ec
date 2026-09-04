@@ -7,10 +7,7 @@ import {
   orderRouteErrorResponse,
   orderSuccessResponse,
 } from '@/features/orders/server/order-http'
-import {
-  createOrder,
-  listOrders,
-} from '@/features/orders/server/order-service'
+import { createOrder, listOrders } from '@/features/orders/server/order-service'
 import { Temporal } from '@/lib/date-time/temporal'
 import { getRuntimeDatabase } from '@/server/db/runtime'
 import { parseJsonRequest } from '@/server/http/json'
@@ -28,8 +25,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     return orderRouteErrorResponse(error, {
       logMessage: '注文履歴の取得に失敗しました。',
-      responseMessage:
-        '注文履歴を取得できませんでした。時間をおいてもう一度お試しください。',
+      responseMessage: '注文履歴を取得できませんでした。時間をおいてもう一度お試しください。',
     })
   }
 }
@@ -39,10 +35,7 @@ export async function POST(request: NextRequest) {
     const authorization = await authorizeOrderRequest(request)
     if (!authorization.ok) return authorization.response
 
-    const parsed = await parseJsonRequest(
-      request,
-      createOrderRequestSchema,
-    )
+    const parsed = await parseJsonRequest(request, createOrderRequestSchema)
     if (!parsed.ok) return parsed.response
 
     const order = await createOrder(parsed.data, {
@@ -54,8 +47,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return orderRouteErrorResponse(error, {
       logMessage: '注文の確定に失敗しました。',
-      responseMessage:
-        '注文を確定できませんでした。時間をおいてもう一度お試しください。',
+      responseMessage: '注文を確定できませんでした。時間をおいてもう一度お試しください。',
     })
   }
 }

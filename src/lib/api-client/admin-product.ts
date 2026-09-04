@@ -16,10 +16,7 @@ export function getAdminProducts(signal?: AbortSignal) {
   })
 }
 
-export function createAdminProduct(
-  input: CreateAdminProductRequest,
-  signal?: AbortSignal,
-) {
+export function createAdminProduct(input: CreateAdminProductRequest, signal?: AbortSignal) {
   return requestJson('/api/admin/products', adminProductResponseSchema, {
     body: JSON.stringify(input),
     headers: jsonHeaders,
@@ -33,16 +30,12 @@ export function updateAdminProduct(
   input: UpdateAdminProductRequest,
   signal?: AbortSignal,
 ) {
-  return requestJson(
-    `/api/admin/products/${productId}`,
-    adminProductResponseSchema,
-    {
-      body: JSON.stringify(input),
-      headers: jsonHeaders,
-      method: 'PATCH',
-      signal,
-    },
-  )
+  return requestJson(`/api/admin/products/${productId}`, adminProductResponseSchema, {
+    body: JSON.stringify(input),
+    headers: jsonHeaders,
+    method: 'PATCH',
+    signal,
+  })
 }
 
 export function updateAdminProductStock(
@@ -50,14 +43,10 @@ export function updateAdminProductStock(
   input: UpdateAdminProductStockRequest,
   signal?: AbortSignal,
 ) {
-  return requestJson(
-    `/api/admin/products/${productId}/stock`,
-    adminProductResponseSchema,
-    {
-      body: JSON.stringify(input),
-      headers: jsonHeaders,
-      method: 'PATCH',
-      signal,
-    },
-  )
+  return requestJson(`/api/admin/products/${productId}/stock`, adminProductResponseSchema, {
+    body: JSON.stringify(input),
+    headers: jsonHeaders,
+    method: 'PATCH',
+    signal,
+  })
 }

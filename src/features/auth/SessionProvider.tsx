@@ -76,11 +76,7 @@ export function SessionProvider({
     [logout, refresh, setAnonymous, setAuthenticated, state],
   )
 
-  return (
-    <SessionContext.Provider value={value}>
-      {children}
-    </SessionContext.Provider>
-  )
+  return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>
 }
 
 export function useSession() {

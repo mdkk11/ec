@@ -43,9 +43,7 @@ describe('product contract', () => {
   })
 
   it.each([0, -1, 1.5])('詳細DTOのstock %sを検証する', (stock) => {
-    expect(
-      productDetailDtoSchema.safeParse({ ...product, stock }).success,
-    ).toBe(stock === 0)
+    expect(productDetailDtoSchema.safeParse({ ...product, stock }).success).toBe(stock === 0)
   })
 
   it('UUID形式、必須field、整数かつ非負の価格を検証する', () => {
@@ -57,17 +55,15 @@ describe('product contract', () => {
         price: 0,
       }).success,
     ).toBe(true)
-    expect(
-      productDtoSchema.safeParse({ ...product, description: undefined }).success,
-    ).toBe(false)
+    expect(productDtoSchema.safeParse({ ...product, description: undefined }).success).toBe(false)
     expect(productDtoSchema.safeParse({ ...product, price: -1 }).success).toBe(false)
     expect(productDtoSchema.safeParse({ ...product, price: 1.5 }).success).toBe(false)
   })
 
   it('不正な在庫状態と外部画像URLを拒否する', () => {
-    expect(
-      productDtoSchema.safeParse({ ...product, availability: 'available' }).success,
-    ).toBe(false)
+    expect(productDtoSchema.safeParse({ ...product, availability: 'available' }).success).toBe(
+      false,
+    )
     expect(
       productDtoSchema.safeParse({
         ...product,
@@ -77,9 +73,7 @@ describe('product contract', () => {
   })
 
   it('公開DTOはcategory name/slugを必須とし、管理用fieldを除外する', () => {
-    expect(
-      productDtoSchema.safeParse({ ...product, category: undefined }).success,
-    ).toBe(false)
+    expect(productDtoSchema.safeParse({ ...product, category: undefined }).success).toBe(false)
     expect(
       productDtoSchema.parse({
         ...product,
@@ -101,10 +95,12 @@ describe('product contract', () => {
     }
 
     expect(adminProductDtoSchema.parse(adminProduct)).toEqual(adminProduct)
-    expect(adminProductListResponseSchema.parse({ items: [adminProduct] }))
-      .toEqual({ items: [adminProduct] })
-    expect(adminProductResponseSchema.parse({ product: adminProduct }))
-      .toEqual({ product: adminProduct })
+    expect(adminProductListResponseSchema.parse({ items: [adminProduct] })).toEqual({
+      items: [adminProduct],
+    })
+    expect(adminProductResponseSchema.parse({ product: adminProduct })).toEqual({
+      product: adminProduct,
+    })
   })
 
   it('UNIT-PRODUCT-001: 価格・在庫は0、expectedVersionは1を許可する', () => {
@@ -154,12 +150,8 @@ describe('product contract', () => {
   })
 
   it('UNIT-PRODUCT-001: 不正versionと変更fieldのないPATCHを拒否する', () => {
-    expect(
-      updateAdminProductRequestSchema.safeParse({ expectedVersion: 0 }).success,
-    ).toBe(false)
-    expect(
-      updateAdminProductRequestSchema.safeParse({ expectedVersion: 1 }).success,
-    ).toBe(false)
+    expect(updateAdminProductRequestSchema.safeParse({ expectedVersion: 0 }).success).toBe(false)
+    expect(updateAdminProductRequestSchema.safeParse({ expectedVersion: 1 }).success).toBe(false)
     expect(
       updateAdminProductStockRequestSchema.safeParse({
         expectedVersion: 1.5,
@@ -179,9 +171,7 @@ describe('product contract', () => {
       stock: 0,
     }
 
-    expect(
-      createAdminProductRequestSchema.safeParse({ ...base, name: '' }).success,
-    ).toBe(false)
+    expect(createAdminProductRequestSchema.safeParse({ ...base, name: '' }).success).toBe(false)
     expect(
       createAdminProductRequestSchema.safeParse({
         ...base,

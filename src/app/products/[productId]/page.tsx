@@ -12,11 +12,7 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic'
 
-export default async function Page({
-  params,
-}: {
-  params: Promise<{ productId: string }>
-}) {
+export default async function Page({ params }: { params: Promise<{ productId: string }> }) {
   const { productId } = await params
   const parsedProductId = productIdSchema.safeParse(productId)
   if (!parsedProductId.success) notFound()
@@ -28,10 +24,7 @@ export default async function Page({
     <ProductDetailView
       product={product}
       purchaseAction={
-        <ProductCartAction
-          availability={product.availability}
-          productId={product.id}
-        />
+        <ProductCartAction availability={product.availability} productId={product.id} />
       }
       status="success"
     />

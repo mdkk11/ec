@@ -10,17 +10,19 @@ export function useAdminRequestCoordinator() {
   const revisionRef = useRef(0)
   const controllerRef = useRef<AbortController | null>(null)
 
-  useEffect(() => () => {
-    revisionRef.current += 1
-    queryGenerationRef.current += 1
-    controllerRef.current?.abort()
-  }, [])
+  useEffect(
+    () => () => {
+      revisionRef.current += 1
+      queryGenerationRef.current += 1
+      controllerRef.current?.abort()
+    },
+    [],
+  )
 
   async function runGuardedQuery<T>(request: () => Promise<T>) {
     const generation = queryGenerationRef.current
     const startedDuringOperation = runningRef.current
-    const isStale = () =>
-      startedDuringOperation || queryGenerationRef.current !== generation
+    const isStale = () => startedDuringOperation || queryGenerationRef.current !== generation
 
     try {
       const data = await request()

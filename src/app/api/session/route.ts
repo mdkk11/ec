@@ -13,18 +13,10 @@ import {
   resolveSessionActor,
 } from '@/server/auth/session-service'
 import { getRuntimeDatabase } from '@/server/db/runtime'
-import {
-  apiErrorResponse,
-  noStoreJsonResponse,
-  parseJsonRequest,
-} from '@/server/http/json'
+import { apiErrorResponse, noStoreJsonResponse, parseJsonRequest } from '@/server/http/json'
 
 function unauthenticatedResponse() {
-  return apiErrorResponse(
-    401,
-    'UNAUTHENTICATED',
-    'ログインが必要です。',
-  )
+  return apiErrorResponse(401, 'UNAUTHENTICATED', 'ログインが必要です。')
 }
 
 export async function POST(request: NextRequest) {
@@ -45,11 +37,7 @@ export async function POST(request: NextRequest) {
     }
 
     const response = noStoreJsonResponse({ user: result.user })
-    response.cookies.set(
-      SESSION_COOKIE_NAME,
-      result.token,
-      createSessionCookieOptions(),
-    )
+    response.cookies.set(SESSION_COOKIE_NAME, result.token, createSessionCookieOptions())
     return response
   } catch (error) {
     console.error('セッションの作成に失敗しました。', error)
@@ -95,11 +83,7 @@ export async function DELETE(request: NextRequest) {
       }))
     ) {
       const response = unauthenticatedResponse()
-      response.cookies.set(
-        SESSION_COOKIE_NAME,
-        '',
-        createExpiredSessionCookieOptions(),
-      )
+      response.cookies.set(SESSION_COOKIE_NAME, '', createExpiredSessionCookieOptions())
       return response
     }
 
@@ -107,11 +91,7 @@ export async function DELETE(request: NextRequest) {
       headers: { 'Cache-Control': 'no-store' },
       status: 204,
     })
-    response.cookies.set(
-      SESSION_COOKIE_NAME,
-      '',
-      createExpiredSessionCookieOptions(),
-    )
+    response.cookies.set(SESSION_COOKIE_NAME, '', createExpiredSessionCookieOptions())
     return response
   } catch (error) {
     console.error('セッションの削除に失敗しました。', error)

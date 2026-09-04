@@ -1,17 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  DUMMY_PASSWORD_HASH,
-  hashPassword,
-  verifyPassword,
-} from './password'
+import { DUMMY_PASSWORD_HASH, hashPassword, verifyPassword } from './password'
 
 describe('scrypt password', () => {
   it('同じpasswordとsaltから決定的なhashを生成して検証できる', async () => {
-    const hash = await hashPassword(
-      'CustomerPass123!',
-      Buffer.from('mockshop-cust-v1'),
-    )
+    const hash = await hashPassword('CustomerPass123!', Buffer.from('mockshop-cust-v1'))
 
     expect(hash).toMatch(/^scrypt\$v1\$16384\$8\$1\$/u)
     await expect(verifyPassword('CustomerPass123!', hash)).resolves.toBe(true)
@@ -29,8 +22,6 @@ describe('scrypt password', () => {
   })
 
   it('未知email用dummy hashも同じscrypt形式で検証する', async () => {
-    await expect(
-      verifyPassword('dummy-password-not-used', DUMMY_PASSWORD_HASH),
-    ).resolves.toBe(true)
+    await expect(verifyPassword('dummy-password-not-used', DUMMY_PASSWORD_HASH)).resolves.toBe(true)
   })
 })
