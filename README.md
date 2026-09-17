@@ -247,7 +247,7 @@ E2E global setupは購入完走、モバイル購入、在庫競合、商品管�
 
 ## Visual regression tests
 
-VRTはStorybookの固定fixtureをPlaywright Chromiumで撮影します。font・画像の読込完了、light color scheme、`ja-JP` locale、reduced motion、caret非表示、animation無効化を固定し、基準画像の生成・更新はCIと同じ `mcr.microsoft.com/playwright:v1.61.1-noble` 環境だけで行います。macOSで生成した画像を正本としてコミットしません。
+VRTはStorybookの固定fixtureをPlaywright Chromiumで撮影します。font・画像の読込完了、light color scheme、`ja-JP` locale、reduced motion、caret非表示、animation無効化を固定し、基準画像の生成・更新はCIと同じ `mcr.microsoft.com/playwright:v1.63.0-noble` 環境だけで行います。macOSで生成した画像を正本としてコミットしません。
 
 ```bash
 pnpm test:vrt
@@ -262,7 +262,7 @@ docker run --rm --ipc=host \
   -v "$PWD:/work" \
   -v mockshop-vrt-node-modules:/work/node_modules \
   -w /work \
-  mcr.microsoft.com/playwright:v1.61.1-noble \
+  mcr.microsoft.com/playwright:v1.63.0-noble \
   bash -lc 'corepack pnpm install --frozen-lockfile && corepack pnpm test:vrt:update; vrt_status=$?; chown -R "$HOST_UID:$HOST_GID" /work/tests/vrt/__screenshots__ /work/storybook-static /work/test-results 2>/dev/null || true; exit $vrt_status'
 ```
 
