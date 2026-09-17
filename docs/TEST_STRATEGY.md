@@ -201,7 +201,7 @@ Storybook上の決定的なfixtureを使い、意図しない見た目の変化�
 ### 実行条件
 
 - VRTはChromiumだけで実行する。
-- CIと基準画像更新は `mcr.microsoft.com/playwright:v1.61.1-noble` の固定Linux環境で実行する。
+- CIと基準画像更新は `mcr.microsoft.com/playwright:v1.63.0-noble` の固定Linux環境で実行する。
 - viewportは必要なstoryに限り375px、768px、1440pxを使用する。
 - フォントとテスト画像をリポジトリ内に固定する。
 - 現在時刻、UUID、乱数、アニメーション、caret、transitionを固定または無効化する。
