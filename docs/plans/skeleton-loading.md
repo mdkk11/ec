@@ -327,12 +327,12 @@ Draft PR #34のhead `793d741` を固定して別エージェントが最終監�
 | 指摘 | disposition | 反映内容 |
 | --- | --- | --- |
 | カートloadingで既知の「クーポン」見出しと「買い物を続ける」導線が欠ける | 受け入れ | 固定見出しと実リンクを追加し、AUTH-014/CART-019のassertionと375/1440 baselineを更新 |
-| Ship状態がPR作成前のまま | 受け入れ | phaseとstackをstabilization・Draft PR #34へ更新 |
+| Orchestrate状態がPR作成前のまま | 受け入れ | phaseとstackをstabilization・Draft PR #34へ更新 |
 | 商品一覧shapeの計画に、成功画面にない在庫状態行が残る | 受け入れ | 実装と成功画面に合わせて商品名・価格の行へ訂正 |
 
 修正後のPR head、CI、完了条件、非目標について再監査する。
 
-## Ship状態
+## Orchestrate状態
 
 ```text
 Phase: stabilization

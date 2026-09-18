@@ -223,8 +223,8 @@
 2. Layer 1の文書・実装・テストを目的別に明示stageし、各commit前に `git diff --cached` を確認する。
 3. Layer 1の検証完了後、`gh stack add feature/navigation-admin-images` で上位branchを作る。
 4. Layer 2も文書・実装・テストを目的別にcommitし、各HEADで検証する。
-5. `gh stack submit --auto --remote origin` でdraft PRを作成し、各PR本文をrepository templateとSHIP Reviewer Guideへ合わせる。
-6. 下位修正時はcurrent `gh stack rebase --upstack` / `push` helpに従って上位をrestackし、影響するverification、CI、Reviewer Guide、`[SHIP:NOTE]` を最新SHAへ同期する。
+5. `gh stack submit --auto --remote origin` でdraft PRを作成し、各PR本文をrepository templateとORCHESTRATE Reviewer Guideへ合わせる。
+6. 下位修正時はcurrent `gh stack rebase --upstack` / `push` helpに従って上位をrestackし、影響するverification、CI、Reviewer Guide、`[ORCHESTRATE:NOTE]` を最新SHAへ同期する。
 
 Layer 2はLayer 1へruntime上の技術依存を持たないが、1つの承認済みUI改善projectをレビュー可能な量へ分けるため同じstackの上位に置く。各layerの文書はそのHEADまでに実装済みの現在仕様だけを記述し、Layer 2のheader/admin仕様をLayer 1で先行して現在形にしない。
 

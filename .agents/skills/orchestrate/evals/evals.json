@@ -1,0 +1,159 @@
+{
+  "skill_name": "orchestrate",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "$orchestrate typo修正を進めて、人間レビュー可能な状態まで進めて。仕様変更、DB変更、認証変更はなく、1ファイルだけを変更する。",
+      "expected_output": "Small fast pathとしてtriageし、実装、関連検証、actual diffの独立レビュー、単一PR、最小限のstabilizationへ進む。PR bodyはPurposeとVerificationを最低限にし、Scopeは有用な場合だけ追加する。Reviewer Guideは読み順、非自明な判断、review focus、repository policyのいずれかに価値がある場合だけ追加し、Guideなしだけを理由にreadyをblockしない。repository policyが要求しないspecification、formal plan、plan review、approval、stack、explanation、final auditは理由付きでskipする。",
+      "files": [],
+      "expectations": [
+        "Smallの条件をsemantic riskで確認し、line countだけで分類しない",
+        "implementation、relevant verification、independent diff/code review、unrelated changes保護を維持する",
+        "不要なspecification、plan、stack、final auditを無条件に実行しない",
+        "SmallはPurpose/Verificationと他のready条件が揃えばReviewer Guideなしでもreadyになれる"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "$orchestrate 通常の管理画面リファクタを進めて。requirements、acceptance criteria、edge cases、責務境界は明確で、DB・認証・公開API・並行性の変更はない。",
+      "expected_output": "Normalとしてrequiredのwritten planとimplementationを進め、grill-with-docsは明確性を根拠にskip可能と判断する。独立implementation review、単一PR、bounded stabilizationを行い、plan review、stack、別explanation、final auditを無条件に追加しない。",
+      "files": [],
+      "expectations": [
+        "Normalがdefault routeであり、requiredのwritten plan、implementation、verification、independent implementation reviewを実行する",
+        "grill-with-docsをclear requirementsではskipでき、material ambiguityまたはmistake reduction時には使えるconditional gateとして扱う",
+        "implementation reviewが同じacceptance criteria、diff、verification、HEAD/baseを確認した場合にNormalのfinal auditをskipする",
+        "NormalのReviewer Guideは現在のdiffのreviewabilityに必要な情報だけを持ち、[ORCHESTRATE:NOTE]は非自明な箇所だけに限定する"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "$orchestrate 注文権限の変更とmigrationを含む機能を進めて。",
+      "expected_output": "Large/High-riskとしてspecification、plan、independent plan review、appropriate/necessaryな場合のhuman approval、実装、最低限の適切なテスト、独立implementation review、stabilization、useful/neededな場合のexplanation、独立final acceptance auditを有効化する。選択したapproval/explanationは維持し、rollback、migration ordering、compatibility、security、data integrity、concurrencyを明示的に確認する。",
+      "files": [],
+      "expectations": [
+        "auth/authorizationとmigrationをHigh-riskとして扱う",
+        "High-riskのplan reviewとfinal auditを別責務の独立gateとして維持する",
+        "human approvalはappropriate/necessary条件、explanationはuseful/needed条件で選択し、選択後は維持する",
+        "rollback、migration ordering、compatibility、security、data integrity、concurrencyのreview項目を含める",
+        "High-riskのReviewer Guideは現在のdiffをレビューするための必要最小限のreviewability情報を持つ"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "$orchestrate このfeatureを実装して。implementation workerが変更し、別のagentがactual diffを独立レビューできることを確認して。",
+      "expected_output": "implementation authorとindependent implementation reviewerを別agentとして起動し、reviewerにはoriginal request、acceptance criteria/spec、plan、repository rules、actual diff、verification、current HEAD/baseだけを渡す。authorの完了主張や望ましい判定は渡さない。custom agentのconfigured sandboxとeffective runtime sandboxを別々に確認し、effective値をruntimeが公開しない場合はread-only enforcementを保証したと主張しない。",
+      "files": [],
+      "expectations": [
+        "implementationをconfigured implementation-worker roleへdelegateする",
+        "reviewerはimplementation authorと別agent instanceである",
+        "reviewはsummaryだけでなくactual diff、changed files、verification、HEAD/baseに基づく",
+        "configured read-onlyとeffective sandboxを区別し、effective値が不明ならruntime enforcement unavailableとして報告する"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "$orchestrate の独立implementation reviewがFAILになり、error handlingのmaterial findingが1件ある。修正後に先へ進めて。",
+      "expected_output": "implementation authorへfindingを戻し、最小修正、影響するverification、独立re-reviewを1 bounded cycleで行う。同じfindingが残る、またはreviewerが利用できない場合はblocker/human decisionへ昇格し、FAILを隠してreadyにしない。",
+      "files": [],
+      "expectations": [
+        "FAIL後にrepair、affected verification、独立re-reviewを順に行う",
+        "bounded repair cycleを超えて無制限に修正を繰り返さない",
+        "未解決findingをblockerまたはhuman decisionとして報告する"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "$orchestrate workerにsrc/featuresだけ変更させる契約だったが、workerがdocs/にも変更を作った。",
+      "expected_output": "actual diffとworker resultを照合してscope driftを検知し、既存user changeとworker変更を区別する。allowed scope外の変更を除去または明示承認するまでreview/submissionを止める。",
+      "files": [],
+      "expectations": [
+        "workerの報告だけを信用せずgit status、actual diff、changed-file listを確認する",
+        "allowed/write scope外の変更をscope driftとしてblocker扱いする",
+        "scope driftをrepairに紛れ込ませず、除去または明示承認を要求する"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "$orchestrate stackの下位PRを修正した。descendant PRも含めてレビュー可能な状態に戻して。",
+      "expected_output": "lower stack changeの影響を全descendantへ伝播し、descendantのimplementation verification、review、存在するReviewer Guide、explanation、必要なfinal auditをstaleにする。stack ancestryを確認してrestackし、影響する検証とレビューをcurrent headsで再実行する。stale判定はstack ancestryとactual HEAD/base、spec/material plan content identityなどのartifact identityを直接使う。",
+      "files": [],
+      "expectations": [
+        "lower-layer changeで全descendantの依存evidenceをstaleにする",
+        "restack後にaffected verificationとindependent reviewを再実行する",
+        "staleな旧headのReviewer Guideやauditをready根拠に再利用しない",
+        "独自のmonotonic evidence revisionやopaque fingerprintを必須にしない"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "$orchestrate のfinal audit後にコードとPR headが変わった。人間レビュー可能と報告してよいか確認して。",
+      "expected_output": "final auditをstaleとして無効化し、current code、PR head/base、stack、specification、material planの変更後に同じaudit evidenceをready根拠として使わない。verification、implementation review、stabilization、final auditは常にcurrent evidenceへ更新し、evidence identityはHEAD/base、spec/planのpath+blob/content revision、レビュー・監査対象の実artifact revisionを直接記録する。explanationはselected/applicableな場合だけcurrent headで回復してから独立auditを再実行する。auditのFAIL/UNCERTAINは1回のbounded repairと独立re-auditで再確認し、同じmaterial issueが残ればblocker/human decisionへ昇格する。",
+      "files": [],
+      "expectations": [
+        "final audit後のcodeまたはhead/base変更をstale propagation対象にする",
+        "verification、implementation review、stabilization、final auditを常にcurrent evidenceへ更新する",
+        "explanationはselected/applicableな場合だけcurrent headで回復し、未選択なら強制しない",
+        "旧auditを再利用せず、同一current evidenceに対する独立auditを要求する",
+        "stale判定にactual artifact identityを使い、独自のmonotonic evidence revisionを必須にしない",
+        "final auditのFAIL/UNCERTAINは1回のbounded repair、affected verification、独立re-auditで処理し、同じmaterial issueが残ればblocker/human decisionへ昇格する"
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "PRレビューで `[ORCHESTRATE:Q] この責務を別moduleへ移すべきでは？` と聞かれた。",
+      "expected_output": "現在の設計意図、trade-off、代替案、推奨を説明するだけで、コード変更は行わない。変更が必要なら明示的な`[ORCHESTRATE:CHANGE]`を待つ。",
+      "files": [],
+      "expectations": [
+        "[ORCHESTRATE:Q]を質問として扱い、codeを変更しない",
+        "設計意図、trade-off、alternative、recommendationを回答する",
+        "質問を暗黙のchange requestへ変換しない"
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "PRレビューで `[ORCHESTRATE:VERIFY] checkoutの在庫不変条件を満たしているか？` と依頼された。",
+      "expected_output": "コード、specification、tests、edge casesを調査し、先頭をPASS、RISK、FAILのいずれかにしてevidenceを示す。RISKまたはFAILならfix proposalを示すが、明示的change requestなしにコードは編集しない。",
+      "files": [],
+      "expectations": [
+        "[ORCHESTRATE:VERIFY]を調査依頼として扱う",
+        "回答の先頭分類をPASS、RISK、FAILのいずれかにする",
+        "verification依頼だけではcodeを変更しない"
+      ]
+    },
+    {
+      "id": 11,
+      "prompt": "PRレビューで `[ORCHESTRATE:CHANGE] 409時に最新状態を読み直して再確認を求めるよう修正して` と依頼された。",
+      "expected_output": "明示的なchange requestとして扱い、exact behavior、affected layers/descendants、specification、repository rulesを確認して最小のcoherent changeを実装する。affected verification、restack、存在するReviewer Guide/[ORCHESTRATE:NOTE]の同期を行う。",
+      "files": [],
+      "expectations": [
+        "[ORCHESTRATE:CHANGE]だけを明示的なcode変更要求として扱う",
+        "affected stack layersとdescendants、specification、repository rulesを確認する",
+        "修正後にaffected verificationと説明同期を行う"
+      ]
+    },
+    {
+      "id": 12,
+      "prompt": "$orchestrate このリファクタは今日はDraft PR作成までで止めて。後日、同じ会話でCI確認から再開したい。前回は仕様、承認済み計画、実装、ローカル検証、Draft PR作成まで完了しており、PR headは変わっていない。",
+      "expected_output": "最初の依頼ではDraft PR作成を安全なcheckpointとして、選択済みで未完了の後続gateをdeferredにする。Normalでexplanationやfinal auditを選択していなければskipを維持する。再開時はcurrent spec/plan/implementation/verification/PR head evidenceを照合し、specificationやplanningを繰り返さず、最初のselected incomplete/stale gateから始め、選択されたexplanationやfinal auditだけを順に行う。",
+      "files": [],
+      "expectations": [
+        "Draft PR作成をcheckpointとして記録し、選択済みで未完了の後続gateだけをdeferredにする",
+        "再開時にcurrent evidenceとhead/baseを照合して最初のselected incomplete/stale gateから続ける",
+        "選択済みのstabilizationやexplanationより前にfinal auditを実行せず、未選択のexplanationやfinal auditを強制しない",
+        "同一headで最終監査を重複実行しない"
+      ]
+    },
+    {
+      "id": 13,
+      "prompt": "$orchestrate 管理商品のテストを責務別に分割して。現在のfeature branchにはPRがないと思うが、直前の関連PRがmerge済みかclosedかもしれない。新しい作業を始める前に確認して。",
+      "expected_output": "core capability確認後にremoteを更新し、openだけでなくdraft、merged、closed PR、branch ancestry、stackを照合する。関連PRがmerged/closedならduplicate PRや隣接taskを黙って開始せず、terminal stateを報告して対象を確定する。",
+      "files": [],
+      "expectations": [
+        "required/selected dependency確認をrepository変更より先に行う",
+        "対象remoteのfetchをPR不在やbranch ancestry判断より先に行う",
+        "open、draft、merged、closedのPR状態とstack ancestryを照合する",
+        "関連PRがmergedまたはclosedならduplicate PRを開始しない"
+      ]
+    }
+  ]
+}

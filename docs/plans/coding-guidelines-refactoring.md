@@ -18,7 +18,7 @@
 
 ### 調査済みの事実
 
-- 計画作成前の作業ブランチは `feature/add-ship-skill`、作業ツリーはcleanである。
+- 計画作成前の作業ブランチは `feature/add-orchestrate-skill`、作業ツリーはcleanである。
 - `pnpm lint`、`pnpm typecheck`、`pnpm test:unit`（12 files / 77 tests）、`pnpm test:frontend`（13 files / 89 tests）は成功している。
 - 商品一覧・詳細、注文履歴・詳細・完了、Root Layoutの初期session取得は、Server Componentから機能別のserver-only facadeを直接呼んでいる。Server Componentから自分自身のRoute HandlerをHTTP fetchしていない。
 - ブラウザの `fetch` は `src/lib/api-client/request-json.ts` に集約され、API通信を開始する `useEffect` は存在しない。

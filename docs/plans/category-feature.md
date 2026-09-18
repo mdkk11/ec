@@ -238,7 +238,7 @@
 3. Layer 2を明示的にstage・確認・commitする。
 4. 各HEADの検証後、`gh stack submit --auto --remote origin` でdraft PRを作成する。
 5. PR本文は各layer自身のdiffだけを説明し、stack順、Reviewer Guide、正確な検証結果を記載する。
-6. 下位修正後は上位をrestackし、影響するテスト・CI・Reviewer Guide・`[SHIP:NOTE]` を最新SHAへ同期する。
+6. 下位修正後は上位をrestackし、影響するテスト・CI・Reviewer Guide・`[ORCHESTRATE:NOTE]` を最新SHAへ同期する。
 
 ## 8. テスト・検証方法
 
