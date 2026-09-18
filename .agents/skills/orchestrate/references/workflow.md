@@ -1,4 +1,4 @@
-# Ship workflow
+# Orchestrate workflow
 
 ## Backbone and gate semantics
 
@@ -28,7 +28,7 @@ After preflight, recover the workflow from durable repository and GitHub evidenc
 | implementation-review | Separate reviewer’s `PASS`, `FAIL`, or `BLOCKED` over the actual diff and the reviewed HEAD/base/spec/plan identities |
 | submit | PR head/base and any stack parent ancestry match the implementation commits |
 | stabilize | Head/base-specific `babysit-pr` snapshot has terminal green checks, no unresolved review action, and clean mergeability |
-| explain | An applicable Reviewer Guide describes the current PR head and stack, and any `[SHIP:NOTE]` comments target that head; otherwise record why the guide is unnecessary |
+| explain | An applicable Reviewer Guide describes the current PR head and stack, and any `[ORCHESTRATE:NOTE]` comments target that head; otherwise record why the guide is unnecessary |
 | final-audit | Independent acceptance audit ran after stabilization and applicable explanation against the audited HEAD/base/spec/plan identities |
 | human-review-ready | Every applicable required gate passes and the current PRs are non-draft when authorized |
 
@@ -90,7 +90,7 @@ High-risk implementation review focuses on implementation quality and actual dif
 
 ## Phase 1: Conditional specification
 
-When the specification gate is enabled, invoke the installed `grill-with-docs` skill and let its current workflow control the interrogation. Pass the original request and discovered repository context; do not duplicate its questions in `$ship`. Verify that the result covers:
+When the specification gate is enabled, invoke the installed `grill-with-docs` skill and let its current workflow control the interrogation. Pass the original request and discovered repository context; do not duplicate its questions in `$orchestrate`. Verify that the result covers:
 
 - Goal and acceptance criteria.
 - Non-goals.
@@ -184,7 +184,7 @@ Each PR describes only its own diff plus minimum parent context. Use the templat
 
 ## Phase 6: Bounded stabilization and stale propagation
 
-Read and invoke `babysit-pr` rather than reproducing its watcher or CI heuristics. For a bounded `$ship` run, use its one-shot diagnostic snapshot. Continuous monitoring is a separate user request. Retry flaky failures only within that Skill’s documented maximum of three attempts. Non-convergent branch-related fixes or review repairs stop at the bounded cycle and become a blocker/human decision.
+Read and invoke `babysit-pr` rather than reproducing its watcher or CI heuristics. For a bounded `$orchestrate` run, use its one-shot diagnostic snapshot. Continuous monitoring is a separate user request. Retry flaky failures only within that Skill’s documented maximum of three attempts. Non-convergent branch-related fixes or review repairs stop at the bounded cycle and become a blocker/human decision.
 
 When a material gate input changes, invalidate dependent evidence. Track at least these inputs:
 
@@ -205,7 +205,7 @@ After lower-layer changes, identify every descendant, restack, rerun affected ch
 
 ## Phase 7: Explanation and final audit
 
-For Normal and High-risk work, maintain a compact Reviewer Guide for the current PR: review order, key decisions, reviewer focus, and exact verification. For Small work, add it only when it materially improves reviewability or repository policy requires it; its absence alone is not a readiness blocker. Add `[SHIP:NOTE]` only for non-obvious domain invariants, state transitions, authorization/security, data integrity, transactions/concurrency, cache/performance, or meaningful architecture decisions. Do not comment on trivial code.
+For Normal and High-risk work, maintain a compact Reviewer Guide for the current PR: review order, key decisions, reviewer focus, and exact verification. For Small work, add it only when it materially improves reviewability or repository policy requires it; its absence alone is not a readiness blocker. Add `[ORCHESTRATE:NOTE]` only for non-obvious domain invariants, state transitions, authorization/security, data integrity, transactions/concurrency, cache/performance, or meaningful architecture decisions. Do not comment on trivial code.
 
 The explanation phase is skipped for Small unless reviewability requires it, conditional for Normal, and conditional for High-risk when non-obvious reasoning, reviewability, or risk makes it useful/needed; once selected, treat it as required. Verify comments target the current head SHA and valid diff lines. Reconcile them after every code or stack change.
 
@@ -220,7 +220,7 @@ The task is ready only when all applicable conditions hold:
 - No unresolved AI-review findings remain.
 - Stack bases and descendant branches include the latest parent changes.
 - Normal and High-risk PRs have a compact Reviewer Guide describing the current diff and synchronized with the current head, unless repository policy supplies an equivalent reviewability artifact. Small PRs may omit the guide when it is not useful; guide absence alone does not block readiness.
-- `[SHIP:NOTE]` comments are optional; when they exist or the explanation gate explicitly selects them, synchronize them with the current head and valid diff lines.
+- `[ORCHESTRATE:NOTE]` comments are optional; when they exist or the explanation gate explicitly selects them, synchronize them with the current head and valid diff lines.
 - Acceptance criteria and non-goals pass the required final audit, or the Normal final-audit skip is supported by the unchanged implementation-review evidence.
 - Required dependency skills completed their bounded responsibilities.
 - Worker result and actual diff are reconciled with no unresolved scope drift.

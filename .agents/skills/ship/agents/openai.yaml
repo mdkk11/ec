@@ -1,6 +1,0 @@
-interface:
-  display_name: "Ship"
-  short_description: "Orchestrate a risk-based change to human-review readiness"
-  default_prompt: "Use $ship to classify this task, delegate the appropriate implementation and independent review roles, and move it to human-review readiness with bounded verification."
-policy:
-  allow_implicit_invocation: false

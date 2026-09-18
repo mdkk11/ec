@@ -66,18 +66,18 @@ Use the repository template plus the following compact contract. Keep the Review
 
 ### Ask the AI
 
-- Question: `[SHIP:Q] <question>`
-- Change request: `[SHIP:CHANGE] <request>`
-- Re-verification: `[SHIP:VERIFY] <question>`
+- Question: `[ORCHESTRATE:Q] <question>`
+- Change request: `[ORCHESTRATE:CHANGE] <request>`
+- Re-verification: `[ORCHESTRATE:VERIFY] <question>`
 ```
 
 When the repository mandates other headings, merge this content into them without deleting required sections. Explain only the current PR’s diff plus minimum parent context needed to review it; do not repeat lower-layer implementation details. Do not claim checks or audits that were not run.
 
-For Normal and High-risk work, maintain the Reviewer Guide unless the repository policy explicitly permits a different reviewability artifact. Keep it to the current diff’s entry point, key decisions, reviewer focus, and exact verification. It is not a replacement for the independent implementation review or a reason to add a stack. `[SHIP:NOTE]` remains optional and belongs only on non-obvious lines.
+For Normal and High-risk work, maintain the Reviewer Guide unless the repository policy explicitly permits a different reviewability artifact. Keep it to the current diff’s entry point, key decisions, reviewer focus, and exact verification. It is not a replacement for the independent implementation review or a reason to add a stack. `[ORCHESTRATE:NOTE]` remains optional and belongs only on non-obvious lines.
 
 ## Inline explanations
 
-Start every AI-authored explanation with `[SHIP:NOTE]`.
+Start every AI-authored explanation with `[ORCHESTRATE:NOTE]`.
 
 Add notes only where explaining why materially reduces review effort, such as:
 
@@ -89,7 +89,7 @@ Add notes only where explaining why materially reduces review effort, such as:
 - DB schema/query decisions.
 - Non-obvious abstractions or ADR/spec decisions embodied in code.
 
-Do not comment on imports, formatting, simple renames, obvious annotations, boilerplate, or trivial markup. A task may legitimately have no `[SHIP:NOTE]` comments; record that no non-obvious explanation was needed.
+Do not comment on imports, formatting, simple renames, obvious annotations, boilerplate, or trivial markup. A task may legitimately have no `[ORCHESTRATE:NOTE]` comments; record that no non-obvious explanation was needed.
 
 Write a short natural explanation using the relevant subset of:
 
@@ -101,22 +101,22 @@ Write a short natural explanation using the relevant subset of:
 Bad:
 
 ```text
-[SHIP:NOTE]
+[ORCHESTRATE:NOTE]
 This filters invalid items.
 ```
 
 Good:
 
 ```text
-[SHIP:NOTE]
+[ORCHESTRATE:NOTE]
 This is the single normalization boundary, so downstream code can rely on every item being valid instead of repeating validation. Please check whether silently excluding any input category would violate the product rules.
 ```
 
-Before posting, resolve the current PR head SHA, path, side, and diff line. Use the available GitHub connector or current `gh api` help. Never guess a line location. Posting these comments is an external communication; ensure the `$ship` invocation and active platform policy authorize it.
+Before posting, resolve the current PR head SHA, path, side, and diff line. Use the available GitHub connector or current `gh api` help. Never guess a line location. Posting these comments is an external communication; ensure the `$orchestrate` invocation and active platform policy authorize it.
 
 ## Human prefixes
 
-### `[SHIP:Q]`
+### `[ORCHESTRATE:Q]`
 
 Treat as a question. Do not change code. Investigate enough context to explain:
 
@@ -125,9 +125,9 @@ Treat as a question. Do not change code. Investigate enough context to explain:
 - Plausible alternatives.
 - A recommendation, including when the reviewer’s alternative is better.
 
-Offer what a change would look like, but wait for `[SHIP:CHANGE]` or equivalent explicit authorization before implementing it.
+Offer what a change would look like, but wait for `[ORCHESTRATE:CHANGE]` or equivalent explicit authorization before implementing it.
 
-### `[SHIP:CHANGE]`
+### `[ORCHESTRATE:CHANGE]`
 
 Treat as an explicit implementation request. Before editing, confirm:
 
@@ -137,7 +137,7 @@ Treat as an explicit implementation request. Before editing, confirm:
 
 Implement the smallest coherent change, run affected verification, restack descendants when applicable, and synchronize explanations. If the request conflicts with the approved specification or creates material new scope, stop and ask rather than silently redefining the task.
 
-### `[SHIP:VERIFY]`
+### `[ORCHESTRATE:VERIFY]`
 
 Treat as a request to investigate, not edit. Compare current code, specification, tests, and edge cases. Answer with exactly one leading classification:
 
@@ -153,7 +153,7 @@ Infer intent conservatively. Treat “why?”, “is this needed?”, “what is
 
 ## Thread behavior
 
-When a human replies to `[SHIP:NOTE]`, use the code at that line, the explanation, the full thread, and the applicable spec/ADR as context. Continue in the same thread when platform policy permits.
+When a human replies to `[ORCHESTRATE:NOTE]`, use the code at that line, the explanation, the full thread, and the applicable spec/ADR as context. Continue in the same thread when platform policy permits.
 
 Do not defend the current implementation as a goal. State the current approach, alternative, trade-off, and recommendation honestly. If the human’s proposal is better, say so.
 
@@ -163,7 +163,7 @@ Respect stricter policies from delegated skills. If posting a human-facing reply
 
 After review fixes, lower-stack changes, restacks, architecture changes, or error-handling changes:
 
-1. Re-read every `[SHIP:NOTE]` against the current diff.
+1. Re-read every `[ORCHESTRATE:NOTE]` against the current diff.
 2. Update an authored comment when supported and still attached to a relevant line.
 3. Otherwise add a new current explanation and make the old one clearly obsolete when the platform permits.
 4. When a Reviewer Guide exists or the explanation gate selects one, update it so it describes the current PR head, current stack position (or single-PR status), and exact verification. Do not create one for a Small task solely to satisfy this synchronization step.

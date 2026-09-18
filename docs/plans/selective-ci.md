@@ -185,7 +185,7 @@ job分類testは依存install前にも使うためpackage scriptにせず、work
 8. ローカル検証と差分監査を行い、1つの意図的なcommitとして作成する。
 9. `gh stack submit --auto` でdraft PRを作成し、リポジトリ指定形式の日本語PR本文へ更新する。このPR自身はworkflow・package・impact選択器変更というhigh-risk差分なので、4ジョブとE2E全specが実行されることを確認する。
 10. boundedな `babysit-pr` one-shotでCI、mergeability、review feedbackを確認し、必要な修正後に再検証する。
-11. Reviewer Guideと必要最小限の `[SHIP:NOTE]` を現在headへ同期し、独立final audit後にready for reviewへ移す。mergeは行わない。
+11. Reviewer Guideと必要最小限の `[ORCHESTRATE:NOTE]` を現在headへ同期し、独立final audit後にready for reviewへ移す。mergeは行わない。
 
 ## 8. テスト・検証方法
 

@@ -1,8 +1,8 @@
-# `$ship` risk-based workflow 改修計画
+# `$orchestrate` risk-based workflow 改修計画
 
 ## 1. 背景と目的
 
-現行の `$ship` は、state-machine、durable evidence による再開、入力変更時の stale 判定、PR head/base と stack 関係の照合、unrelated changes の保護、author と critic の分離を備えている。一方、通常の機能追加やリファクタでも、仕様化、独立 plan review、人間の plan 承認、stacked PR、説明 phase、独立 final audit を一律に要求するため、task risk に対して ceremony が過剰になっている。
+現行の `$orchestrate` は、state-machine、durable evidence による再開、入力変更時の stale 判定、PR head/base と stack 関係の照合、unrelated changes の保護、author と critic の分離を備えている。一方、通常の機能追加やリファクタでも、仕様化、独立 plan review、人間の plan 承認、stacked PR、説明 phase、独立 final audit を一律に要求するため、task risk に対して ceremony が過剰になっている。
 
 これらの安全性と回復性は維持し、task を Small / Normal / Large or High-risk に分類して、必要な gate だけを有効化する workflow へ変更する。Normal を既定経路とし、1 meaningful PR、独立 implementation review、bounded stabilization を中心に、人間レビュー可能な状態まで進める。
 
@@ -10,20 +10,20 @@
 
 ### 調査済みの事実
 
-- `.agents/skills/ship/SKILL.md` は controller の責務、phase state、global safety、完了報告を定義している。
-- `.agents/skills/ship/references/workflow.md` は全 task にほぼ共通の直列 phase を定義し、現行 Medium path で specification、plan、independent plan review、user approval、stack、explanation、final audit を必須にしている。
-- `.agents/skills/ship/references/runtime-preflight.md` は `grill-with-docs`、`grilling`、`domain-modeling`、`babysit-pr`、`gh-stack` を開始前の一律 hard dependency としている。
-- 現在の `grill-with-docs` は `grilling` に `domain-modeling` を使用させる wrapper である。`grilling` と `domain-modeling` は `$ship` が直接呼ぶ契約ではない。
-- `babysit-pr` は one-shot snapshot と continuous watch を提供し、flaky retry を最大3回に制限している。`$ship` の bounded stabilization では one-shot を使える。
+- `.agents/skills/orchestrate/SKILL.md` は controller の責務、phase state、global safety、完了報告を定義している。
+- `.agents/skills/orchestrate/references/workflow.md` は全 task にほぼ共通の直列 phase を定義し、現行 Medium path で specification、plan、independent plan review、user approval、stack、explanation、final audit を必須にしている。
+- `.agents/skills/orchestrate/references/runtime-preflight.md` は `grill-with-docs`、`grilling`、`domain-modeling`、`babysit-pr`、`gh-stack` を開始前の一律 hard dependency としている。
+- 現在の `grill-with-docs` は `grilling` に `domain-modeling` を使用させる wrapper である。`grilling` と `domain-modeling` は `$orchestrate` が直接呼ぶ契約ではない。
+- `babysit-pr` は one-shot snapshot と continuous watch を提供し、flaky retry を最大3回に制限している。`$orchestrate` の bounded stabilization では one-shot を使える。
 - `gh-stack` は stack の作成、submit、restack、state 照合を提供するが、単一PRには不要である。
-- `.agents/skills/ship/references/pr-review-protocol.md` は Reviewer Guide と human prefix protocol を定義している。`[SHIP:NOTE]` は既に重要な箇所へ限定する記述だが、workflow 側では explanation phase 自体が一律必須である。
-- `.agents/skills/ship/evals/evals.json` は resume、merged/closed PR の重複防止、Draft PR checkpoint の3ケースだけを持つ。
-- repository-local `explained-code-review` は独立 blind review を行えるが、HTML review artifact の生成に特化している。すべての `$ship` invocation の必須 dependency にはしない。
+- `.agents/skills/orchestrate/references/pr-review-protocol.md` は Reviewer Guide と human prefix protocol を定義している。`[ORCHESTRATE:NOTE]` は既に重要な箇所へ限定する記述だが、workflow 側では explanation phase 自体が一律必須である。
+- `.agents/skills/orchestrate/evals/evals.json` は resume、merged/closed PR の重複防止、Draft PR checkpoint の3ケースだけを持つ。
+- repository-local `explained-code-review` は独立 blind review を行えるが、HTML review artifact の生成に特化している。すべての `$orchestrate` invocation の必須 dependency にはしない。
 - 公式 OpenAI documentation では、trusted project の `.codex/config.toml` で main agent の既定 `model` と `model_reasoning_effort` を設定でき、`.codex/agents/*.toml` で project-scoped custom agent ごとの model、reasoning effort、instructions、sandbox を設定できる。一方、child spawn 時には parent turn の live sandbox/approval override が再適用され得るため、custom agent file の configured sandbox と effective runtime sandbox は別に確認・報告する必要がある。
 - 現在の Codex CLI は `0.148.0-alpha.6` で multi-agent feature が有効であり、local model catalog は `gpt-5.6-sol` の `high` と `gpt-5.6-luna` の `max` をサポートしている。
 - 現在の repository には `.codex/` directory がなく、project-level model routing は未設定である。
 - `AGENTS.md` は複数ファイルの設計変更に実行計画と承認を要求する。計画作成後は実装承認まで停止する。
-- 作業開始時の worktree は clean だった。ローカル `main` は `origin/main` より8コミット遅れているが、対象の `$ship`、`AGENTS.md`、`docs/PLANNING.md`、`explained-code-review` には差分がない。
+- 作業開始時の worktree は clean だった。ローカル `main` は `origin/main` より8コミット遅れているが、対象の `$orchestrate`、`AGENTS.md`、`docs/PLANNING.md`、`explained-code-review` には差分がない。
 
 ## 3. 解決する問題
 
@@ -31,7 +31,7 @@
 2. implementation 品質を確認する正式な独立 review gate がなく、plan critique と final audit に保証が分散している。
 3. implementation worker の入力、結果、write scope、scope drift の扱いが明文化されていない。
 4. stack が reviewability ではなく標準工程として扱われている。
-5. delegated Skill の transitive dependency まで `$ship` が一律に検証し、不要な path も開始不能になる。
+5. delegated Skill の transitive dependency まで `$orchestrate` が一律に検証し、不要な path も開始不能になる。
 6. Normal task で implementation review と final specification audit の責務が重複する。
 7. local review fix と CI/review fix の非収束時 escalation が十分明確でない。
 8. 現行 eval が risk routing、independence、scope drift、stale evidence、prefix semantics を十分に覆っていない。
@@ -88,8 +88,8 @@
 ### Explanation と human protocol
 
 - Small のPR bodyは Purpose、必要ならScope、Verificationを最低限とし、Reviewer Guideはdiffの読み順、非自明な判断、review focus、repository policyのいずれかに価値がある場合だけ追加する。Normal / High-risk は Reviewer Guide を原則維持するが、現在の diff の review に必要な情報だけに絞る。
-- `[SHIP:NOTE]` は domain invariant、state transition、auth/security、data integrity、transaction/concurrency、cache/performance、非自明な architecture decision に限定し、trivial code には付けない。
-- `[SHIP:Q]` と `[SHIP:VERIFY]` は read-only、`[SHIP:CHANGE]` だけを明示的 change request とする意味論を維持する。
+- `[ORCHESTRATE:NOTE]` は domain invariant、state transition、auth/security、data integrity、transaction/concurrency、cache/performance、非自明な architecture decision に限定し、trivial code には付けない。
+- `[ORCHESTRATE:Q]` と `[ORCHESTRATE:VERIFY]` は read-only、`[ORCHESTRATE:CHANGE]` だけを明示的 change request とする意味論を維持する。
 
 ### Final audit と stale evidence
 
@@ -101,21 +101,21 @@
 
 ### Dependency と bounded stabilization
 
-- `grill-with-docs` は specification/grill gate を有効にした場合だけ direct dependency として検証する。内部の `grilling` と `domain-modeling` は wrapper 側の契約に委ね、`$ship` の hard-coded dependency list から外す。
+- `grill-with-docs` は specification/grill gate を有効にした場合だけ direct dependency として検証する。内部の `grilling` と `domain-modeling` は wrapper 側の契約に委ね、`$orchestrate` の hard-coded dependency list から外す。
 - `gh-stack` は existing stack の recovery または stack 選択時だけ検証する。
 - `babysit-pr` は PR stabilization を実行する前に検証し、local-only checkpoint までの作業を不必要に止めない。
 - independent agent support は independent review が必要になる前に確認し、欠けている場合は独立性を偽らず blocker とする。
-- `$ship` の bounded stabilization は `babysit-pr` の one-shot snapshot を使う。flaky retry は同 Skill の最大3回を超えない。branch-related fix が同じ原因で収束しない場合は、同 Skill の stop condition と local review の bounded cycle に従い human decision へ昇格する。
+- `$orchestrate` の bounded stabilization は `babysit-pr` の one-shot snapshot を使う。flaky retry は同 Skill の最大3回を超えない。branch-related fix が同じ原因で収束しない場合は、同 Skill の stop condition と local review の bounded cycle に従い human decision へ昇格する。
 - planner、implementation worker、independent reviewer、final auditor という role だけを定義し、具体的な model 名は記載しない。
 
 ### Runtime model routing
 
-- workflow semantics と model assignment を分離する。`$ship` の Markdown は `orchestrator/planner`、`implementation worker`、`independent implementation reviewer`、`final auditor` という role と独立性だけを定義し、具体的な model 名や reasoning level を記載しない。
+- workflow semantics と model assignment を分離する。`$orchestrate` の Markdown は `orchestrator/planner`、`implementation worker`、`independent implementation reviewer`、`final auditor` という role と独立性だけを定義し、具体的な model 名や reasoning level を記載しない。
 - project runtime の `.codex/config.toml` で main orchestrator の default を `gpt-5.6-sol` / `high` にする。
-- `.codex/agents/ship-planner.toml` で planner を `gpt-5.6-sol` / `high`、configured read-only にする。plan artifact の書込みが必要な場合は orchestrator が reviewer-approved result を保存する。
-- `.codex/agents/ship-implementation-worker.toml` で implementation worker を `gpt-5.6-luna` / `max` にする。`$ship` は原則この独立 subagent へ implementation contract を渡し、main orchestrator 自身による実装は runtime が subagent を利用できない場合の明示的 blocker/fallback decision に限定する。
-- `.codex/agents/ship-independent-reviewer.toml` で independent implementation reviewer を `gpt-5.6-sol` / `high`、configured read-only にする。
-- `.codex/agents/ship-final-auditor.toml` で final auditor を `gpt-5.6-sol` / `high`、configured read-only にする。
+- `.codex/agents/orchestrate-planner.toml` で planner を `gpt-5.6-sol` / `high`、configured read-only にする。plan artifact の書込みが必要な場合は orchestrator が reviewer-approved result を保存する。
+- `.codex/agents/orchestrate-implementation-worker.toml` で implementation worker を `gpt-5.6-luna` / `max` にする。`$orchestrate` は原則この独立 subagent へ implementation contract を渡し、main orchestrator 自身による実装は runtime が subagent を利用できない場合の明示的 blocker/fallback decision に限定する。
+- `.codex/agents/orchestrate-independent-reviewer.toml` で independent implementation reviewer を `gpt-5.6-sol` / `high`、configured read-only にする。
+- `.codex/agents/orchestrate-final-auditor.toml` で final auditor を `gpt-5.6-sol` / `high`、configured read-only にする。
 - preflightでは configured sandbox、runtimeが公開する場合のeffective sandbox、logical role policy、runtime enforcementの確認可否を分離する。effective read-onlyを確認できない場合は保証を主張せず、write-capableでもplanner/reviewer/auditorのno-edit/no-external-state/no-PR-mutation契約は維持してruntime limitationを報告する。独自wrapperや擬似sandboxは追加しない。
 - current session へ project config が遡及適用されるとは仮定しない。実装作業自体では spawn API の正式な per-agent model/reasoning override を使い、implementation author を Luna Max、reviewer を別の Sol High agent として起動する。
 - runtime や active tool surface が named custom agent または per-agent override を公開しない場合は擬似 routing を追加しない。利用可能な設定 level、実際に解決された assignment、不可能な部分を最終報告する。
@@ -126,27 +126,27 @@
 - Small の速度向上を理由に verification、diff review、unrelated changes 保護を省略しない。
 - Normal の保証を plan review と final audit の二重実行で代替しない。
 - High-risk の rollback、migration、compatibility、security、data-integrity gate を弱めない。
-- すべての task に stack、HTML review artifact、ADR、`[SHIP:NOTE]` を強制しない。
+- すべての task に stack、HTML review artifact、ADR、`[ORCHESTRATE:NOTE]` を強制しない。
 - 新しい runner、schema file、dependency、workflow state fileを追加しない。既存 Markdown と eval JSON の契約内で表現する。
 - model routing を Skill 本文へ埋め込まず、project-scoped Codex runtime configuration 以外の独自 launcher や wrapper を追加しない。
-- `$ship` から delegated Skill の内部依存を推測して再実装または一律検証しない。
+- `$orchestrate` から delegated Skill の内部依存を推測して再実装または一律検証しない。
 - 自動 merge、無断の force-push、unrelated user changes の修正を許可しない。
 
 ## 6. 変更対象
 
 | ファイル | 変更内容 |
 | --- | --- |
-| `.agents/skills/ship/SKILL.md` | risk-based controller、柔軟な phase state、role と implementation/review contract、完了報告を更新する |
-| `.agents/skills/ship/references/workflow.md` | Small / Normal / High-risk の経路、独立 implementation review、repair、optional stack/explanation/final audit、stale matrix を定義する |
-| `.agents/skills/ship/references/runtime-preflight.md` | core capability、direct conditional dependency、delegated transitive dependency を分離する |
-| `.agents/skills/ship/references/pr-review-protocol.md` | Reviewer Guide を最小化し、`[SHIP:NOTE]` を conditional にし、3 prefix の意味論を保持する |
-| `.agents/skills/ship/evals/evals.json` | 現行3ケースの意図を保持しながら、指定された13ケースへ再編・追加する |
-| `.agents/skills/ship/agents/openai.yaml` | stacked PR を default と読める表示文と prompt を risk-based orchestration に合わせる |
+| `.agents/skills/orchestrate/SKILL.md` | risk-based controller、柔軟な phase state、role と implementation/review contract、完了報告を更新する |
+| `.agents/skills/orchestrate/references/workflow.md` | Small / Normal / High-risk の経路、独立 implementation review、repair、optional stack/explanation/final audit、stale matrix を定義する |
+| `.agents/skills/orchestrate/references/runtime-preflight.md` | core capability、direct conditional dependency、delegated transitive dependency を分離する |
+| `.agents/skills/orchestrate/references/pr-review-protocol.md` | Reviewer Guide を最小化し、`[ORCHESTRATE:NOTE]` を conditional にし、3 prefix の意味論を保持する |
+| `.agents/skills/orchestrate/evals/evals.json` | 現行3ケースの意図を保持しながら、指定された13ケースへ再編・追加する |
+| `.agents/skills/orchestrate/agents/openai.yaml` | stacked PR を default と読める表示文と prompt を risk-based orchestration に合わせる |
 | `.codex/config.toml` | main orchestrator の project default を Sol High にし、multi-agent を有効化する |
-| `.codex/agents/ship-planner.toml` | planner の project-scoped custom agent を Sol High / read-only で定義する |
-| `.codex/agents/ship-implementation-worker.toml` | implementation worker を Luna Max で定義し、scope と result contract を守らせる |
-| `.codex/agents/ship-independent-reviewer.toml` | implementation author と分離した Sol High / read-only reviewer を定義する |
-| `.codex/agents/ship-final-auditor.toml` | High-risk の acceptance/spec audit を行う Sol High / read-only auditor を定義する |
+| `.codex/agents/orchestrate-planner.toml` | planner の project-scoped custom agent を Sol High / read-only で定義する |
+| `.codex/agents/orchestrate-implementation-worker.toml` | implementation worker を Luna Max で定義し、scope と result contract を守らせる |
+| `.codex/agents/orchestrate-independent-reviewer.toml` | implementation author と分離した Sol High / read-only reviewer を定義する |
+| `.codex/agents/orchestrate-final-auditor.toml` | High-risk の acceptance/spec audit を行う Sol High / read-only auditor を定義する |
 
 `explained-code-review`、global の delegated Skill、application code、product documents、personal `~/.codex` configuration は変更しない。
 
@@ -157,8 +157,8 @@
 3. 同ファイルへ implementation worker Input/Result と independent implementation review の契約を追加する。scope drift、FAIL repair、reverification、独立性、High-risk final auditor との責務分離を明記する。
 4. stack section を optional capability に変更する。単一PR default、stack 選択条件、existing stack recovery、lower-layer change の descendant invalidation を明記する。
 5. explanation、final audit、human-review readiness を gate-aware に変更する。Normal の重複 audit を避けつつ、High-risk と stale evidence の厳格さを維持する。
-6. `runtime-preflight.md` の一律 required-skill check を、開始時の capability inventory と gate 選択後の conditional dependency validation に分ける。`grilling` と `domain-modeling` は `grill-with-docs` の transitive dependency として `$ship` の hard dependency から外す。
-7. `pr-review-protocol.md` の PR body contract を single PR/stack 両対応にし、SmallはPurpose、必要ならScope、Verificationだけでreadyになれるようにする。Reviewer GuideはSmallでは条件付き、Normal / High-riskでは原則維持し、現在の diff の review に必要な情報へ限定する。`[SHIP:Q]`、`[SHIP:CHANGE]`、`[SHIP:VERIFY]` の既存動作は変更しない。
+6. `runtime-preflight.md` の一律 required-skill check を、開始時の capability inventory と gate 選択後の conditional dependency validation に分ける。`grilling` と `domain-modeling` は `grill-with-docs` の transitive dependency として `$orchestrate` の hard dependency から外す。
+7. `pr-review-protocol.md` の PR body contract を single PR/stack 両対応にし、SmallはPurpose、必要ならScope、Verificationだけでreadyになれるようにする。Reviewer GuideはSmallでは条件付き、Normal / High-riskでは原則維持し、現在の diff の review に必要な情報へ限定する。`[ORCHESTRATE:Q]`、`[ORCHESTRATE:CHANGE]`、`[ORCHESTRATE:VERIFY]` の既存動作は変更しない。
 8. `agents/openai.yaml` の short description と default prompt から stacked PR 必須の含意を除く。
 9. `.codex/config.toml` と4つの project-scoped custom agent fileを追加する。official schema の `model`、`model_reasoning_effort`、`sandbox_mode`、`developer_instructions` だけを使用し、Skill本文からは role名で参照する。
 10. `evals.json` の既存13ケースへ次の観点を自然に統合し、ケース数自体は増やさない。
@@ -170,9 +170,9 @@
    6. worker の allowed scope 外変更を検知する。
    7. lower stack 変更で descendant verification を stale にする。
    8. final audit 後の code/head/base/spec 変更で audit を stale にする。
-   9. `[SHIP:Q]` で code を変更しない。
-   10. `[SHIP:VERIFY]` で code を変更しない。
-   11. `[SHIP:CHANGE]` だけを明示的 change request と扱う。
+   9. `[ORCHESTRATE:Q]` で code を変更しない。
+   10. `[ORCHESTRATE:VERIFY]` で code を変更しない。
+   11. `[ORCHESTRATE:CHANGE]` だけを明示的 change request と扱う。
    12. current evidence が有効な resume で specification/planning を繰り返さない。
    13. merged/closed PR に duplicate PR を作らない。
    14. SmallはReviewer GuideなしでもPurpose/Verificationと他条件が揃えばreadyになり、Normal / High-riskのGuideは必要なreviewability情報を持つ。
@@ -184,7 +184,7 @@
 
 ### 構文・repository validation
 
-- `node -e "JSON.parse(require('node:fs').readFileSync('.agents/skills/ship/evals/evals.json', 'utf8'))"`
+- `node -e "JSON.parse(require('node:fs').readFileSync('.agents/skills/orchestrate/evals/evals.json', 'utf8'))"`
 - repository内のYAML / TOMLを既存parserでparseする。
 - `pnpm format`
 - `pnpm lint`
@@ -202,7 +202,7 @@ application code を変更しないため、unit/frontend/backend/E2E/VRT、type
 - High-risk: migration または authorization 変更を入力し、spec、plan、independent plan review、必要な approval、code review、final audit と risk safeguards が有効になることを確認する。
 - Resume: current spec/plan/review/HEAD/base evidence を与え、最初の incomplete/stale gate から再開することを確認する。
 - Stale: lower stack、implementation diff、PR head/base、spec を順に変更した想定で、依存する verification/review/explanation/audit だけが stale になることを確認する。
-- Prefix: `[SHIP:Q]` と `[SHIP:VERIFY]` は read-only、`[SHIP:CHANGE]` は change request になることを確認する。
+- Prefix: `[ORCHESTRATE:Q]` と `[ORCHESTRATE:VERIFY]` は read-only、`[ORCHESTRATE:CHANGE]` は change request になることを確認する。
 - Terminal PR: merged/closed PR を検出した場合、duplicate PR や隣接 task を開始しないことを確認する。
 - Routing: Skill本文が role名だけを持ち、project runtime config が orchestrator/planner Sol High、implementation worker Luna Max、reviewer/final auditor Sol High を割り当てることを確認する。
 - Sandbox reporting: configured read-only、runtimeが公開するeffective sandbox、logical read-only policy、runtime enforcementの確認可否を別項目として出力し、effective値が非公開なら保証を主張しないことを確認する。
@@ -233,8 +233,8 @@ application code を変更しないため、unit/frontend/backend/E2E/VRT、type
 - High-risk の independent plan review と final audit が別責務として維持される。
 - implementation worker contract と scope drift detection が明文化される。
 - single PR が default になり、stack capability と restack/stale behavior は残る。
-- `grilling` と `domain-modeling` が `$ship` の direct hard dependency ではなくなる一方、delegated contract の確認責務は失われない。
-- SmallはReviewer Guideなしでも最小PR bodyと他のready条件で完了でき、Normal / High-riskのReviewer Guideと3つのhuman prefixは必要最小限で維持され、`[SHIP:NOTE]` は非自明な箇所だけになる。
+- `grilling` と `domain-modeling` が `$orchestrate` の direct hard dependency ではなくなる一方、delegated contract の確認責務は失われない。
+- SmallはReviewer Guideなしでも最小PR bodyと他のready条件で完了でき、Normal / High-riskのReviewer Guideと3つのhuman prefixは必要最小限で維持され、`[ORCHESTRATE:NOTE]` は非自明な箇所だけになる。
 - repair と stabilization が bounded になり、非収束時は blocker/human decision へ昇格する。
 - eval が指定された13ケースを個別に覆い、既存3ケースの安全性を失わない。
 - JSON parse、format、lint、knip と全 workflow simulation が成功する。

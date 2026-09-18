@@ -1,15 +1,15 @@
 ---
-name: ship
-description: "Orchestrate or resume an end-to-end repository change from `$ship TASK` through risk-based planning, delegated implementation, independent implementation review, bounded stabilization, and human-review readiness. Use only when the user explicitly invokes `$ship` or explicitly asks for this full ship workflow; do not use for a simple commit, push, PR creation, requirement interview, or PR-monitoring request alone."
+name: orchestrate
+description: "Orchestrate or resume an end-to-end repository change from `$orchestrate TASK` through risk-based planning, delegated implementation, independent implementation review, bounded stabilization, and human-review readiness. Use only when the user explicitly invokes `$orchestrate` or explicitly asks for this full orchestration workflow; do not use for a simple commit, push, PR creation, requirement interview, or PR-monitoring request alone."
 ---
 
-# Ship
+# Orchestrate
 
 Act as the workflow controller. Delegate specialized work, preserve repository rules, and keep every pull request explainable and reviewable. Do not auto-merge. The workflow is role-based: runtime configuration chooses the concrete agent and model for each role; this Skill defines the responsibilities and gates, not a model assignment.
 
 ## Start
 
-1. Extract the task after `$ship`. If it is missing, ask for the task and stop.
+1. Extract the task after `$orchestrate`. If it is missing, ask for the task and stop.
 2. Read [runtime-preflight.md](references/runtime-preflight.md) completely. Perform the core capability inventory before repository mutation, then validate only the direct dependencies selected by triage.
 3. Perform the remaining read-only preflight checks before changing files or external state.
 4. Read [workflow.md](references/workflow.md) completely, classify the task as `small`, `normal`, or `large/high-risk`, select each gate as `required`, `conditional`, or `skipped`, recover existing state from current evidence, and resume at the first incomplete or stale phase rather than restarting by default.
@@ -33,7 +33,7 @@ Delegate:
 - Delegate conditional specification interrogation to `grill-with-docs` when the selected gate is enabled. For Normal work, skip it when requirements, acceptance criteria, edge cases, and responsibility boundaries are sufficiently clear; use it when material ambiguity remains or interrogation is likely to prevent an implementation mistake.
 - Delegate implementation to the configured implementation-worker role with the contract in [workflow.md](references/workflow.md).
 - Delegate the independent implementation review to a separate configured reviewer role. Give it raw request/spec/plan/diff/verification evidence and do not disclose the author’s verdict or completion claim.
-- Delegate bounded PR/CI/review diagnosis to `babysit-pr`. Use its one-shot mode for a bounded `$ship` run; use continuous monitoring only when the user separately requests monitoring and accept that its own stop conditions then govern.
+- Delegate bounded PR/CI/review diagnosis to `babysit-pr`. Use its one-shot mode for a bounded `$orchestrate` run; use continuous monitoring only when the user separately requests monitoring and accept that its own stop conditions then govern.
 - Delegate stacked branch and PR operations to `gh-stack` only when an existing or selected stack is in scope, while treating the current `gh stack --help` output as the CLI source of truth.
 - Use the configured planner role for planning or plan review when available. Use a separate configured final-auditor role for the High-risk final acceptance audit or an explicitly enabled audit.
 - Use repository-specific skills when they match a selected phase.
@@ -87,7 +87,7 @@ Update this record after every phase transition, gate selection, worker handoff,
 
 Keep specifications and plans focused on the problem, relevant evidence, constraints, decisions, implementation, and verification. Exclude workflow narration such as fetched refs, worktree cleanliness, branch or stack setup, commit and PR identifiers, approval history, phase transitions, and conversation history unless a fact materially changes the technical solution or the repository’s required document template explicitly asks for it.
 
-An explicit earlier milestone such as plan completion, implementation completion, or draft PR creation is a checkpoint, not successful completion of the full workflow. Stop there when requested, record every deferred phase, and resume from that evidence on the next `$ship` invocation.
+An explicit earlier milestone such as plan completion, implementation completion, or draft PR creation is a checkpoint, not successful completion of the full workflow. Stop there when requested, record every deferred phase, and resume from that evidence on the next `$orchestrate` invocation.
 
 ## Completion
 

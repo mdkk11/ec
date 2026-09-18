@@ -2,13 +2,13 @@
 
 Perform this phase without modifying the worktree, local branches, PRs, installed skills, or configuration. Refreshing remote-tracking refs with a non-destructive fetch is permitted because stale remote state can otherwise cause duplicate or misdirected work.
 
-The preflight has two dependency tiers. Core capability checks happen before repository investigation. Gate-specific direct dependencies are selected after triage and validated before the phase that needs them. A skill used internally by a delegated wrapper is transitive: verify the wrapper’s current contract when the wrapper is selected, but do not make the transitive skill a `$ship` hard dependency.
+The preflight has two dependency tiers. Core capability checks happen before repository investigation. Gate-specific direct dependencies are selected after triage and validated before the phase that needs them. A skill used internally by a delegated wrapper is transitive: verify the wrapper’s current contract when the wrapper is selected, but do not make the transitive skill a `$orchestrate` hard dependency.
 
 ## 1. Core capability inventory
 
 Before inspecting the repository, inspect the active tool and skill catalog and confirm:
 
-- `$ship` and its reference files are readable.
+- `$orchestrate` and its reference files are readable.
 - Independent subagent support is available, or the runtime limitation is known.
 - Read-only filesystem and Git inspection are available.
 - The current CLI and configuration inspection commands are available when runtime routing is in scope.
@@ -20,7 +20,7 @@ Do not require every optional workflow skill here. A missing gate-specific depen
 1. Resolve the repository root, current branch, default branch, remotes, upstream, and worktree status.
 2. After resolving the exact remote, refresh its remote-tracking refs with `git fetch --prune <remote>` when authentication and repository policy permit. If fetch is unavailable, query remote refs and GitHub directly and mark local tracking refs as potentially stale.
 3. Detect nested or parent `AGENTS.md` files that apply to target paths and read them completely.
-4. Identify unrelated staged, unstaged, and untracked changes. Do not assume they belong to `$ship`.
+4. Identify unrelated staged, unstaged, and untracked changes. Do not assume they belong to `$orchestrate`.
 5. Inspect recent branches and PRs in every state—open, draft, merged, and closed—before deciding whether work or submission is missing. Resolve the current branch’s PR directly when one exists; do not infer absence from an open-PR list alone.
 6. Reconcile local HEAD, remote branch HEAD, PR head/base/state, default-branch HEAD, and `gh stack view --json` when stack support is in scope. If a related PR is already merged or closed, report that terminal state instead of creating a duplicate PR or choosing a new task from stale context.
 7. Confirm GitHub authentication before any later push or PR operation, without printing tokens.
@@ -45,7 +45,7 @@ If a selected direct dependency is unavailable, stop before that gate. Preserve 
 
 ### Delegated transitive dependencies
 
-`grilling` and `domain-modeling` may be used inside `grill-with-docs`. Read and trust the wrapper’s current contract when `grill-with-docs` is selected, but do not list or independently invoke those skills as `$ship` direct dependencies unless the wrapper explicitly requires it. Do not infer or reimplement internal dependencies of `babysit-pr` or `gh-stack`.
+`grilling` and `domain-modeling` may be used inside `grill-with-docs`. Read and trust the wrapper’s current contract when `grill-with-docs` is selected, but do not list or independently invoke those skills as `$orchestrate` direct dependencies unless the wrapper explicitly requires it. Do not infer or reimplement internal dependencies of `babysit-pr` or `gh-stack`.
 
 `explained-code-review` is an optional repository-local review capability. Use it only when the selected task or repository policy calls for its artifact; it is not a required dependency for every invocation.
 
