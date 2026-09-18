@@ -1,204 +1,227 @@
 # Ship workflow
 
-## State machine
+## Backbone and gate semantics
 
-Move forward through these phases and return to earlier phases whenever an input becomes stale:
+Use one state machine for every task, then select the gates that apply to the risk class:
 
 ```text
-preflight/recover -> triage -> specification -> planning -> independent plan review -> user approval
-       -> stacked implementation -> draft submission -> stabilization
-       -> explanation layer -> independent final audit -> human-review-ready
+preflight/recover -> triage -> [specification] -> planning -> [plan-review] -> [approval]
+  -> implementation -> verification -> independent implementation review
+  -> [bounded repair/reverification] -> submit -> stabilize -> [explain]
+  -> [final-audit] -> human-review-ready
 ```
 
-Do not run independent critique in parallel with the artifact it reviews. Independence means a separate agent receives the finalized raw artifact and repository context without being told the desired verdict.
+Each optional phase is recorded as `required`, `conditional`, or `skipped` with a reason and evidence revision. `Skipped` means an intentional decision, not an unperformed task. Do not run independent critique in parallel with the artifact it reviews. Independence means a separate agent receives the finalized raw artifact and repository context without being told the author’s desired verdict.
 
-## Phase recovery and checkpoints
+### Phase recovery and checkpoints
 
-After preflight, recover the workflow from current evidence before choosing a path. Conversation memory is useful context, but durable repository and GitHub evidence decides whether a phase is still current.
-
-Use the highest phase whose required evidence is complete and whose inputs have not changed:
+After preflight, recover the workflow from durable repository and GitHub evidence before choosing a path. Conversation memory is useful context, but current artifacts decide whether a phase is still current.
 
 | Phase | Minimum current evidence |
 | --- | --- |
-| specification | Confirmed acceptance criteria, non-goals, assumptions, and required user decisions |
+| specification | Confirmed acceptance criteria, non-goals, assumptions, and required user decisions, or an explicit skip reason |
 | planning | Final plan artifact grounded in the current specification and repository state |
-| independent plan review | Critique and disposition for that exact plan revision |
-| user approval | Explicit approval of the reviewed plan; never infer it from later repository artifacts |
-| implementation | Intended commits and verification at their current HEADs |
-| draft submission | PR head/base and stack relationships match those commits |
-| stabilization | Head-specific `babysit-pr` snapshot has terminal green checks, no unresolved review action, and clean mergeability |
-| explanation | Reviewer Guide and any `[SHIP:NOTE]` comments describe the current PR head and stack |
-| final audit | Independent audit ran after stabilization and explanation against the same heads and artifacts |
-| human-review-ready | Final audit passes and the current PRs are non-draft with every readiness gate satisfied |
+| plan-review | Independent critique and disposition for that exact plan revision, or a recorded skip reason |
+| approval | Explicit approval of the reviewed plan when repository policy or the selected route requires it |
+| implementation | Worker result reconciled with actual diff, intended commits, and verification at current HEADs |
+| verification | Relevant checks at the current implementation HEAD |
+| implementation-review | Separate reviewer’s `PASS`, `FAIL`, or `BLOCKED` over the actual diff and current evidence |
+| submit | PR head/base and any stack relationships match the implementation commits |
+| stabilize | Head-specific `babysit-pr` snapshot has terminal green checks, no unresolved review action, and clean mergeability |
+| explain | Reviewer Guide and any `[SHIP:NOTE]` comments describe the current PR head and stack, or an explicit skip reason |
+| final-audit | Independent acceptance audit ran after stabilization and applicable explanation against the same heads and artifacts |
+| human-review-ready | Every applicable required gate passes and the current PRs are non-draft when authorized |
 
-Resume at the first incomplete or stale phase. Do not repeat specification, planning, implementation, submission, or audits merely to reconstruct a narrative. If evidence is missing for an approval gate, ask for that approval rather than assuming it.
+Resume at the first incomplete or stale phase among the gates selected for the current route. Do not repeat specification, planning, implementation, submission, or audits merely to reconstruct a narrative. A skipped gate remains skipped with its reason; only required gates and enabled conditional gates are candidates for resumption. If evidence is missing for a required approval gate, ask for that approval rather than assuming it.
 
-When the user requests an earlier milestone:
+When the user requests an earlier milestone, treat plan completion, implementation completion, or draft PR creation as a checkpoint. Perform only the verification needed to make that checkpoint safe and truthful, record every selected but deferred phase, and do not call a pre-submission review the final audit. On continuation, recover the existing artifacts and resume at the first selected incomplete or stale gate. Run explanation or final audit only when that gate was selected or enabled; a Normal route that skipped either gate keeps it skipped unless a later change or explicit request selects it.
 
-- Treat plan completion, implementation completion, or draft PR creation as an explicit checkpoint.
-- Perform only the verification needed to make that checkpoint safe and truthful.
-- Do not run Phase 8 early. A pre-submission code review or acceptance check may be called a preliminary implementation review, but it does not become the final specification audit.
-- Record the first deferred phase and the exact evidence needed to resume.
-- On continuation, recover the existing artifacts and proceed from that phase. Run the final audit once, after stabilization and explanation, unless a later code, stack, verification, or explanation change makes it stale.
+If a related PR is already merged or closed, report its terminal state. Do not recreate it, restart implementation, or silently select an adjacent task from stale context.
 
-If the related PR is already merged or closed, report the terminal state. Do not recreate the PR, restart implementation, or silently select an adjacent task.
+## Phase 0: Triage and route selection
 
-## Phase 0: Triage
+Classify by semantic and operational risk, not line count. Normal is the default when the task is not clearly Small or High-risk. Record the class, non-goals, acceptance criteria, applicable repository policy, selected gates, and skip/conditional reasons before implementation.
 
-Classify by semantic and operational risk, not line count.
+| Gate | Small | Normal | Large / High-risk |
+| --- | --- | --- | --- |
+| specification / `grill-with-docs` | skipped unless policy or ambiguity requires it | conditional/recommended | required |
+| written plan | skipped unless policy requires it | required | required |
+| independent plan review | skipped unless policy requires it | conditional based on risk, plan novelty, or policy | required |
+| human plan approval | skipped unless policy requires it | conditional based on repository policy or material decisions | conditional when repository policy, user direction, or a material decision makes it appropriate/necessary |
+| implementation worker | required by default | required by default | required |
+| verification | relevant checks required | relevant checks required | lowest responsible tests plus cross-boundary checks required |
+| independent implementation review | required | required | required |
+| single PR | default | default | default unless a meaningful stack is justified |
+| stack | conditional | conditional | conditional; never by class alone |
+| explanation layer | skipped unless reviewability requires it | conditional | conditional when non-obvious reasoning, reviewability, or risk makes it useful/needed; required once selected |
+| final audit | skipped | skipped when implementation review covers the same evidence; otherwise conditional | required, separate from code review |
 
 ### Small fast path
 
-Use only for an obvious, isolated change such as a typo, copy change, tiny CSS adjustment, or well-understood bug fix. Require all of the following:
+Use only for an obvious isolated change such as a typo, copy change, tiny CSS adjustment, or well-understood bug fix. All of these must hold:
 
-- Acceptance criteria are unambiguous.
+- Acceptance criteria are unambiguous and non-goals are obvious.
 - No schema, migration, auth, security, concurrency, public API, architecture, or destructive behavior changes.
 - One meaningful PR is sufficient.
-- Repository rules do not require a formal spec or plan.
+- Repository rules do not require formal specification, plan, or approval.
 
-Record the goal, acceptance criteria, non-goals, and verification briefly. Skip persistent spec/plan ceremony and independent plan critique only when all conditions hold. Still perform relevant implementation verification and final diff review.
+Route through `preflight/recover -> triage -> implementation -> relevant verification -> independent diff/code review -> submit -> minimal stabilization -> human-review-ready`. Keep a short conversation record of goal, acceptance criteria, non-goals, and verification. Unless policy requires them, skip persistent specification, formal plan, plan critique, plan approval, stack, explanation, and final audit. Still protect unrelated changes and perform an independent review of the actual diff.
 
-### Medium standard path
+### Normal standard path
 
-Use for normal features and refactors. Require delegated specification, a written or repository-approved plan, independent plan critique, user approval, meaningful PR layers, and independent final audit.
+Use for ordinary features, refactors, and multi-file changes that do not meet High-risk criteria. Route through:
 
-### Large/high-risk path
+```text
+preflight/recover -> triage -> conditional specification -> planning
+  -> implementation -> verification -> independent implementation review
+  -> bounded repair/reverification -> single PR -> bounded stabilization
+  -> human-review-ready
+```
 
-Use for auth, authorization, payments, migrations, destructive changes, security, public APIs, concurrency, or major architecture. In addition to the standard path:
+The `grill-with-docs` gate is conditional and recommended, not automatic. Skip it when requirements, acceptance criteria, edge cases, and responsibility boundaries are sufficiently clear. Use it when material ambiguity remains, or when specification interrogation is likely to prevent an implementation mistake. When enabled, use the `orchestrator/planner -> grill-with-docs -> planning` sequence and record the resulting specification evidence. Plan review, human plan approval, stack, a separate explanation phase, and final audit are conditional additions driven by repository policy, task characteristics, or review findings; do not run them by default.
 
-- Make rollback, data integrity, compatibility, abuse cases, observability, and migration ordering explicit.
-- Require tests at the lowest appropriate boundary plus integration coverage where risk crosses boundaries.
-- Prefer smaller reversible layers, but never split a transaction or invariant into an invalid intermediate state.
+Normal implementation review must check acceptance criteria, correctness, tests, and relevant risks against the same specification/plan, actual diff, verification, and HEAD/base. When that evidence is unchanged and the reviewer passes, it is the acceptance gate and the separate final audit is skipped. Enable a final audit only when implementation review cannot cover acceptance/spec compliance, a material finding demands it, repository policy requires it, or the user explicitly asks for it.
 
-## Phase 1: Specification
+### Large / High-risk path
 
-Invoke the installed `grill-with-docs` skill and let its current workflow control the interview. Pass the original request and discovered repository context. Do not duplicate its questions in `$ship`.
+Use for auth or authorization, payments, migrations, destructive changes, security, public APIs, concurrency, data integrity, or major architecture. Maintain specification, written plan, independent plan review, implementation, verification, independent implementation review, PR/stabilization, and an independent final acceptance audit. Select human plan approval when repository policy, user direction, or a material decision makes it appropriate/necessary. Select the explanation layer when non-obvious reasoning, reviewability, or risk makes it useful/needed; once selected, keep it current and required. Make rollback, migration ordering, compatibility, observability, abuse cases, data integrity, security, concurrency, and destructive behavior explicit review items. Prefer smaller reversible layers, but never split a transaction or invariant into an invalid intermediate state.
 
-Before leaving the phase, ensure the resulting format covers, directly or equivalently:
+High-risk implementation review focuses on implementation quality and actual diff correctness. The final auditor separately checks each acceptance criterion, non-goal, specification/plan compliance, risk safeguard, and required evidence. Neither review may be represented as the other.
+
+## Phase 1: Conditional specification
+
+When the specification gate is enabled, invoke the installed `grill-with-docs` skill and let its current workflow control the interrogation. Pass the original request and discovered repository context; do not duplicate its questions in `$ship`. Verify that the result covers:
 
 - Goal and acceptance criteria.
 - Non-goals.
 - Expected behavior and affected actors.
 - Edge cases and error handling.
 - Test strategy and relevant scenario ownership.
-- Open decisions and explicit assumptions.
+- Responsibility boundaries, open decisions, and explicit assumptions.
 
 Persist the result only when repository convention or task complexity warrants it. Follow repository naming and approval rules.
 
 ## Phase 2: Implementation plan
 
-Use a planning-capable agent or the active agent when necessary. Ground the plan in the approved specification and actual code.
+Use the configured planner role or another planning-capable agent when necessary. Ground the plan in the approved specification and actual code. Define each proposed layer with responsibility, concrete behavior/data flow, main files, parent dependency, downstream consumers, verification at that HEAD, risks, and rollback implications. Aim for roughly 100–200 changed lines only as a soft reviewability signal; never split by line count when it creates a semantically broken layer.
 
-Define each proposed stack layer with:
-
-- Responsibility: one meaningful change.
-- Changes: concrete behavior and data flow.
-- Main files/modules.
-- Parent dependency and downstream consumers.
-- Verification at that layer's HEAD.
-- Risks and rollback implications.
-
-Aim for roughly 100–200 changed lines only as a soft reviewability signal. Never split by line count when it creates a semantically broken layer. Every layer should build, typecheck, lint, and pass its relevant tests whenever the architecture permits.
-
-Use the repository's plan format. If it requires permission before creating a plan, stop and ask. After writing the plan, do not implement until all required plan-review and user-approval gates pass.
-
-## Phase 3: Independent plan review
-
-Create a separate critic agent. Provide the original request, finalized specification, plan, applicable repository rules, and targeted code context. Do not provide the author's conclusions or a requested verdict.
-
-Ask the critic to check:
-
-- Natural PR boundaries and dependency direction.
-- Valid intermediate HEADs.
-- Acceptance-criteria coverage.
-- Test strategy and lowest responsible test level.
-- Architecture, migrations, rollback, security, edge cases, and concurrency.
-- Unnecessary abstraction and over-engineering.
-
-Use one bounded cycle:
+After writing a plan, do not implement until all required plan-review and user-approval gates pass. If plan review is selected, use a separate critic and one bounded cycle:
 
 ```text
-Plan -> Critique -> Patch -> Final verification
+Plan -> independent critique -> patch/disposition -> final verification
 ```
 
-Record accepted and rejected critique points with reasons. Avoid an unbounded critic loop. Present the reviewed plan for user approval unless the repository's explicit workflow says otherwise.
+Ask the critic to check PR boundaries, dependency direction, valid intermediate HEADs, acceptance coverage, lowest responsible test level, architecture, migrations, rollback, security, edge cases, concurrency, and unnecessary abstraction. Record accepted and rejected findings with reasons.
 
-## Phase 4: Stacked implementation
+## Phase 3: Delegated implementation and verification
 
-Implement approved layers in order. For each layer:
+Implementation is a separate role by default. The controller passes this contract to the configured implementation-worker role:
 
-1. Reconfirm its parent HEAD and worktree cleanliness.
-2. Implement only that layer's responsibility.
-3. Add or update the lowest appropriate tests.
-4. Run the discovered relevant tests, typecheck, lint, and build in the repository-required order.
-5. Inspect the diff and stage only intentional files.
-6. Commit according to repository conventions.
-7. Record verification results and residual risks before starting the child layer.
+### Worker input
 
-Use separate agents for implementation and later deep review when available. Do not let parallel agents edit the same worktree or overlapping files.
+- `responsibility`: the single approved layer and its intended behavior.
+- `relevant context`: specification, plan, repository rules, and affected modules.
+- `allowed/write scope`: exact files or directories the worker may change.
+- `do-not-touch scope`: unrelated user changes, generated files, other layers, and protected files.
+- `acceptance criteria`: observable requirements and non-goals.
+- `parent/base HEAD`: the exact starting revision and stack relationship.
+- `required verification`: exact commands and relevant test ownership.
+- `known risks`: edge cases, invariants, security, concurrency, migration, or compatibility concerns.
 
-### Stack operations
+### Worker result
 
-Read `gh-stack` and use the installed `gh stack --help` output for exact `init`, `add`, `submit`, `rebase`, `sync`, and `push` operations. Verify commit ancestry and GitHub base fields instead of inferring parents from branch names.
+Require a concise result with:
 
-## Phase 5: Draft submission
+```text
+Status: PASS | BLOCKED
+Changed files and summary: <actual intended changes>
+Verification results: <exact commands and outcomes>
+Plan deviations: <none or explicit deviation and reason>
+Assumptions: <explicit assumptions>
+Residual risks: <remaining risk>
+Blockers: <none or exact blocker>
+```
 
-Create draft PRs unless the user explicitly requests another state. Preserve required repository PR-template sections and add the sections defined in `pr-review-protocol.md`; do not replace one with the other.
+The controller never trusts this report alone. Reconcile it with `git status`, actual diff, changed-file list, parent/base HEAD, and verification output. Any change outside allowed scope is scope drift: stop the gate, distinguish it from pre-existing user work, and require removal or explicit authorization before review or submission. If the configured worker cannot start, record the runtime limitation and obtain explicit authorization for a controller fallback; do not silently claim delegated implementation.
 
-Each PR must describe only its own diff plus the minimum parent context needed to review it. Include exact verification performed at that layer. Do not claim tests that were not run.
+After implementation, run the relevant verification required by the selected route and repository rules. Record exact commands, outcomes, skipped checks with reasons, and the evidence revision.
 
-## Phase 6: Stabilization and restacking
+## Phase 4: Independent implementation review
 
-Read and invoke the installed `babysit-pr` skill rather than reproducing its watcher or CI heuristics. For a bounded `$ship` run, request its documented one-shot diagnostic snapshots and use its surfaced actions to stabilize the PR. If the user asks for continuous monitoring, hand off to its watch mode and follow its stricter stop conditions.
+Use a separate configured reviewer agent, never the implementation author. Give the reviewer only raw evidence:
 
-Process lower layers before descendants. When a lower layer changes:
+- Original request and acceptance criteria/specification.
+- Applicable plan and repository rules.
+- Actual diff, changed files, current HEAD/base, stack ancestry, and verification output.
 
-1. Identify every descendant branch and PR.
-2. Restack using the current `gh stack` help.
-3. Use `--force-with-lease` only for stack-owned rewritten branches after verifying remote state.
-4. Re-run affected tests, typecheck, lint, build, and review.
-5. Mark descendant Reviewer Guides and `[SHIP:NOTE]` comments stale until checked against the new diff.
+Do not provide the author’s completion claim, desired verdict, or hidden reasoning. Ask for a concise result:
 
-Overlay the prefix semantics from `pr-review-protocol.md` when classifying comments before passing actionable work to `babysit-pr`. A question is not an actionable code change.
+```text
+Verdict: PASS | FAIL | BLOCKED
+Findings: <material findings with severity and evidence>
+Acceptance criteria: <criterion-by-criterion result>
+Plan deviations: <material deviation or none>
+Verification: <checks reviewed or missing>
+Repair/reverification: <required action or none>
+```
 
-## Phase 7: Explanation layer
+Review acceptance criteria, material plan deviation, correctness, responsibility boundaries, unnecessary abstraction, simplification opportunities, edge/error handling, security, applicable performance, tests, implementation-detail coupling, regression risk, and repository conventions. Use actual diff and current evidence, not a summary substituted for them.
 
-Wait until the stack is stable and CI/deep review fixes have landed. Then read `pr-review-protocol.md` and:
+`FAIL` requires the implementation author to repair, the affected verification to rerun, and an independent re-review of the new evidence. Allow one bounded repair and re-review cycle by default. If the same material finding remains, or the reviewer is unavailable, escalate to a blocker or human decision. A reviewer must not approve work it authored.
 
-1. Update every PR body with its current Reviewer Guide and stack position.
-2. Add a small number of `[SHIP:NOTE]` inline comments only where the reasoning materially helps review.
-3. Verify comments target the current head SHA and valid diff lines.
-4. Reconcile existing explanation comments after any later code or stack change.
+## Phase 5: PR and optional stack
 
-Do not optimize for comment count.
+Default to one meaningful PR. Select a stack only when all of these are true:
 
-## Phase 8: Independent final specification audit
+- Responsibilities are semantically independent.
+- Parent/child dependencies and valid intermediate HEADs are clear.
+- Each layer can be tested and reviewed on its own.
+- The stack materially improves reviewability or safe rollback.
 
-Use an agent independent from implementation. Provide raw artifacts:
+Line count alone is not a stack reason. For an existing or selected stack, read `gh-stack`, use current `gh stack --help`, reconcile head/base ancestry, restack safely, and use `--force-with-lease` only for stack-owned rewritten branches. Preserve draft status unless the user or repository policy authorizes readiness.
 
-- Original user request.
-- Final specification.
-- ADRs, if any.
-- Approved implementation plan.
-- Final stack diffs and verification results.
+Each PR describes only its own diff plus minimum parent context. Use the template and Reviewer Guide in [pr-review-protocol.md](pr-review-protocol.md), and include exact verification actually run.
 
-Require one line per acceptance criterion and non-goal with `PASS`, `FAIL`, or `UNCERTAIN` plus evidence. Fix every `FAIL`, then restack and rerun affected verification. Resolve `UNCERTAIN` through evidence or user input; do not relabel it as pass.
+## Phase 6: Bounded stabilization and stale propagation
 
-This audit is valid only when stabilization and the explanation layer are complete for the same PR head SHA and stack bases. A review performed before draft submission or while checks are pending is preliminary evidence, not Phase 8, and must not cause a duplicate “final” audit later.
+Read and invoke `babysit-pr` rather than reproducing its watcher or CI heuristics. For a bounded `$ship` run, use its one-shot diagnostic snapshot. Continuous monitoring is a separate user request. Retry flaky failures only within that Skill’s documented maximum of three attempts. Non-convergent branch-related fixes or review repairs stop at the bounded cycle and become a blocker/human decision.
 
-After the audit, update `docs/CONTEXT.md` only with durable project knowledge discovered during the work and only when repository convention calls for it. Do not add feature-local history or temporary assumptions.
+When any gate input changes, invalidate dependent evidence. Track at least these inputs:
 
-## Phase 9: Human-review readiness
+| Changed input | Stale evidence |
+| --- | --- |
+| original request, acceptance criteria, non-goals, or specification | planning, implementation, verification, review, explanation, final audit |
+| plan or plan-review disposition | implementation, verification, review, explanation, final audit |
+| implementation diff or commit | verification, implementation review, explanation, final audit |
+| PR head/base or merge base | stabilization, implementation review, explanation, final audit |
+| lower stack layer | every descendant implementation verification, review, Reviewer Guide, explanation, and final audit |
+| stack ancestry or restack | affected descendant verification, review, explanation, and final audit |
+| explanation comments/Reviewer Guide | explanation gate and any final audit that consumed them |
 
-The stack is ready only when all applicable conditions hold:
+After lower-layer changes, identify every descendant, restack, rerun affected checks, and reconcile guides/notes against the new diff. After final audit, any code, PR head/base, stack, specification, or plan change makes that audit stale; never reuse the same artifact as ready evidence.
 
-- Required CI and local verification are green.
+## Phase 7: Explanation and final audit
+
+The Reviewer Guide is maintained for every PR, but it is a compact entry point: review order, key decisions, reviewer focus, and exact verification. Add `[SHIP:NOTE]` only for non-obvious domain invariants, state transitions, authorization/security, data integrity, transactions/concurrency, cache/performance, or meaningful architecture decisions. Do not comment on trivial code.
+
+The explanation phase is skipped for Small unless reviewability requires it, conditional for Normal, and conditional for High-risk when non-obvious reasoning, reviewability, or risk makes it useful/needed; once selected, treat it as required. Verify comments target the current head SHA and valid diff lines. Reconcile them after every code or stack change.
+
+Run the independent final auditor only when the selected route requires it or a conditional gate is enabled. Provide raw original request, specification, plan, final diffs, stack bases, and verification results. Require one line per acceptance criterion and non-goal with `PASS`, `FAIL`, or `UNCERTAIN` plus evidence. Handle final-audit `FAIL` or `UNCERTAIN` through one bounded repair cycle: apply the minimal repair, restack where applicable, rerun affected verification, and run one independent re-audit against the current evidence. If the same material issue remains, or an `UNCERTAIN` cannot be resolved with evidence, escalate to a blocker or human decision. Do not relabel uncertainty as pass.
+
+## Human-review readiness
+
+The task is ready only when all applicable conditions hold:
+
+- Required local and CI verification is green.
+- The independent implementation review passes and any bounded repair is complete.
 - No unresolved AI-review findings remain.
 - Stack bases and descendant branches include the latest parent changes.
-- Reviewer Guides describe the current diffs.
-- `[SHIP:NOTE]` comments are current or clearly marked obsolete.
-- Acceptance criteria and non-goals pass the final audit.
+- A Reviewer Guide exists for every PR, describes the current diff, and is synchronized with the current head; this requirement is never skipped.
+- `[SHIP:NOTE]` comments are optional; when they exist or the explanation gate explicitly selects them, synchronize them with the current head and valid diff lines.
+- Acceptance criteria and non-goals pass the required final audit, or the Normal final-audit skip is supported by the unchanged implementation-review evidence.
 - Required dependency skills completed their bounded responsibilities.
+- Worker result and actual diff are reconciled with no unresolved scope drift.
+- Runtime role assignment and reviewer independence were verified to the extent the active Codex runtime permits; limitations are reported.
 - No repository approval gate remains.
 
-Use the current CLI help to move draft PRs to ready-for-review when the `$ship` invocation and repository policy authorize it. Report the ready milestone and stop. Never merge automatically.
+Use the current CLI help to move draft PRs to ready-for-review when authorized. Report the ready milestone and stop. Never merge automatically.

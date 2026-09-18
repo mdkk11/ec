@@ -1,6 +1,6 @@
 # PR reviewer guide and conversation protocol
 
-Treat the PR body, selected inline comments, and review threads as an interface for discussing implementation intent. Apply repository PR templates and language conventions first, then add the sections below.
+Treat the PR body, selected inline comments, and review threads as an interface for discussing implementation intent. Apply repository PR templates and language conventions first, then add the sections below. A single meaningful PR is the default; include stack details only when a selected stack exists.
 
 ## PR body
 
@@ -26,9 +26,7 @@ Include at least:
 
 ## Stack
 
-1. <Layer 1 and status>
-2. <Layer 2 and status> ← this PR
-3. <Layer 3 and status>
+<Single PR: none. Stack: ordered layer list and current status.>
 
 ## Reviewer Guide
 
@@ -53,13 +51,15 @@ Include at least:
 - Re-verification: `[SHIP:VERIFY] <question>`
 ```
 
-When the repository mandates other headings, merge this content into them without deleting required sections. Explain only the current PR's diff; do not repeat lower-layer implementation details.
+When the repository mandates other headings, merge this content into them without deleting required sections. Explain only the current PR’s diff plus minimum parent context needed to review it; do not repeat lower-layer implementation details. Do not claim checks or audits that were not run.
+
+The Reviewer Guide is required for each PR, but keep it to the current diff’s entry point, key decisions, reviewer focus, and exact verification. It is not a replacement for the independent implementation review or a reason to add a stack.
 
 ## Inline explanations
 
 Start every AI-authored explanation with `[SHIP:NOTE]`.
 
-Select only lines where explaining why materially reduces review effort, such as:
+Add notes only where explaining why materially reduces review effort, such as:
 
 - Domain invariants and state transitions.
 - Validation or API boundaries.
@@ -69,7 +69,7 @@ Select only lines where explaining why materially reduces review effort, such as
 - DB schema/query decisions.
 - Non-obvious abstractions or ADR/spec decisions embodied in code.
 
-Do not comment on imports, formatting, simple renames, obvious annotations, boilerplate, or trivial markup.
+Do not comment on imports, formatting, simple renames, obvious annotations, boilerplate, or trivial markup. A task may legitimately have no `[SHIP:NOTE]` comments; record that no non-obvious explanation was needed.
 
 Write a short natural explanation using the relevant subset of:
 
@@ -103,7 +103,7 @@ Treat as a question. Do not change code. Investigate enough context to explain:
 - Current design intent.
 - Relevant trade-offs.
 - Plausible alternatives.
-- A recommendation, including when the reviewer's alternative is better.
+- A recommendation, including when the reviewer’s alternative is better.
 
 Offer what a change would look like, but wait for `[SHIP:CHANGE]` or equivalent explicit authorization before implementing it.
 
@@ -112,10 +112,10 @@ Offer what a change would look like, but wait for `[SHIP:CHANGE]` or equivalent 
 Treat as an explicit implementation request. Before editing, confirm:
 
 - Exact requested behavior.
-- Affected stack layers and descendants.
+- Affected PR or stack layers and descendants.
 - Consistency with the specification, ADRs, and repository rules.
 
-Implement the smallest coherent change, run affected verification, restack descendants, and synchronize explanations. If the request conflicts with the approved specification or creates material new scope, stop and ask rather than silently redefining the task.
+Implement the smallest coherent change, run affected verification, restack descendants when applicable, and synchronize explanations. If the request conflicts with the approved specification or creates material new scope, stop and ask rather than silently redefining the task.
 
 ### `[SHIP:VERIFY]`
 
@@ -135,9 +135,9 @@ Infer intent conservatively. Treat “why?”, “is this needed?”, “what is
 
 When a human replies to `[SHIP:NOTE]`, use the code at that line, the explanation, the full thread, and the applicable spec/ADR as context. Continue in the same thread when platform policy permits.
 
-Do not defend the current implementation as a goal. State the current approach, alternative, trade-off, and recommendation honestly. If the human's proposal is better, say so.
+Do not defend the current implementation as a goal. State the current approach, alternative, trade-off, and recommendation honestly. If the human’s proposal is better, say so.
 
-Respect stricter GitHub mutation policies from delegated skills. If posting a human-facing reply requires approval of the exact text, draft the response in chat and wait for that approval.
+Respect stricter policies from delegated skills. If posting a human-facing reply requires approval of the exact text, draft the response in chat and wait for that approval.
 
 ## Synchronization
 
@@ -146,6 +146,7 @@ After review fixes, lower-stack changes, restacks, architecture changes, or erro
 1. Re-read every `[SHIP:NOTE]` against the current diff.
 2. Update an authored comment when supported and still attached to a relevant line.
 3. Otherwise add a new current explanation and make the old one clearly obsolete when the platform permits.
-4. Do not leave a misleading explanation merely because it is already published.
+4. Update the Reviewer Guide so it describes the current PR head, current stack position (or single-PR status), and exact verification.
+5. Do not leave a misleading explanation merely because it is already published.
 
 Questions and verification requests never become code changes solely because synchronization is needed.

@@ -2,58 +2,83 @@
 
 Perform this phase without modifying the worktree, local branches, PRs, installed skills, or configuration. Refreshing remote-tracking refs with a non-destructive fetch is permitted because stale remote state can otherwise cause duplicate or misdirected work.
 
-## 1. Check required skills
+The preflight has two dependency tiers. Core capability checks happen before repository investigation. Gate-specific direct dependencies are selected after triage and validated before the phase that needs them. A skill used internally by a delegated wrapper is transitive: verify the wrapper’s current contract when the wrapper is selected, but do not make the transitive skill a `$ship` hard dependency.
 
-Perform this check before inspecting the repository:
+## 1. Core capability inventory
 
-- `grill-with-docs`
-- `grilling`
-- `domain-modeling`
-- `babysit-pr`
-- `gh-stack`
+Before inspecting the repository, inspect the active tool and skill catalog and confirm:
 
-If any required skill is unavailable:
+- `$ship` and its reference files are readable.
+- Independent subagent support is available, or the runtime limitation is known.
+- Read-only filesystem and Git inspection are available.
+- The current CLI and configuration inspection commands are available when runtime routing is in scope.
 
-1. Report every missing skill.
-2. Tell the user installation is required and request authorization to install it.
-3. Stop before triage, repository work, or external mutation.
-
-Do not use the small fast path, continue part of the workflow, reproduce the missing skill's procedure, or select a manual fallback.
+Do not require every optional workflow skill here. A missing gate-specific dependency is handled after triage. If the controller cannot create a separate reviewer for a route that requires independent review, stop that route before implementation and report the blocker; do not simulate independence.
 
 ## 2. Establish repository state
 
 1. Resolve the repository root, current branch, default branch, remotes, upstream, and worktree status.
 2. After resolving the exact remote, refresh its remote-tracking refs with `git fetch --prune <remote>` when authentication and repository policy permit. If fetch is unavailable, query remote refs and GitHub directly and mark local tracking refs as potentially stale.
-3. Detect nested or parent `AGENTS.md` files that apply to the target paths and read them completely.
+3. Detect nested or parent `AGENTS.md` files that apply to target paths and read them completely.
 4. Identify unrelated staged, unstaged, and untracked changes. Do not assume they belong to `$ship`.
-5. Inspect recent branches and PRs in every state—open, draft, merged, and closed—before deciding whether work or submission is missing. Resolve the current branch's PR directly when one exists; do not infer absence from an open-PR list alone.
-6. Reconcile local HEAD, remote branch HEAD, PR head/base/state, default-branch HEAD, and `gh stack view --json`. If a related PR is already merged or closed, report that terminal state instead of creating a duplicate PR or choosing a new task from stale context.
+5. Inspect recent branches and PRs in every state—open, draft, merged, and closed—before deciding whether work or submission is missing. Resolve the current branch’s PR directly when one exists; do not infer absence from an open-PR list alone.
+6. Reconcile local HEAD, remote branch HEAD, PR head/base/state, default-branch HEAD, and `gh stack view --json` when stack support is in scope. If a related PR is already merged or closed, report that terminal state instead of creating a duplicate PR or choosing a new task from stale context.
 7. Confirm GitHub authentication before any later push or PR operation, without printing tokens.
 
-Prefer `rg --files` and targeted reads. Do not dump secrets or entire configuration files into chat.
+Remote refresh and PR reconciliation happen before statements such as “this branch has no PR,” “the branch is ahead of main,” or “start from the current main.”
 
-Remote refresh and PR reconciliation happen before task classification or statements such as “this branch has no PR,” “the branch is ahead of main,” or “start from the current main.”
+## 3. Triage-selected direct dependencies
 
-## 3. Discover capabilities and skills
+After classifying the task and selecting gates, validate only the dependencies needed by that route. Record the result and version/commit where useful.
 
-Use the current session's tool and skill catalog first. Then inspect the configured personal, repository, and plugin skill locations when needed.
+| Capability | Validate when | Contract |
+| --- | --- | --- |
+| `grill-with-docs` | specification gate is required or enabled | Read its current `SKILL.md` and invoke its current workflow; do not duplicate its interrogation |
+| implementation worker role | every route before implementation | Confirm a separate role can receive the worker contract and return a result; implementation is delegated by default |
+| independent reviewer role | every route before implementation review | Confirm the reviewer can be a separate agent from the implementation author and can inspect actual diff/evidence |
+| planner role / planning support | written plan or plan review is required | Confirm the selected planning capability and repository plan format |
+| `babysit-pr` | stabilization is selected | Read its script paths, prerequisites, mutation policy, stop conditions, and one-shot mode; use its documented snapshot |
+| `gh-stack` | an existing or selected stack is in scope | Read it before stack navigation or mutation and reconcile with current `gh stack --help` |
+| final auditor role | High-risk or explicit final-audit gate | Confirm an independent agent can receive raw acceptance evidence after stabilization |
 
-For every required skill:
+If a selected direct dependency is unavailable, stop before that gate. Preserve any safe earlier checkpoint, state the exact missing capability, and ask for authorization or user direction as appropriate. Do not make missing `grill-with-docs`, `gh-stack`, or `babysit-pr` block a route that does not select them.
 
-1. Read its current `SKILL.md` completely before invoking it.
-2. Treat its current safety and stop conditions as authoritative.
+### Delegated transitive dependencies
 
-Required delegation checks:
+`grilling` and `domain-modeling` may be used inside `grill-with-docs`. Read and trust the wrapper’s current contract when `grill-with-docs` is selected, but do not list or independently invoke those skills as `$ship` direct dependencies unless the wrapper explicitly requires it. Do not infer or reimplement internal dependencies of `babysit-pr` or `gh-stack`.
 
-- `grill-with-docs`: verify the installed body and any skills it invokes. At the time `$ship` was authored, the upstream wrapper invoked `grilling` and `domain-modeling`; re-check instead of assuming this remains true.
-- `babysit-pr`: verify its script paths, prerequisites, mutation policy, and stop conditions. Prefer its documented one-shot diagnostic mode for bounded stabilization.
-- `gh-stack`: read it before creating, submitting, rebasing, syncing, or navigating a stack. Reconcile its guidance with the installed extension's current help.
+`explained-code-review` is an optional repository-local review capability. Use it only when the selected task or repository policy calls for its artifact; it is not a required dependency for every invocation.
 
-Inspect current Codex capabilities from actual tool declarations. If the CLI is available, `codex features list` may supplement—not override—the active session tools. Do not hard-code model names. Confirm that independent agents can be created before promising independent review.
+## 4. Project-scoped runtime model routing
 
-## 4. Discover repository conventions
+Keep workflow semantics and concrete model assignment separate. The Skill and its references name only roles: orchestrator/planner, implementation worker, independent implementation reviewer, and final auditor. The project runtime configuration is the source of truth for the concrete assignment.
 
-Inspect only enough documentation to determine:
+Inspect, without editing during preflight:
+
+- Project `.codex/config.toml` for the main orchestrator defaults and multi-agent enablement.
+- Project `.codex/agents/*.toml` for role definitions and their config layers.
+- Current Codex CLI version, strict-config behavior, feature flags, and model catalog.
+
+Validate the official configuration surface where available:
+
+```text
+codex --strict-config --cd <repository> doctor
+codex --strict-config --cd <repository> exec --ephemeral --sandbox read-only "<no-op prompt>"
+codex features list
+codex debug models
+```
+
+The current CLI does not accept `--strict-config` on the `features` subcommand; use a strict `doctor` or no-op `exec` invocation for configuration parsing, then use `features list` for the feature inventory.
+
+Confirm that the project config is trusted, role files parse, configured model/reasoning pairs are supported by the current catalog, the implementation worker has write capability required by its contract, and reviewer/planner/auditor roles are read-only where their contract requires it. Do not create a launcher, wrapper, or pseudo-routing mechanism to hide an unsupported setting.
+
+For a new task, use the configured implementation-worker role by default and record the resolved role, model, reasoning level, sandbox, and agent identity in the operational state when the runtime exposes them. Start the implementation author and independent reviewer as different agent instances. If the active spawn surface supports explicit per-agent model/reasoning overrides, use the project role plus those formal overrides and record the resolved assignment. If a project config change cannot affect an already-running session, report that limitation and verify it on a new invocation or supported spawn surface; never claim retroactive application.
+
+If the active tool surface does not expose named roles or per-agent overrides, report all three facts before proceeding: the configuration level that is accepted, the assignment actually resolved for each agent, and the role assignment that cannot be enforced. A worker fallback is a recorded decision, not silent substitution.
+
+## 5. Discover repository conventions
+
+Inspect only enough documentation and files to determine:
 
 - Where specifications, plans, ADRs, and durable context belong.
 - Whether plan creation or implementation requires explicit human approval.
@@ -63,22 +88,11 @@ Inspect only enough documentation to determine:
 - Package manager and commands for lint, typecheck, tests, build, migrations, E2E, and VRT.
 - CI workflows, required checks, protected branches, and release constraints.
 
-Use actual files as the source of truth: package scripts, Makefiles, task runners, CI YAML, and repository docs. Do not invent a command from the ecosystem defaults.
+Use actual files as the source of truth: package scripts, Makefiles, task runners, CI YAML, and repository docs. Do not invent a command from ecosystem defaults. Do not create an ADR for every feature or put temporary hypotheses into durable context.
 
-Default documentation layout only when the repository has no convention:
+## 6. Inspect GitHub CLI and stacking support when selected
 
-```text
-docs/CONTEXT.md                  durable project/domain knowledge only
-docs/specs/YYYYMMDD-<feature>.md feature specification when persistence helps
-docs/plans/YYYYMMDD-<feature>.md implementation plan when persistence helps
-docs/adr/YYYYMMDD-<decision>.md  durable design decision only
-```
-
-Do not create an ADR for every feature or put temporary hypotheses into `CONTEXT.md`.
-
-## 5. Inspect GitHub CLI and stacking support
-
-Run current help rather than relying on remembered syntax:
+When submission, stabilization, or stack operations are in scope, run current help rather than relying on remembered syntax:
 
 ```text
 gh --version
@@ -88,30 +102,33 @@ gh stack --help
 gh pr create --help
 ```
 
-Derive the workflow from the installed `gh stack` help. If the command is unavailable, tell the user that the official extension is required, request authorization to install it, and stop.
+If `gh-stack` is selected and the command is unavailable, tell the user that the required extension is missing and stop before stack mutation. A local implementation checkpoint may continue only when the user explicitly requested that partial outcome and no other gate is blocked.
 
-## 6. Check other blockers
+## 7. Other blockers
 
-Apply these gates after the required-skill check:
+Apply these gates after core capability and triage-selected dependency checks:
 
 | Blocker | Behavior |
 | --- | --- |
-| Independent subagent support | Allow the small fast path when otherwise safe. Stop medium/large work before independent plan review or final audit. |
-| `gh` or GitHub authentication | Permit local planning/implementation only when the user wants that partial outcome; stop before push or PR creation. |
-| Repository command | Mark it unavailable; do not substitute an assumed equivalent. |
+| independent subagent support | Small may continue only if its route still has the required independent diff review; Normal/High-risk stop before an independent review or final audit that cannot be separated |
+| implementation worker routing | Use the configured worker by default; if unavailable, stop or obtain explicit fallback authorization and report the actual assignment |
+| `gh` or GitHub authentication | Permit local planning/implementation only when the user wants that partial outcome; stop before push or PR creation |
+| repository command | Mark it unavailable; do not substitute an assumed equivalent |
+| dirty overlapping worktree | Preserve the existing change and stop until ownership/scope is resolved |
 
-## 7. Report before implementation
+## 8. Report before implementation
 
 Give a short preflight result containing:
 
-- Task classification candidate.
+- Task classification candidate and selected gate matrix.
 - Applicable repository rules and approval gates.
-- Available delegated skills and agents.
+- Core capabilities and selected direct dependencies, with transitive dependencies clearly separated.
+- Runtime role configuration, current-session applicability, actual assignment evidence, and any limitation.
 - Discovered verification commands.
-- Stacking mechanism.
+- Stacking mechanism, if selected.
 - Dirty-worktree or permission blockers.
 - Proposed responsibility boundary and artifacts.
-- Recovered phase and the evidence that makes earlier phases current or stale.
-- Requested milestone and the phases that would remain deferred at that checkpoint.
+- Recovered phase and evidence that makes earlier phases current or stale.
+- Requested milestone and phases that remain deferred at that checkpoint.
 
-Continue automatically only when the user request and repository rules authorize the next mutation and no gate above requires a stop.
+Continue automatically only when the user request and repository rules authorize the next mutation and no selected gate requires a stop.
