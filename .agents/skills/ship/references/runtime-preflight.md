@@ -70,11 +70,22 @@ codex debug models
 
 The current CLI does not accept `--strict-config` on the `features` subcommand; use a strict `doctor` or no-op `exec` invocation for configuration parsing, then use `features list` for the feature inventory.
 
-Confirm that the project config is trusted, role files parse, configured model/reasoning pairs are supported by the current catalog, the implementation worker has write capability required by its contract, and reviewer/planner/auditor roles are read-only where their contract requires it. Do not create a launcher, wrapper, or pseudo-routing mechanism to hide an unsupported setting.
+Confirm that the project config is trusted, role files parse, configured model/reasoning pairs are supported by the current catalog, and the implementation worker has the write capability required by its contract. For planner, reviewer, and auditor roles, confirm that the custom agent files declare `sandbox_mode = "read-only"` as the intended configuration, but do not treat that declaration as proof of runtime enforcement. If the active runtime exposes effective sandbox or agent metadata, record the reported value; otherwise record it as unavailable. Do not create a launcher, wrapper, or pseudo-routing mechanism to hide an unsupported setting.
 
-For a new task, use the configured implementation-worker role by default and record the resolved role, model, reasoning level, sandbox, and agent identity in the operational state when the runtime exposes them. Start the implementation author and independent reviewer as different agent instances. If the active spawn surface supports explicit per-agent model/reasoning overrides, use the project role plus those formal overrides and record the resolved assignment. If a project config change cannot affect an already-running session, report that limitation and verify it on a new invocation or supported spawn surface; never claim retroactive application.
+Report sandbox state as separate fields:
 
-If the active tool surface does not expose named roles or per-agent overrides, report all three facts before proceeding: the configuration level that is accepted, the assignment actually resolved for each agent, and the role assignment that cannot be enforced. A worker fallback is a recorded decision, not silent substitution.
+```text
+Configured sandbox: read-only
+Effective sandbox: <runtime-reported value | unavailable>
+Logical role policy: read-only
+Runtime enforcement: confirmed | unavailable | mismatched
+```
+
+If the effective sandbox is write-capable or cannot be inspected, preserve the role’s logical contract—do not edit files, mutate external state, or mutate PRs—and report the runtime limitation. A configured read-only value alone is not evidence that the child runtime enforced it.
+
+For a new task, use the configured implementation-worker role by default and record the resolved role, model, reasoning level, configured sandbox, effective sandbox (when exposed), and agent identity in the operational state. Start the implementation author and independent reviewer as different agent instances. If the active spawn surface supports explicit per-agent model/reasoning overrides, use the project role plus those formal overrides and record the resolved assignment. If a project config change cannot affect an already-running session, report that limitation and verify it on a new invocation or supported spawn surface; never claim retroactive application.
+
+If the active tool surface does not expose named roles, per-agent overrides, or effective sandbox metadata, report the configuration level that is accepted, the assignment actually resolved for each agent, the sandbox value that cannot be verified, and any role assignment that cannot be enforced. A worker fallback is a recorded decision, not silent substitution.
 
 ## 5. Discover repository conventions
 

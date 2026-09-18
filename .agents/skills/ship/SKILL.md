@@ -21,12 +21,12 @@ Act as the workflow controller. Delegate specialized work, preserve repository r
 Own only orchestration:
 
 - Classify the task and select the risk path and gate matrix.
-- Track phase, artifacts, gate status, stack dependencies, verification, evidence revisions, and blockers.
+- Track phase, artifacts, gate status, stack dependencies, verification, direct artifact identities, and blockers.
 - Choose and invoke available skills, role-configured agents, and CLIs in the required order.
 - Delegate implementation through the configured implementation-worker role by default. Pass the implementation contract, and use the controller as the author only when that role cannot be started and the user explicitly accepts the fallback; record the reason.
 - Enforce approval gates, independence between author and critic, and final readiness criteria.
 - Compare worker-reported results with the actual worktree diff, Git status, changed-file list, HEAD/base, and verification output.
-- Restack descendants and invalidate stale verification, reviews, guides, explanations, or audits when a lower layer or other input changes.
+- Restack descendants and invalidate stale verification, reviews, guides, explanations, or audits when a lower layer or material input changes.
 
 Delegate:
 
@@ -49,7 +49,7 @@ Delegate:
 - Do not merge automatically. Leave final merge decisions to a human.
 - Do not claim human-review readiness while required checks, reviews, audits, dependency updates, or explanation synchronization remain incomplete.
 - Treat any allowed-scope violation from an implementation worker as a blocker until the change is removed, explicitly authorized, or the user resolves the scope decision. Never hide scope drift inside a repair.
-- A completed gate becomes stale when any of its inputs change. Do not use an old green result to pass a new head, base, specification, plan, or stack ancestry.
+- A completed gate becomes stale when a material input changes. Do not use an old green result to pass a new head, base, specification, material plan content, or stack ancestry.
 
 ## State reporting
 
@@ -64,19 +64,26 @@ Gates: specification=<required|conditional|skipped>; plan=<...>; plan-review=<..
        approval=<required|conditional|skipped>
        implementation-review=<required|conditional|skipped>; stack=<...>
        explanation=<...>; final-audit=<...>
-Spec: <path or chat artifact>
-Plan: <path or chat artifact>
-Implementation author: <role/agent and evidence>
-Reviewer: <separate role/agent and evidence>
-Stack: <ordered branch/PR list and bases, or single PR>
-Verification: <current results per layer>
+Spec: <path @ blob SHA/content revision, or chat artifact identity>
+Plan: <path @ blob SHA/content revision, or chat artifact identity>
+Implementation author: <role/agent and implementation HEAD SHA>
+Reviewer: <separate role/agent; reviewed HEAD/base/spec/plan identities>
+Stack: <ordered branch/PR list and parent/base ancestry, or single PR>
+Verification: <current results and verification-input identities per layer>
 Requested milestone: <full readiness or explicit earlier checkpoint>
-Evidence: <artifact, commit SHA, PR head SHA, or approval supporting the current phase>
-Evidence revision: <monotonic revision or input fingerprint>
+Evidence:
+  PR: head=<SHA> base=<SHA>
+  Reviewer Guide: PR head SHA it describes, or skipped with reason
+  Final audit: audited HEAD/base/spec/plan identities, or skipped with reason
+Runtime sandbox:
+  Configured: <read-only | workspace-write | ...>
+  Effective: <runtime-reported value | unavailable>
+  Logical role policy: <read-only | implementation write>
+  Enforcement: <confirmed | unavailable | mismatched>
 Blockers: <missing dependency, approval, scope drift, CI, review item, or routing limitation>
 ```
 
-Update this record after every phase transition, gate selection, worker handoff, lower-stack change, evidence invalidation, or blocker. A skipped phase must include its reason. A completed phase becomes stale when its inputs change; rerun it instead of preserving a false green state.
+Update this record after every phase transition, gate selection, worker handoff, lower-stack change, evidence invalidation, or blocker. A skipped phase must include its reason. A completed phase becomes stale when a material input changes; rerun it instead of preserving a false green state.
 
 Keep specifications and plans focused on the problem, relevant evidence, constraints, decisions, implementation, and verification. Exclude workflow narration such as fetched refs, worktree cleanliness, branch or stack setup, commit and PR identifiers, approval history, phase transitions, and conversation history unless a fact materially changes the technical solution or the repository’s required document template explicitly asks for it.
 
@@ -92,7 +99,7 @@ Finish only when the applicable readiness gate in [workflow.md](references/workf
 - Implementation worker contract result and actual-diff/scope reconciliation.
 - Stack order and base relationships, or the single-PR decision.
 - Verification, bounded repair/stabilization, and final acceptance results.
-- Reviewer Guide and prefix protocol status.
+- Reviewer Guide and prefix protocol status, including a Small-task skip when the guide is not useful.
 - Runtime routing: configured role assignment, independently verified author/reviewer roles, current-session applicability, and any configuration limit or fallback.
 - Current limitations and residual risks.
 - Exact remaining human action, normally review and merge.

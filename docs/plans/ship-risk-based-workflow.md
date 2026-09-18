@@ -19,7 +19,7 @@
 - `.agents/skills/ship/references/pr-review-protocol.md` は Reviewer Guide と human prefix protocol を定義している。`[SHIP:NOTE]` は既に重要な箇所へ限定する記述だが、workflow 側では explanation phase 自体が一律必須である。
 - `.agents/skills/ship/evals/evals.json` は resume、merged/closed PR の重複防止、Draft PR checkpoint の3ケースだけを持つ。
 - repository-local `explained-code-review` は独立 blind review を行えるが、HTML review artifact の生成に特化している。すべての `$ship` invocation の必須 dependency にはしない。
-- 公式 OpenAI documentation では、trusted project の `.codex/config.toml` で main agent の既定 `model` と `model_reasoning_effort` を設定でき、`.codex/agents/*.toml` で project-scoped custom agent ごとの model、reasoning effort、instructions、sandbox を設定できる。custom agent file の値は explicit spawn、`[agents]` default、parent value を解決した後に優先される。
+- 公式 OpenAI documentation では、trusted project の `.codex/config.toml` で main agent の既定 `model` と `model_reasoning_effort` を設定でき、`.codex/agents/*.toml` で project-scoped custom agent ごとの model、reasoning effort、instructions、sandbox を設定できる。一方、child spawn 時には parent turn の live sandbox/approval override が再適用され得るため、custom agent file の configured sandbox と effective runtime sandbox は別に確認・報告する必要がある。
 - 現在の Codex CLI は `0.148.0-alpha.6` で multi-agent feature が有効であり、local model catalog は `gpt-5.6-sol` の `high` と `gpt-5.6-luna` の `max` をサポートしている。
 - 現在の repository には `.codex/` directory がなく、project-level model routing は未設定である。
 - `AGENTS.md` は複数ファイルの設計変更に実行計画と承認を要求する。計画作成後は実装承認まで停止する。
@@ -87,7 +87,7 @@
 
 ### Explanation と human protocol
 
-- Reviewer Guide は各PRに維持するが、現在の diff を理解・レビューする entry point、key decision、review focus、verification に絞る。
+- Small のPR bodyは Purpose、必要ならScope、Verificationを最低限とし、Reviewer Guideはdiffの読み順、非自明な判断、review focus、repository policyのいずれかに価値がある場合だけ追加する。Normal / High-risk は Reviewer Guide を原則維持するが、現在の diff の review に必要な情報だけに絞る。
 - `[SHIP:NOTE]` は domain invariant、state transition、auth/security、data integrity、transaction/concurrency、cache/performance、非自明な architecture decision に限定し、trivial code には付けない。
 - `[SHIP:Q]` と `[SHIP:VERIFY]` は read-only、`[SHIP:CHANGE]` だけを明示的 change request とする意味論を維持する。
 
@@ -95,8 +95,8 @@
 
 - final audit は High-risk または明示的に有効化された task だけで行う。
 - Normal で implementation review が同じ acceptance criteria、diff、verification、HEAD/base を確認済みなら final audit は skip する。
-- original request、acceptance criteria/spec、plan、actual code/diff、verification、PR head/base、stack ancestry のうち gate の入力が変われば、依存する evidence を stale にする。
-- lower stack が変わった場合は全 descendant の implementation verification、review、Reviewer Guide、必要な explanation、final audit を stale にする。
+- original request、acceptance criteria/spec、material plan content、actual code/diff、verification、PR head/base、stack ancestry のうち gate の入力が変われば、依存する evidence を stale にする。判定には spec/plan の path と blob SHA/content revision、implementation HEAD、PR head/base、review/audit が確認した各 revision など既存artifactのidentityを直接使い、独自のmonotonic evidence revisionは作らない。
+- lower stack が変わった場合は全 descendant の implementation verification、review、存在する/applicable な Reviewer Guide、必要な explanation、final audit を stale にする。
 - final audit 後に code、PR head/base、spec が変わった場合は audit を stale にし、同じ artifact を根拠に ready としない。
 
 ### Dependency と bounded stabilization
@@ -112,10 +112,11 @@
 
 - workflow semantics と model assignment を分離する。`$ship` の Markdown は `orchestrator/planner`、`implementation worker`、`independent implementation reviewer`、`final auditor` という role と独立性だけを定義し、具体的な model 名や reasoning level を記載しない。
 - project runtime の `.codex/config.toml` で main orchestrator の default を `gpt-5.6-sol` / `high` にする。
-- `.codex/agents/ship-planner.toml` で planner を `gpt-5.6-sol` / `high`、read-only にする。plan artifact の書込みが必要な場合は orchestrator が reviewer-approved result を保存する。
+- `.codex/agents/ship-planner.toml` で planner を `gpt-5.6-sol` / `high`、configured read-only にする。plan artifact の書込みが必要な場合は orchestrator が reviewer-approved result を保存する。
 - `.codex/agents/ship-implementation-worker.toml` で implementation worker を `gpt-5.6-luna` / `max` にする。`$ship` は原則この独立 subagent へ implementation contract を渡し、main orchestrator 自身による実装は runtime が subagent を利用できない場合の明示的 blocker/fallback decision に限定する。
-- `.codex/agents/ship-independent-reviewer.toml` で independent implementation reviewer を `gpt-5.6-sol` / `high`、read-only にする。
-- `.codex/agents/ship-final-auditor.toml` で final auditor を `gpt-5.6-sol` / `high`、read-only にする。
+- `.codex/agents/ship-independent-reviewer.toml` で independent implementation reviewer を `gpt-5.6-sol` / `high`、configured read-only にする。
+- `.codex/agents/ship-final-auditor.toml` で final auditor を `gpt-5.6-sol` / `high`、configured read-only にする。
+- preflightでは configured sandbox、runtimeが公開する場合のeffective sandbox、logical role policy、runtime enforcementの確認可否を分離する。effective read-onlyを確認できない場合は保証を主張せず、write-capableでもplanner/reviewer/auditorのno-edit/no-external-state/no-PR-mutation契約は維持してruntime limitationを報告する。独自wrapperや擬似sandboxは追加しない。
 - current session へ project config が遡及適用されるとは仮定しない。実装作業自体では spawn API の正式な per-agent model/reasoning override を使い、implementation author を Luna Max、reviewer を別の Sol High agent として起動する。
 - runtime や active tool surface が named custom agent または per-agent override を公開しない場合は擬似 routing を追加しない。利用可能な設定 level、実際に解決された assignment、不可能な部分を最終報告する。
 
@@ -151,16 +152,16 @@
 
 ## 7. 実装手順
 
-1. `SKILL.md` の Start、responsibility boundary、state reporting、completion を gate-aware に変更する。task class を Normal default にし、phase ごとの required/conditional/skipped と evidence revision を追跡できる状態表現へ更新する。
+1. `SKILL.md` の Start、responsibility boundary、state reporting、completion を gate-aware に変更する。task class を Normal default にし、phase ごとの required/conditional/skipped と、spec/plan/HEAD/base/review/auditなど実artifactのrevisionを追跡できる状態表現へ更新する。
 2. `workflow.md` の state machine を共通 backbone と risk-based route に分ける。各 class の end-to-end flow、追加 gate の選択条件、recovery/checkpoint、stale propagation を先に定義する。
 3. 同ファイルへ implementation worker Input/Result と independent implementation review の契約を追加する。scope drift、FAIL repair、reverification、独立性、High-risk final auditor との責務分離を明記する。
 4. stack section を optional capability に変更する。単一PR default、stack 選択条件、existing stack recovery、lower-layer change の descendant invalidation を明記する。
 5. explanation、final audit、human-review readiness を gate-aware に変更する。Normal の重複 audit を避けつつ、High-risk と stale evidence の厳格さを維持する。
 6. `runtime-preflight.md` の一律 required-skill check を、開始時の capability inventory と gate 選択後の conditional dependency validation に分ける。`grilling` と `domain-modeling` は `grill-with-docs` の transitive dependency として `$ship` の hard dependency から外す。
-7. `pr-review-protocol.md` の PR body template を single PR/stack 両対応にし、Reviewer Guide を現在の diff の review に必要な情報へ限定する。`[SHIP:Q]`、`[SHIP:CHANGE]`、`[SHIP:VERIFY]` の既存動作は変更しない。
+7. `pr-review-protocol.md` の PR body contract を single PR/stack 両対応にし、SmallはPurpose、必要ならScope、Verificationだけでreadyになれるようにする。Reviewer GuideはSmallでは条件付き、Normal / High-riskでは原則維持し、現在の diff の review に必要な情報へ限定する。`[SHIP:Q]`、`[SHIP:CHANGE]`、`[SHIP:VERIFY]` の既存動作は変更しない。
 8. `agents/openai.yaml` の short description と default prompt から stacked PR 必須の含意を除く。
 9. `.codex/config.toml` と4つの project-scoped custom agent fileを追加する。official schema の `model`、`model_reasoning_effort`、`sandbox_mode`、`developer_instructions` だけを使用し、Skill本文からは role名で参照する。
-10. `evals.json` を13ケースにする。既存 resume、merged/closed duplicate 防止、Draft checkpoint の intent を残し、次を個別に評価する。
+10. `evals.json` の既存13ケースへ次の観点を自然に統合し、ケース数自体は増やさない。
    1. Small が不要な spec/plan ceremony を skip する。
    2. Normal が plan review、final audit、stack を無条件実行しない。
    3. High-risk が厳格な gate を維持する。
@@ -174,6 +175,9 @@
    11. `[SHIP:CHANGE]` だけを明示的 change request と扱う。
    12. current evidence が有効な resume で specification/planning を繰り返さない。
    13. merged/closed PR に duplicate PR を作らない。
+   14. SmallはReviewer GuideなしでもPurpose/Verificationと他条件が揃えばreadyになり、Normal / High-riskのGuideは必要なreviewability情報を持つ。
+   15. configured read-onlyとeffective sandboxを区別し、effective値を確認できなければruntime enforcementを保証しない。
+   16. stale判定はHEAD/base/spec/plan等のactual artifact revisionを使い、独自counter/fingerprintを要求しない。
 11. Skill6ファイルと runtime configuration 5ファイルを通読し、同じ保証が plan review、implementation review、stabilization、final audit に重複していないか、role と model assignment が密結合していないか確認する。
 
 ## 8. テスト・検証方法
@@ -181,6 +185,7 @@
 ### 構文・repository validation
 
 - `node -e "JSON.parse(require('node:fs').readFileSync('.agents/skills/ship/evals/evals.json', 'utf8'))"`
+- repository内のYAML / TOMLを既存parserでparseする。
 - `pnpm format`
 - `pnpm lint`
 - `pnpm knip`
@@ -200,6 +205,8 @@ application code を変更しないため、unit/frontend/backend/E2E/VRT、type
 - Prefix: `[SHIP:Q]` と `[SHIP:VERIFY]` は read-only、`[SHIP:CHANGE]` は change request になることを確認する。
 - Terminal PR: merged/closed PR を検出した場合、duplicate PR や隣接 task を開始しないことを確認する。
 - Routing: Skill本文が role名だけを持ち、project runtime config が orchestrator/planner Sol High、implementation worker Luna Max、reviewer/final auditor Sol High を割り当てることを確認する。
+- Sandbox reporting: configured read-only、runtimeが公開するeffective sandbox、logical read-only policy、runtime enforcementの確認可否を別項目として出力し、effective値が非公開なら保証を主張しないことを確認する。
+- Evidence: current HEAD/baseをそれぞれ変更し、spec/plan blob revision、reviewed/audited HEAD/base、Reviewer Guide target headに依存するevidenceだけがstaleになることを確認する。独自monotonic revisionは使用しない。
 
 各 simulation は `evals.json` の expected output と expectations を先頭から照合し、矛盾があれば文書側または eval 側を修正する。
 
@@ -212,6 +219,7 @@ application code を変更しないため、unit/frontend/backend/E2E/VRT、type
 - reviewer repair を1 bounded cycleにすると未解決で停止しやすくなる。停止時は finding、試行済み修正、verification evidence、必要な human decision を明示し、失敗を隠して先へ進めない。
 - ローカル `main` が `origin/main` より遅れている。対象ファイルに差分はないが、実装開始前に remote 状態を再確認し、必要なら user-authorized な更新方法を選ぶ。
 - project `.codex` config は既に開始済みの session へ遡及適用されない可能性がある。current task では per-spawn override で検証し、project default の完全な適用は新規 session で有効になるものとして報告する。
+- custom agent file の `sandbox_mode = "read-only"` は configured intentであり、parent turnのlive override後のeffective sandboxをruntimeが公開しない場合がある。logical read-only contractを維持しつつ、確認不能をenforcement保証へ読み替えない。
 
 ## 10. 未確定事項
 
@@ -226,7 +234,7 @@ application code を変更しないため、unit/frontend/backend/E2E/VRT、type
 - implementation worker contract と scope drift detection が明文化される。
 - single PR が default になり、stack capability と restack/stale behavior は残る。
 - `grilling` と `domain-modeling` が `$ship` の direct hard dependency ではなくなる一方、delegated contract の確認責務は失われない。
-- Reviewer Guide と3つの human prefix が維持され、`[SHIP:NOTE]` は非自明な箇所だけになる。
+- SmallはReviewer Guideなしでも最小PR bodyと他のready条件で完了でき、Normal / High-riskのReviewer Guideと3つのhuman prefixは必要最小限で維持され、`[SHIP:NOTE]` は非自明な箇所だけになる。
 - repair と stabilization が bounded になり、非収束時は blocker/human decision へ昇格する。
 - eval が指定された13ケースを個別に覆い、既存3ケースの安全性を失わない。
 - JSON parse、format、lint、knip と全 workflow simulation が成功する。
@@ -235,3 +243,5 @@ application code を変更しないため、unit/frontend/backend/E2E/VRT、type
 - independent implementation review を implementation author とは別の Sol High reviewer で実行できる。
 - model assignment が Skill 本文の workflow semantics と密結合せず、project runtime configuration に隔離される。
 - runtime 上設定不能または current session へ遡及適用できない部分が、設定可能な level と実際の assignment とともに最終報告される。
+- planner/reviewer/auditorのconfigured sandbox、effective sandbox、logical read-only policy、runtime enforcementの確認可否が区別され、確認不能なeffective read-onlyを保証済みと主張しない。
+- stale evidenceはspec/planのpathとblob/content revision、implementation/PRのHEAD/base、review/audit/guideが対象にしたrevisionで追跡し、独自monotonic counterやopaque fingerprintを必須にしない。

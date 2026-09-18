@@ -4,7 +4,27 @@ Treat the PR body, selected inline comments, and review threads as an interface 
 
 ## PR body
 
-Include at least:
+Choose the smallest body that satisfies the task class and repository template. Every PR needs a clear Purpose and exact Verification. Add Scope when it clarifies what is included or intentionally deferred; include Depends on and Stack only when they apply.
+
+### Small
+
+For an obvious isolated change, the minimum body is:
+
+```markdown
+## Purpose
+
+<What changed and why>
+
+## Verification
+
+- `<exact command or manual check>` — PASS/FAIL/not run with reason
+```
+
+When useful, add a separate `## Scope` section for the included or intentionally deferred boundary. Add a Reviewer Guide only when it materially helps the review: explaining the diff reading order, a non-obvious decision, a concrete reviewer focus, or a repository policy requirement. A missing guide alone must not block Small-task human-review readiness.
+
+### Normal / High-risk
+
+Use the repository template plus the following compact contract. Keep the Reviewer Guide to information needed to review the current diff; do not add ceremony merely to complete a section.
 
 ```markdown
 ## Purpose
@@ -53,7 +73,7 @@ Include at least:
 
 When the repository mandates other headings, merge this content into them without deleting required sections. Explain only the current PR’s diff plus minimum parent context needed to review it; do not repeat lower-layer implementation details. Do not claim checks or audits that were not run.
 
-The Reviewer Guide is required for each PR, but keep it to the current diff’s entry point, key decisions, reviewer focus, and exact verification. It is not a replacement for the independent implementation review or a reason to add a stack.
+For Normal and High-risk work, maintain the Reviewer Guide unless the repository policy explicitly permits a different reviewability artifact. Keep it to the current diff’s entry point, key decisions, reviewer focus, and exact verification. It is not a replacement for the independent implementation review or a reason to add a stack. `[SHIP:NOTE]` remains optional and belongs only on non-obvious lines.
 
 ## Inline explanations
 
@@ -146,7 +166,7 @@ After review fixes, lower-stack changes, restacks, architecture changes, or erro
 1. Re-read every `[SHIP:NOTE]` against the current diff.
 2. Update an authored comment when supported and still attached to a relevant line.
 3. Otherwise add a new current explanation and make the old one clearly obsolete when the platform permits.
-4. Update the Reviewer Guide so it describes the current PR head, current stack position (or single-PR status), and exact verification.
+4. When a Reviewer Guide exists or the explanation gate selects one, update it so it describes the current PR head, current stack position (or single-PR status), and exact verification. Do not create one for a Small task solely to satisfy this synchronization step.
 5. Do not leave a misleading explanation merely because it is already published.
 
 Questions and verification requests never become code changes solely because synchronization is needed.
