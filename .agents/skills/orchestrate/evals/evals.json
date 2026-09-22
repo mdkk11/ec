@@ -47,14 +47,16 @@
     },
     {
       "id": 4,
-      "prompt": "$orchestrate このfeatureを実装して。implementation workerが変更し、別のagentがactual diffを独立レビューできることを確認して。",
-      "expected_output": "implementation authorとindependent implementation reviewerを別agentとして起動し、reviewerにはoriginal request、acceptance criteria/spec、plan、repository rules、actual diff、verification、current HEAD/baseだけを渡す。authorの完了主張や望ましい判定は渡さない。custom agentのconfigured sandboxとeffective runtime sandboxを別々に確認し、effective値をruntimeが公開しない場合はread-only enforcementを保証したと主張しない。",
+      "prompt": "$orchestrate このfeatureを実装して。implementation workerが変更し、別のagentがactual diffを独立レビューできることを確認して。runtime preflightではallow_implicit_invocation=falseのSkillがimplicit prompt一覧に出ていない。",
+      "expected_output": "implementation authorとindependent implementation reviewerを別agentとして起動し、reviewerにはoriginal request、acceptance criteria/spec、plan、repository rules、actual diff、verification、current HEAD/baseだけを渡す。authorの完了主張や望ましい判定は渡さない。custom agentのconfigured sandboxとeffective runtime sandboxを別々に確認し、effective値をruntimeが公開しない場合はread-only enforcementを保証したと主張しない。runtime/discoveryはstatic evidence、必要なnon-model diagnostic、gate-criticalなactual runtime fallbackの順にboundedに確認する。allow_implicit_invocation=falseによるimplicit context上の非表示だけをfailureとせず、同一propertyをequivalent probeで反復しない。確認不能ならunavailableとして記録し、selected gateに必要な場合だけblockする。",
       "files": [],
       "expectations": [
         "implementationをconfigured implementation-worker roleへdelegateする",
         "reviewerはimplementation authorと別agent instanceである",
         "reviewはsummaryだけでなくactual diff、changed files、verification、HEAD/baseに基づく",
-        "configured read-onlyとeffective sandboxを区別し、effective値が不明ならruntime enforcement unavailableとして報告する"
+        "configured read-onlyとeffective sandboxを区別し、effective値が不明ならruntime enforcement unavailableとして報告する",
+        "runtime/discoveryはcheapest reliable evidenceから始め、同一propertyへのprimary methodと最大1つのmaterially differentなfallbackで原則収束する",
+        "allow_implicit_invocation=falseのSkillがimplicit contextにないことだけをdiscovery/install failureにせず、gateに不要なunavailable propertyではworkflowをblockしない"
       ]
     },
     {
@@ -143,14 +145,15 @@
     },
     {
       "id": 12,
-      "prompt": "$orchestrate このリファクタは今日はDraft PR作成までで止めて。後日、同じ会話でCI確認から再開したい。前回は仕様、承認済み計画、実装、ローカル検証、Draft PR作成まで完了しており、PR headは変わっていない。",
-      "expected_output": "最初の依頼ではDraft PR作成を安全なcheckpointとして、選択済みで未完了の後続gateをdeferredにする。Normalでexplanationやfinal auditを選択していなければskipを維持する。再開時はcurrent spec/plan/implementation/verification/PR head evidenceを照合し、specificationやplanningを繰り返さず、最初のselected incomplete/stale gateから始め、選択されたexplanationやfinal auditだけを順に行う。",
+      "prompt": "$orchestrate このリファクタは今日はDraft PR作成までで止めて。後日、同じ会話でCI確認から再開したい。前回は仕様、承認済み計画、実装、ローカル検証、Draft PR作成まで完了しており、HEAD/base/spec/plan/runtime configとverification environmentは変わっていない。",
+      "expected_output": "最初の依頼ではDraft PR作成を安全なcheckpointとして、選択済みで未完了の後続gateをdeferredにする。Normalでexplanationやfinal auditを選択していなければskipを維持する。再開時はcurrent spec/plan/implementation/verification/PR head evidenceを照合し、specificationやplanningを繰り返さず、最初のselected incomplete/stale gateから始め、選択されたexplanationやfinal auditだけを順に行う。later phaseの実行だけでは既存evidenceをstaleにせず、material inputが変わっていないlocal verificationとruntime/discovery evidenceを無条件に再実行しない。",
       "files": [],
       "expectations": [
         "Draft PR作成をcheckpointとして記録し、選択済みで未完了の後続gateだけをdeferredにする",
         "再開時にcurrent evidenceとhead/baseを照合して最初のselected incomplete/stale gateから続ける",
         "選択済みのstabilizationやexplanationより前にfinal auditを実行せず、未選択のexplanationやfinal auditを強制しない",
-        "同一headで最終監査を重複実行しない"
+        "同一headで最終監査を重複実行しない",
+        "HEAD/base/spec/plan/runtime config/verification environmentが変わっていないcurrent evidenceをlater phaseだけを理由に再実行しない"
       ]
     },
     {

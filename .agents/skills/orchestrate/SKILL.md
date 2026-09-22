@@ -22,6 +22,7 @@ Own only orchestration:
 
 - Classify the task and select the risk path and gate matrix, including the Architecture Decision Gate when the route requires it.
 - Track phase, artifacts, gate status, stack dependencies, verification, direct artifact identities, and blockers.
+- Bound runtime and discovery diagnostics, and reuse current evidence while its material inputs remain unchanged.
 - Separate the Architecture Decision Gate from its optional ADR artifact: record `existing-covered`, `recorded`, or `no-new-decision` with the applicable decision evidence and approval state.
 - Choose and invoke available skills, role-configured agents, and CLIs in the required order.
 - Delegate implementation through the configured implementation-worker role by default. Pass the implementation contract, and use the controller as the author only when that role cannot be started and the user explicitly accepts the fallback; record the reason.

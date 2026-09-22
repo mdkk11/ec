@@ -4,6 +4,12 @@ Perform this phase without modifying the worktree, local branches, PRs, installe
 
 The preflight has two dependency tiers. Core capability checks happen before repository investigation. Gate-specific direct dependencies are selected after triage and validated before the phase that needs them. A skill used internally by a delegated wrapper is transitive: verify the wrapper’s current contract when the wrapper is selected, but do not make the transitive skill a `$orchestrate` hard dependency.
 
+## Bounded evidence acquisition
+
+For each runtime or discovery property, use the cheapest reliable evidence first: static files/configuration, then a non-model diagnostic when needed, then an actual model/MCP runtime probe only when the selected gate depends on that property and cheaper evidence is insufficient. Use one primary attempt and, only if needed, at most one materially different fallback attempt by default. Do not repeat equivalent probes through fresh sessions, MCP reconnects, or alternate commands. Additional attempts beyond that bound are allowed only when the selected dependency documents its own bounded retry policy; a transient failure may justify using the one fallback but never resets or expands the overall bound.
+
+If the property remains unresolved, record `unavailable` as the result. Block only when that property is required to execute or truthfully pass the selected gate; otherwise continue and report the limitation. Attempt bounds are primary, with a bounded command timeout as a secondary safeguard. Reuse diagnostic evidence while its material inputs—such as the relevant Skill/config content, CLI version, invocation mode, or exposed runtime metadata—remain unchanged; do not introduce an opaque fingerprint, counter, cache, or diagnostic wrapper.
+
 ## 1. Core capability inventory
 
 Before inspecting the repository, inspect the active tool and skill catalog and confirm:
@@ -14,6 +20,8 @@ Before inspecting the repository, inspect the active tool and skill catalog and 
 - The current CLI and configuration inspection commands are available when runtime routing is in scope.
 
 Do not require every optional workflow skill here. A missing gate-specific dependency is handled after triage. If the controller cannot create a separate reviewer for a route that requires independent review, stop that route before implementation and report the blocker; do not simulate independence.
+
+An already-running `$orchestrate` invocation proves that its explicit invocation resolved and its body is readable; do not launch a fresh runtime merely to rediscover it. When Skill installation, synchronization, invocation policy, or discovery is itself in scope, inspect `SKILL.md`, `agents/openai.yaml`, configured Skill paths, and runtime configuration first. If `allow_implicit_invocation` is `false`, absence from the implicit model context is expected and is not evidence of installation or explicit-invocation failure.
 
 ## 2. Establish repository state
 
@@ -60,16 +68,21 @@ Inspect, without editing during preflight:
 - Project `.codex/agents/*.toml` for role definitions and their config layers.
 - Current Codex CLI version, strict-config behavior, feature flags, and model catalog.
 
-Validate the official configuration surface where available:
+Validate only the configuration properties required by the selected route. Start with the project files above. When static inspection is insufficient, choose the minimum applicable non-model diagnostic from the current CLI surface, for example:
 
 ```text
 codex --strict-config --cd <repository> doctor
-codex --strict-config --cd <repository> exec --ephemeral --sandbox read-only "<no-op prompt>"
 codex features list
 codex debug models
 ```
 
-The current CLI does not accept `--strict-config` on the `features` subcommand; use a strict `doctor` or no-op `exec` invocation for configuration parsing, then use `features list` for the feature inventory.
+Use an actual model/MCP runtime probe only as the bounded fallback when current-session applicability is gate-critical and the static/non-model evidence cannot establish it:
+
+```text
+codex --strict-config --cd <repository> exec --ephemeral --sandbox read-only "<no-op prompt>"
+```
+
+The current CLI does not accept `--strict-config` on the `features` subcommand; use a strict `doctor` for configuration parsing when available, then use `features list` only when that inventory is needed. Do not run every example command as a checklist.
 
 Confirm that the project config is trusted, role files parse, configured model/reasoning pairs are supported by the current catalog, and the implementation worker has the write capability required by its contract. For planner, reviewer, and auditor roles, confirm that the custom agent files declare `sandbox_mode = "read-only"` as the intended configuration, but do not treat that declaration as proof of runtime enforcement. If the active runtime exposes effective sandbox or agent metadata, record the reported value; otherwise record it as unavailable. Do not create a launcher, wrapper, or pseudo-routing mechanism to hide an unsupported setting. Keep the logical contract read-only even when effective enforcement is unavailable or write-capable: those roles must not edit files, mutate external state, or mutate PRs.
 
