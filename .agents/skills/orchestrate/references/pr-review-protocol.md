@@ -73,7 +73,9 @@ Use the repository template plus the following compact contract. Keep the Review
 
 When the repository mandates other headings, merge this content into them without deleting required sections. Explain only the current PR’s diff plus minimum parent context needed to review it; do not repeat lower-layer implementation details. Do not claim checks or audits that were not run.
 
-For Normal and High-risk work, maintain the Reviewer Guide unless the repository policy explicitly permits a different reviewability artifact. Keep it to the current diff’s entry point, key decisions, reviewer focus, and exact verification. It is not a replacement for the independent implementation review or a reason to add a stack. `[ORCHESTRATE:NOTE]` remains optional and belongs only on non-obvious lines.
+When the Architecture Decision Gate is enabled and completes, include its outcome once in the PR body or Reviewer Guide. For `existing-covered` or `recorded`, reference the applicable ADR path and current revision. For `no-new-decision`, include a short reason only when it helps reviewability or repository policy requires it; otherwise no ADR section is needed. A skipped gate has no outcome to include. Do not copy the ADR body or create an empty section, and do not require an ADR reference for a Small task without an applicable artifact.
+
+For Normal and High-risk work, maintain the Reviewer Guide unless the repository policy explicitly permits a different reviewability artifact. Keep it to the current diff’s entry point, key decisions, reviewer focus, applicable Architecture Decision Gate/ADR reference, and exact verification. It is not a replacement for the independent implementation review or a reason to add a stack. `[ORCHESTRATE:NOTE]` remains optional and belongs only on non-obvious lines.
 
 ## Inline explanations
 
@@ -134,6 +136,7 @@ Treat as an explicit implementation request. Before editing, confirm:
 - Exact requested behavior.
 - Affected PR or stack layers and descendants.
 - Consistency with the specification, ADRs, and repository rules.
+- Consistency with the selected Architecture Decision Gate outcome and current ADR evidence when applicable.
 
 Implement the smallest coherent change, run affected verification, restack descendants when applicable, and synchronize explanations. If the request conflicts with the approved specification or creates material new scope, stop and ask rather than silently redefining the task.
 
@@ -167,6 +170,7 @@ After review fixes, lower-stack changes, restacks, architecture changes, or erro
 2. Update an authored comment when supported and still attached to a relevant line.
 3. Otherwise add a new current explanation and make the old one clearly obsolete when the platform permits.
 4. When a Reviewer Guide exists or the explanation gate selects one, update it so it describes the current PR head, current stack position (or single-PR status), and exact verification. Do not create one for a Small task solely to satisfy this synchronization step.
-5. Do not leave a misleading explanation merely because it is already published.
+5. Re-check any Architecture Decision Gate outcome and ADR path/revision after a material decision change; status-only or related-link changes do not require downstream review text to be rewritten when the governing decision is unchanged.
+6. Do not leave a misleading explanation merely because it is already published.
 
 Questions and verification requests never become code changes solely because synchronization is needed.

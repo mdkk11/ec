@@ -4,50 +4,61 @@
     {
       "id": 1,
       "prompt": "$orchestrate typo修正を進めて、人間レビュー可能な状態まで進めて。仕様変更、DB変更、認証変更はなく、1ファイルだけを変更する。",
-      "expected_output": "Small fast pathとしてtriageし、実装、関連検証、actual diffの独立レビュー、単一PR、最小限のstabilizationへ進む。PR bodyはPurposeとVerificationを最低限にし、Scopeは有用な場合だけ追加する。Reviewer Guideは読み順、非自明な判断、review focus、repository policyのいずれかに価値がある場合だけ追加し、Guideなしだけを理由にreadyをblockしない。repository policyが要求しないspecification、formal plan、plan review、approval、stack、explanation、final auditは理由付きでskipする。",
+      "expected_output": "Small fast pathとしてtriageし、実装、関連検証、actual diffの独立レビュー、単一PR、最小限のstabilizationへ進む。PR bodyはPurposeとVerificationを最低限にし、Scopeは有用な場合だけ追加する。Reviewer Guideは読み順、非自明な判断、review focus、repository policyのいずれかに価値がある場合だけ追加し、Guideなしだけを理由にreadyをblockしない。repository policyが要求しないspecification、Architecture Decision Gate/ADR、formal plan、plan review、approval、stack、explanation、final auditは理由付きでskipする。",
       "files": [],
       "expectations": [
         "Smallの条件をsemantic riskで確認し、line countだけで分類しない",
         "implementation、relevant verification、independent diff/code review、unrelated changes保護を維持する",
         "不要なspecification、plan、stack、final auditを無条件に実行しない",
-        "SmallはPurpose/Verificationと他のready条件が揃えばReviewer Guideなしでもreadyになれる"
+        "SmallはPurpose/Verificationと他のready条件が揃えばReviewer Guideなしでもreadyになれる",
+        "Smallの局所変更ではArchitecture Decision Gateを原則skipし、ADR artifactを作成しない",
+        "Smallのno-artifact routeはadrs CLIやADR repositoryがないだけではblockしない"
       ]
     },
     {
       "id": 2,
       "prompt": "$orchestrate 通常の管理画面リファクタを進めて。requirements、acceptance criteria、edge cases、責務境界は明確で、DB・認証・公開API・並行性の変更はない。",
-      "expected_output": "Normalとしてrequiredのwritten planとimplementationを進め、grill-with-docsは明確性を根拠にskip可能と判断する。独立implementation review、単一PR、bounded stabilizationを行い、plan review、stack、別explanation、final auditを無条件に追加しない。",
+      "expected_output": "Normalとしてrequiredのwritten planとimplementationを進め、grill-with-docsは明確性を根拠にskip可能と判断する。局所変更ならArchitecture Decision Gateもskipし、durable/cross-cuttingなtechnical decisionを実際に行う場合だけGateをrequiredにする。独立implementation review、単一PR、bounded stabilizationを行い、plan review、stack、別explanation、final auditを無条件に追加しない。",
       "files": [],
       "expectations": [
         "Normalがdefault routeであり、requiredのwritten plan、implementation、verification、independent implementation reviewを実行する",
         "grill-with-docsをclear requirementsではskipでき、material ambiguityまたはmistake reduction時には使えるconditional gateとして扱う",
         "implementation reviewが同じacceptance criteria、diff、verification、HEAD/baseを確認した場合にNormalのfinal auditをskipする",
-        "NormalのReviewer Guideは現在のdiffのreviewabilityに必要な情報だけを持ち、[ORCHESTRATE:NOTE]は非自明な箇所だけに限定する"
+        "NormalのReviewer Guideは現在のdiffのreviewabilityに必要な情報だけを持ち、[ORCHESTRATE:NOTE]は非自明な箇所だけに限定する",
+        "NormalのArchitecture Decision Gateはlocal changeではskipでき、durable/cross-cutting decision時だけexisting-covered/recorded/no-new-decisionを記録する"
       ]
     },
     {
       "id": 3,
       "prompt": "$orchestrate 注文権限の変更とmigrationを含む機能を進めて。",
-      "expected_output": "Large/High-riskとしてspecification、plan、independent plan review、appropriate/necessaryな場合のhuman approval、実装、最低限の適切なテスト、独立implementation review、stabilization、useful/neededな場合のexplanation、独立final acceptance auditを有効化する。選択したapproval/explanationは維持し、rollback、migration ordering、compatibility、security、data integrity、concurrencyを明示的に確認する。",
+      "expected_output": "Large/High-riskとしてspecification、required Architecture Decision Gate、plan、independent plan review、appropriate/necessaryな場合のhuman approval、実装、最低限の適切なテスト、独立implementation review、stabilization、useful/neededな場合のexplanation、独立final acceptance auditを有効化する。Gateはexisting-covered/recorded/no-new-decisionのいずれかをevidence付きで記録し、新しいdurable decisionがない限り新規ADRを強制しない。Gateでrequired decision approvalが未解決ならGateをpending-approvalにし、repository policyがproposed inputを許さない場合はplanning前で停止する。Policyがproposed inputを許す場合だけpendingのままplanningを進められるが、implementation前にapprovalをcurrentにしてGateをcompleteにする。post-plan human plan approvalとは別に扱う。選択したapproval/explanationは維持し、rollback、migration ordering、compatibility、security、data integrity、concurrencyを明示的に確認する。",
       "files": [],
       "expectations": [
         "auth/authorizationとmigrationをHigh-riskとして扱う",
         "High-riskのplan reviewとfinal auditを別責務の独立gateとして維持する",
         "human approvalはappropriate/necessary条件、explanationはuseful/needed条件で選択し、選択後は維持する",
         "rollback、migration ordering、compatibility、security、data integrity、concurrencyのreview項目を含める",
-        "High-riskのReviewer Guideは現在のdiffをレビューするための必要最小限のreviewability情報を持つ"
+        "High-riskのReviewer Guideは現在のdiffをレビューするための必要最小限のreviewability情報を持つ",
+        "High-riskではDecision Gateを必須にするが、新規ADR作成はnew durable decisionがある場合だけにし、既存coverageまたはno-new-decisionを許可する",
+        "adrs doctor PASSはrepository structure/config healthだけのevidenceであり、decision qualityはplan review/human approval/final auditで確認する",
+        "既存decisionを上書きせず、関連付けはlink、置換時だけsupersedesを使う",
+        "required decision approvalが未解決ならGateをpending-approvalにし、policyがproposed inputを許さない場合はplanning前でblockする",
+        "policyがproposed inputを許してplanningを進める場合も、implementation前にapprovalをcurrentにしてGateをcompleteにする"
       ]
     },
     {
       "id": 4,
-      "prompt": "$orchestrate このfeatureを実装して。implementation workerが変更し、別のagentがactual diffを独立レビューできることを確認して。",
-      "expected_output": "implementation authorとindependent implementation reviewerを別agentとして起動し、reviewerにはoriginal request、acceptance criteria/spec、plan、repository rules、actual diff、verification、current HEAD/baseだけを渡す。authorの完了主張や望ましい判定は渡さない。custom agentのconfigured sandboxとeffective runtime sandboxを別々に確認し、effective値をruntimeが公開しない場合はread-only enforcementを保証したと主張しない。",
+      "prompt": "$orchestrate このfeatureを実装して。implementation workerが変更し、別のagentがactual diffを独立レビューできることを確認して。runtime preflightではallow_implicit_invocation=falseのSkillがimplicit prompt一覧に出ていない。",
+      "expected_output": "implementation authorとindependent implementation reviewerを別agentとして起動し、reviewerにはoriginal request、acceptance criteria/spec、plan、repository rules、actual diff、verification、current HEAD/baseだけを渡す。authorの完了主張や望ましい判定は渡さない。custom agentのconfigured sandboxとeffective runtime sandboxを別々に確認し、effective値をruntimeが公開しない場合はread-only enforcementを保証したと主張しない。runtime/discoveryはstatic evidence、必要なnon-model diagnostic、gate-criticalなactual runtime fallbackの順にboundedに確認する。allow_implicit_invocation=falseによるimplicit context上の非表示だけをfailureとせず、同一propertyをequivalent probeで反復しない。確認不能ならunavailableとして記録し、selected gateに必要な場合だけblockする。Static/config evidenceは入力不変なら再利用できるが、effective sandbox、agent/MCP availability、active tool catalog、actual runtime routingはcurrent invocationのevidenceとして必要時だけboundedに再確認する。",
       "files": [],
       "expectations": [
         "implementationをconfigured implementation-worker roleへdelegateする",
         "reviewerはimplementation authorと別agent instanceである",
         "reviewはsummaryだけでなくactual diff、changed files、verification、HEAD/baseに基づく",
-        "configured read-onlyとeffective sandboxを区別し、effective値が不明ならruntime enforcement unavailableとして報告する"
+        "configured read-onlyとeffective sandboxを区別し、effective値が不明ならruntime enforcement unavailableとして報告する",
+        "runtime/discoveryはcheapest reliable evidenceから始め、同一propertyへのprimary methodと最大1つのmaterially differentなfallbackで原則収束する",
+        "allow_implicit_invocation=falseのSkillがimplicit contextにないことだけをdiscovery/install failureにせず、gateに不要なunavailable propertyではworkflowをblockしない",
+        "static/config evidenceとinvocation-scoped runtime evidenceを分け、後者を別invocationへ持ち越さない"
       ]
     },
     {
@@ -75,22 +86,25 @@
     {
       "id": 7,
       "prompt": "$orchestrate stackの下位PRを修正した。descendant PRも含めてレビュー可能な状態に戻して。",
-      "expected_output": "lower stack changeの影響を全descendantへ伝播し、descendantのimplementation verification、review、存在するReviewer Guide、explanation、必要なfinal auditをstaleにする。stack ancestryを確認してrestackし、影響する検証とレビューをcurrent headsで再実行する。stale判定はstack ancestryとactual HEAD/base、spec/material plan content identityなどのartifact identityを直接使う。",
+      "expected_output": "lower stack changeの影響を全descendantへ伝播し、descendantのimplementation verification、review、存在するReviewer Guide、explanation、必要なfinal auditをstaleにする。stack ancestryを確認してrestackし、影響する検証とレビューをcurrent headsで再実行する。material specificationまたはoriginal decision inputの変更ではArchitecture Decision Gateを必ずstaleにして再評価する。既存のspecification-dependent downstream staleは維持し、decision-dependent downstreamは再評価後にdecision semanticsが変わった場合だけstaleにする。ADR status transitionはapplicability/governing relationshipを評価し、変わり得る場合はGateをstaleにする。status transitionがdecision semantics/governing decisionを変えないと確認できればapproval/readinessだけを更新する。stale判定はstack ancestryとactual HEAD/base、spec/material plan content identity、Architecture Decision Gateのdecision/chosen option/consequence/supersedesなどの実質的なdecision identityを直接使う。related-link/presentation-onlyの unchanged changeはdownstream staleにしない。",
       "files": [],
       "expectations": [
         "lower-layer changeで全descendantの依存evidenceをstaleにする",
         "restack後にaffected verificationとindependent reviewを再実行する",
         "staleな旧headのReviewer Guideやauditをready根拠に再利用しない",
-        "独自のmonotonic evidence revisionやopaque fingerprintを必須にしない"
+        "独自のmonotonic evidence revisionやopaque fingerprintを必須にしない",
+        "ADRのmaterial decision semantics変更はdownstreamをstaleにするが、status transitionはapplicability/governing relationshipを評価してからreadinessだけの更新かGate再評価かを決める",
+        "material specificationまたはoriginal decision input変更ではArchitecture Decision Gateを先にstale化して再評価し、decision-dependent downstreamは意味変更時だけstaleにする"
       ]
     },
     {
       "id": 8,
       "prompt": "$orchestrate のfinal audit後にコードとPR headが変わった。人間レビュー可能と報告してよいか確認して。",
-      "expected_output": "final auditをstaleとして無効化し、current code、PR head/base、stack、specification、material planの変更後に同じaudit evidenceをready根拠として使わない。verification、implementation review、stabilization、final auditは常にcurrent evidenceへ更新し、evidence identityはHEAD/base、spec/planのpath+blob/content revision、レビュー・監査対象の実artifact revisionを直接記録する。explanationはselected/applicableな場合だけcurrent headで回復してから独立auditを再実行する。auditのFAIL/UNCERTAINは1回のbounded repairと独立re-auditで再確認し、同じmaterial issueが残ればblocker/human decisionへ昇格する。",
+      "expected_output": "final auditをstaleとして無効化し、current code、PR head/base、stack、specification、material planの変更後に同じaudit evidenceをready根拠として使わない。verification、implementation review、stabilization、final auditは常にcurrent evidenceへ更新し、evidence identityはHEAD/base、spec/planのpath+blob/content revision、レビュー・監査対象の実artifact revisionを直接記録する。ADR status transitionもapplicability/governing relationshipが変わり得る場合はGateをstaleにして再評価し、decision semantics/governing decisionが不変ならdownstreamをstaleにしない。explanationはselected/applicableな場合だけcurrent headで回復してから独立auditを再実行する。auditのFAIL/UNCERTAINは1回のbounded repairと独立re-auditで再確認し、同じmaterial issueが残ればblocker/human decisionへ昇格する。",
       "files": [],
       "expectations": [
         "final audit後のcodeまたはhead/base変更をstale propagation対象にする",
+        "Architecture Decision GateまたはADRのchosen option/consequence/supersedes変更をstale propagation対象にし、status transitionはapplicability/governing relationshipを確認してGate再評価またはapproval/readiness更新に分ける",
         "verification、implementation review、stabilization、final auditを常にcurrent evidenceへ更新する",
         "explanationはselected/applicableな場合だけcurrent headで回復し、未選択なら強制しない",
         "旧auditを再利用せず、同一current evidenceに対する独立auditを要求する",
@@ -133,14 +147,16 @@
     },
     {
       "id": 12,
-      "prompt": "$orchestrate このリファクタは今日はDraft PR作成までで止めて。後日、同じ会話でCI確認から再開したい。前回は仕様、承認済み計画、実装、ローカル検証、Draft PR作成まで完了しており、PR headは変わっていない。",
-      "expected_output": "最初の依頼ではDraft PR作成を安全なcheckpointとして、選択済みで未完了の後続gateをdeferredにする。Normalでexplanationやfinal auditを選択していなければskipを維持する。再開時はcurrent spec/plan/implementation/verification/PR head evidenceを照合し、specificationやplanningを繰り返さず、最初のselected incomplete/stale gateから始め、選択されたexplanationやfinal auditだけを順に行う。",
+      "prompt": "$orchestrate このリファクタは今日はDraft PR作成までで止めて。後日、同じ会話でCI確認から再開したい。前回は仕様、承認済み計画、実装、ローカル検証、Draft PR作成まで完了しており、HEAD/base/spec/plan/runtime configとverification environmentは変わっていない。",
+      "expected_output": "最初の依頼ではDraft PR作成を安全なcheckpointとして、選択済みで未完了の後続gateをdeferredにする。Normalでexplanationやfinal auditを選択していなければskipを維持する。再開時はcurrent spec/plan/implementation/verification/PR head evidenceを照合し、specificationやplanningを繰り返さず、最初のselected incomplete/stale gateから始め、選択されたexplanationやfinal auditだけを順に行う。later phaseの実行だけでは既存evidenceをstaleにせず、material inputが変わっていないlocal verificationとstatic/config evidenceを無条件に再実行しない。Effective sandbox、agent/MCP availability、active tool catalog、actual runtime routingなどinvocation-scoped evidenceは別invocationへ持ち越さず、selected gateが必要とする場合だけcurrent invocationでboundedに再確認する。",
       "files": [],
       "expectations": [
         "Draft PR作成をcheckpointとして記録し、選択済みで未完了の後続gateだけをdeferredにする",
         "再開時にcurrent evidenceとhead/baseを照合して最初のselected incomplete/stale gateから続ける",
         "選択済みのstabilizationやexplanationより前にfinal auditを実行せず、未選択のexplanationやfinal auditを強制しない",
-        "同一headで最終監査を重複実行しない"
+        "同一headで最終監査を重複実行しない",
+        "HEAD/base/spec/plan/runtime config/verification environmentが変わっていないstatic/config evidenceをlater phaseだけを理由に再実行しない",
+        "invocation-scoped runtime evidenceは別invocationへ持ち越さず、必要なcurrent invocationでのみboundedに再確認する"
       ]
     },
     {

@@ -4,6 +4,12 @@ Perform this phase without modifying the worktree, local branches, PRs, installe
 
 The preflight has two dependency tiers. Core capability checks happen before repository investigation. Gate-specific direct dependencies are selected after triage and validated before the phase that needs them. A skill used internally by a delegated wrapper is transitive: verify the wrapper’s current contract when the wrapper is selected, but do not make the transitive skill a `$orchestrate` hard dependency.
 
+## Bounded evidence acquisition
+
+For each runtime or discovery property, use the cheapest reliable evidence first: static files/configuration, then a non-model diagnostic when needed, then an actual model/MCP runtime probe only when the selected gate depends on that property and cheaper evidence is insufficient. Use one primary attempt and, only if needed, at most one materially different fallback attempt by default. Do not repeat equivalent probes through fresh sessions, MCP reconnects, or alternate commands. Additional attempts beyond that bound are allowed only when the selected dependency documents its own bounded retry policy; a transient failure may justify using the one fallback but never resets or expands the overall bound.
+
+If the property remains unresolved, record `unavailable` as the result. Block only when that property is required to execute or truthfully pass the selected gate; otherwise continue and report the limitation. Attempt bounds are primary, with a bounded command timeout as a secondary safeguard. Static/config evidence, such as relevant Skill/config content and CLI version, may be reused while those material inputs remain unchanged. Effective sandbox, agent availability, MCP availability, active tool catalog, and actual runtime routing are invocation-scoped evidence: recheck them boundedly when a selected gate needs them and do not carry them across invocations. Do not introduce an opaque fingerprint, counter, cache, or diagnostic wrapper.
+
 ## 1. Core capability inventory
 
 Before inspecting the repository, inspect the active tool and skill catalog and confirm:
@@ -14,6 +20,8 @@ Before inspecting the repository, inspect the active tool and skill catalog and 
 - The current CLI and configuration inspection commands are available when runtime routing is in scope.
 
 Do not require every optional workflow skill here. A missing gate-specific dependency is handled after triage. If the controller cannot create a separate reviewer for a route that requires independent review, stop that route before implementation and report the blocker; do not simulate independence.
+
+An already-running `$orchestrate` invocation proves that its explicit invocation resolved and its body is readable; do not launch a fresh runtime merely to rediscover it. When Skill installation, synchronization, invocation policy, or discovery is itself in scope, inspect `SKILL.md`, `agents/openai.yaml`, configured Skill paths, and runtime configuration first. If `allow_implicit_invocation` is `false`, absence from the implicit model context is expected and is not evidence of installation or explicit-invocation failure.
 
 ## 2. Establish repository state
 
@@ -40,8 +48,9 @@ After classifying the task and selecting gates, validate only the dependencies n
 | `babysit-pr` | stabilization is selected | Read its script paths, prerequisites, mutation policy, stop conditions, and one-shot mode; use its documented snapshot |
 | `gh-stack` | an existing or selected stack is in scope | Read it before stack navigation or mutation and reconcile with current `gh stack --help` |
 | final auditor role | High-risk or explicit final-audit gate | Confirm an independent agent can receive raw acceptance evidence after stabilization |
+| `adrs` CLI | an existing ADR repository is selected for search/health checks, or the Architecture Decision Gate selects `recorded`/another ADR mutation | Confirm the installed CLI and current subcommand help; use repository configuration and policy as the source of truth |
 
-If a selected direct dependency is unavailable, stop before that gate. Preserve any safe earlier checkpoint, state the exact missing capability, and ask for authorization or user direction as appropriate. Do not make missing `grill-with-docs`, `gh-stack`, or `babysit-pr` block a route that does not select them.
+If a selected direct dependency is unavailable, stop before that gate. Preserve any safe earlier checkpoint, state the exact missing capability, and ask for authorization or user direction as appropriate. Do not make missing `grill-with-docs`, `gh-stack`, `babysit-pr`, or `adrs` block a route that does not select them. A required Architecture Decision Gate with `no-new-decision` does not select `adrs` merely because the repository has no ADR CLI or initialization; an ADR operation that is actually needed does.
 
 ### Delegated transitive dependencies
 
@@ -59,18 +68,23 @@ Inspect, without editing during preflight:
 - Project `.codex/agents/*.toml` for role definitions and their config layers.
 - Current Codex CLI version, strict-config behavior, feature flags, and model catalog.
 
-Validate the official configuration surface where available:
+Validate only the configuration properties required by the selected route. Start with the project files above. When static inspection is insufficient, choose the minimum applicable non-model diagnostic from the current CLI surface, for example:
 
 ```text
 codex --strict-config --cd <repository> doctor
-codex --strict-config --cd <repository> exec --ephemeral --sandbox read-only "<no-op prompt>"
 codex features list
 codex debug models
 ```
 
-The current CLI does not accept `--strict-config` on the `features` subcommand; use a strict `doctor` or no-op `exec` invocation for configuration parsing, then use `features list` for the feature inventory.
+Use an actual model/MCP runtime probe only as the bounded fallback when current-session applicability is gate-critical and the static/non-model evidence cannot establish it:
 
-Confirm that the project config is trusted, role files parse, configured model/reasoning pairs are supported by the current catalog, and the implementation worker has the write capability required by its contract. For planner, reviewer, and auditor roles, confirm that the custom agent files declare `sandbox_mode = "read-only"` as the intended configuration, but do not treat that declaration as proof of runtime enforcement. If the active runtime exposes effective sandbox or agent metadata, record the reported value; otherwise record it as unavailable. Do not create a launcher, wrapper, or pseudo-routing mechanism to hide an unsupported setting.
+```text
+codex --strict-config --cd <repository> exec --ephemeral --sandbox read-only "<no-op prompt>"
+```
+
+The current CLI does not accept `--strict-config` on the `features` subcommand; use a strict `doctor` for configuration parsing when available, then use `features list` only when that inventory is needed. Do not run every example command as a checklist.
+
+Confirm that the project config is trusted, role files parse, configured model/reasoning pairs are supported by the current catalog, and the implementation worker has the write capability required by its contract. For planner, reviewer, and auditor roles, confirm that the custom agent files declare `sandbox_mode = "read-only"` as the intended configuration, but do not treat that declaration as proof of runtime enforcement. If the active runtime exposes effective sandbox or agent metadata, record the reported value; otherwise record it as unavailable. Do not create a launcher, wrapper, or pseudo-routing mechanism to hide an unsupported setting. Keep the logical contract read-only even when effective enforcement is unavailable or write-capable: those roles must not edit files, mutate external state, or mutate PRs.
 
 Report sandbox state as separate fields:
 
@@ -92,6 +106,7 @@ If the active tool surface does not expose named roles, per-agent overrides, or 
 Inspect only enough documentation and files to determine:
 
 - Where specifications, plans, ADRs, and durable context belong.
+- Whether an ADR repository is configured, which decisions it covers, and whether its policy requires a doctor/approval check. Do not initialize one or infer its directory, format, status, or CLI syntax.
 - Whether plan creation or implementation requires explicit human approval.
 - Branch and commit naming conventions.
 - Pull-request templates and required body sections.
@@ -99,7 +114,7 @@ Inspect only enough documentation and files to determine:
 - Package manager and commands for lint, typecheck, tests, build, migrations, E2E, and VRT.
 - CI workflows, required checks, protected branches, and release constraints.
 
-Use actual files as the source of truth: package scripts, Makefiles, task runners, CI YAML, and repository docs. Do not invent a command from ecosystem defaults. Do not create an ADR for every feature or put temporary hypotheses into durable context.
+Use actual files as the source of truth: package scripts, Makefiles, task runners, CI YAML, and repository docs. For an ADR operation, also use the installed `adrs --help` and `adrs <subcommand> --help` output. Do not invent a command from ecosystem defaults. Do not create an ADR for every feature or put temporary hypotheses into durable context.
 
 ## 6. Inspect GitHub CLI and stacking support when selected
 
@@ -139,6 +154,7 @@ Give a short preflight result containing:
 - Stacking mechanism, if selected.
 - Dirty-worktree or permission blockers.
 - Proposed responsibility boundary and artifacts.
+- Architecture Decision Gate outcome, applicable ADR CLI/config dependency, and whether `adrs doctor` is only being recorded as repository-health evidence.
 - Recovered phase and evidence that makes earlier phases current or stale.
 - Requested milestone and phases that remain deferred at that checkpoint.
 
