@@ -4,38 +4,44 @@
     {
       "id": 1,
       "prompt": "$orchestrate typo修正を進めて、人間レビュー可能な状態まで進めて。仕様変更、DB変更、認証変更はなく、1ファイルだけを変更する。",
-      "expected_output": "Small fast pathとしてtriageし、実装、関連検証、actual diffの独立レビュー、単一PR、最小限のstabilizationへ進む。PR bodyはPurposeとVerificationを最低限にし、Scopeは有用な場合だけ追加する。Reviewer Guideは読み順、非自明な判断、review focus、repository policyのいずれかに価値がある場合だけ追加し、Guideなしだけを理由にreadyをblockしない。repository policyが要求しないspecification、formal plan、plan review、approval、stack、explanation、final auditは理由付きでskipする。",
+      "expected_output": "Small fast pathとしてtriageし、実装、関連検証、actual diffの独立レビュー、単一PR、最小限のstabilizationへ進む。PR bodyはPurposeとVerificationを最低限にし、Scopeは有用な場合だけ追加する。Reviewer Guideは読み順、非自明な判断、review focus、repository policyのいずれかに価値がある場合だけ追加し、Guideなしだけを理由にreadyをblockしない。repository policyが要求しないspecification、Architecture Decision Gate/ADR、formal plan、plan review、approval、stack、explanation、final auditは理由付きでskipする。",
       "files": [],
       "expectations": [
         "Smallの条件をsemantic riskで確認し、line countだけで分類しない",
         "implementation、relevant verification、independent diff/code review、unrelated changes保護を維持する",
         "不要なspecification、plan、stack、final auditを無条件に実行しない",
-        "SmallはPurpose/Verificationと他のready条件が揃えばReviewer Guideなしでもreadyになれる"
+        "SmallはPurpose/Verificationと他のready条件が揃えばReviewer Guideなしでもreadyになれる",
+        "Smallの局所変更ではArchitecture Decision Gateを原則skipし、ADR artifactを作成しない",
+        "Smallのno-artifact routeはadrs CLIやADR repositoryがないだけではblockしない"
       ]
     },
     {
       "id": 2,
       "prompt": "$orchestrate 通常の管理画面リファクタを進めて。requirements、acceptance criteria、edge cases、責務境界は明確で、DB・認証・公開API・並行性の変更はない。",
-      "expected_output": "Normalとしてrequiredのwritten planとimplementationを進め、grill-with-docsは明確性を根拠にskip可能と判断する。独立implementation review、単一PR、bounded stabilizationを行い、plan review、stack、別explanation、final auditを無条件に追加しない。",
+      "expected_output": "Normalとしてrequiredのwritten planとimplementationを進め、grill-with-docsは明確性を根拠にskip可能と判断する。局所変更ならArchitecture Decision Gateもskipし、durable/cross-cuttingなtechnical decisionを実際に行う場合だけGateをrequiredにする。独立implementation review、単一PR、bounded stabilizationを行い、plan review、stack、別explanation、final auditを無条件に追加しない。",
       "files": [],
       "expectations": [
         "Normalがdefault routeであり、requiredのwritten plan、implementation、verification、independent implementation reviewを実行する",
         "grill-with-docsをclear requirementsではskipでき、material ambiguityまたはmistake reduction時には使えるconditional gateとして扱う",
         "implementation reviewが同じacceptance criteria、diff、verification、HEAD/baseを確認した場合にNormalのfinal auditをskipする",
-        "NormalのReviewer Guideは現在のdiffのreviewabilityに必要な情報だけを持ち、[ORCHESTRATE:NOTE]は非自明な箇所だけに限定する"
+        "NormalのReviewer Guideは現在のdiffのreviewabilityに必要な情報だけを持ち、[ORCHESTRATE:NOTE]は非自明な箇所だけに限定する",
+        "NormalのArchitecture Decision Gateはlocal changeではskipでき、durable/cross-cutting decision時だけexisting-covered/recorded/no-new-decisionを記録する"
       ]
     },
     {
       "id": 3,
       "prompt": "$orchestrate 注文権限の変更とmigrationを含む機能を進めて。",
-      "expected_output": "Large/High-riskとしてspecification、plan、independent plan review、appropriate/necessaryな場合のhuman approval、実装、最低限の適切なテスト、独立implementation review、stabilization、useful/neededな場合のexplanation、独立final acceptance auditを有効化する。選択したapproval/explanationは維持し、rollback、migration ordering、compatibility、security、data integrity、concurrencyを明示的に確認する。",
+      "expected_output": "Large/High-riskとしてspecification、required Architecture Decision Gate、plan、independent plan review、appropriate/necessaryな場合のhuman approval、実装、最低限の適切なテスト、独立implementation review、stabilization、useful/neededな場合のexplanation、独立final acceptance auditを有効化する。Gateはexisting-covered/recorded/no-new-decisionのいずれかをevidence付きで記録し、新しいdurable decisionがない限り新規ADRを強制しない。選択したapproval/explanationは維持し、rollback、migration ordering、compatibility、security、data integrity、concurrencyを明示的に確認する。",
       "files": [],
       "expectations": [
         "auth/authorizationとmigrationをHigh-riskとして扱う",
         "High-riskのplan reviewとfinal auditを別責務の独立gateとして維持する",
         "human approvalはappropriate/necessary条件、explanationはuseful/needed条件で選択し、選択後は維持する",
         "rollback、migration ordering、compatibility、security、data integrity、concurrencyのreview項目を含める",
-        "High-riskのReviewer Guideは現在のdiffをレビューするための必要最小限のreviewability情報を持つ"
+        "High-riskのReviewer Guideは現在のdiffをレビューするための必要最小限のreviewability情報を持つ",
+        "High-riskではDecision Gateを必須にするが、新規ADR作成はnew durable decisionがある場合だけにし、既存coverageまたはno-new-decisionを許可する",
+        "adrs doctor PASSはrepository structure/config healthだけのevidenceであり、decision qualityはplan review/human approval/final auditで確認する",
+        "既存decisionを上書きせず、関連付けはlink、置換時だけsupersedesを使う"
       ]
     },
     {
@@ -75,13 +81,14 @@
     {
       "id": 7,
       "prompt": "$orchestrate stackの下位PRを修正した。descendant PRも含めてレビュー可能な状態に戻して。",
-      "expected_output": "lower stack changeの影響を全descendantへ伝播し、descendantのimplementation verification、review、存在するReviewer Guide、explanation、必要なfinal auditをstaleにする。stack ancestryを確認してrestackし、影響する検証とレビューをcurrent headsで再実行する。stale判定はstack ancestryとactual HEAD/base、spec/material plan content identityなどのartifact identityを直接使う。",
+      "expected_output": "lower stack changeの影響を全descendantへ伝播し、descendantのimplementation verification、review、存在するReviewer Guide、explanation、必要なfinal auditをstaleにする。stack ancestryを確認してrestackし、影響する検証とレビューをcurrent headsで再実行する。stale判定はstack ancestryとactual HEAD/base、spec/material plan content identity、Architecture Decision Gateのdecision/chosen option/consequence/supersedesなどの実質的なdecision identityを直接使う。ADRのstatus-onlyまたはrelated-link-only変更はdecision meaningが変わらない限りdownstream staleにしない。",
       "files": [],
       "expectations": [
         "lower-layer changeで全descendantの依存evidenceをstaleにする",
         "restack後にaffected verificationとindependent reviewを再実行する",
         "staleな旧headのReviewer Guideやauditをready根拠に再利用しない",
-        "独自のmonotonic evidence revisionやopaque fingerprintを必須にしない"
+        "独自のmonotonic evidence revisionやopaque fingerprintを必須にしない",
+        "ADRのmaterial decision semantics変更はdownstreamをstaleにするが、status-only/link-only変更は原則としてreadiness/health evidenceだけを更新する"
       ]
     },
     {
@@ -91,6 +98,7 @@
       "files": [],
       "expectations": [
         "final audit後のcodeまたはhead/base変更をstale propagation対象にする",
+        "Architecture Decision GateまたはADRのchosen option/consequence/supersedes変更をstale propagation対象にし、本文不変のstatus transitionやrelated linkだけではdownstreamをstaleにしない",
         "verification、implementation review、stabilization、final auditを常にcurrent evidenceへ更新する",
         "explanationはselected/applicableな場合だけcurrent headで回復し、未選択なら強制しない",
         "旧auditを再利用せず、同一current evidenceに対する独立auditを要求する",

@@ -5,7 +5,7 @@
 Use one state machine for every task, then select the gates that apply to the risk class:
 
 ```text
-preflight/recover -> triage -> [specification] -> planning -> [plan-review] -> [approval]
+preflight/recover -> triage -> [specification] -> [architecture decision] -> planning -> [plan-review] -> [approval]
   -> implementation -> verification -> independent implementation review
   -> [bounded repair/reverification] -> submit -> stabilize -> [explain]
   -> [final-audit] -> human-review-ready
@@ -20,6 +20,7 @@ After preflight, recover the workflow from durable repository and GitHub evidenc
 | Phase | Minimum current evidence |
 | --- | --- |
 | specification | Confirmed acceptance criteria, non-goals, assumptions, and required user decisions, or an explicit skip reason; identify the spec path and blob/content revision when durable |
+| architecture decision | Gate status (`complete` or `skipped` with reason) and, when complete, exactly one decision outcome with its evidence, applicable ADR path/revision, approval state, and repository-health evidence when used |
 | planning | Final plan artifact grounded in the current specification and repository state; identify the plan path and blob/content revision |
 | plan-review | Independent critique and disposition for that exact plan/spec revision, or a recorded skip reason |
 | approval | Explicit approval of the reviewed plan when repository policy or the selected route requires it |
@@ -45,6 +46,7 @@ Classify by semantic and operational risk, not line count. Normal is the default
 | Gate | Small | Normal | Large / High-risk |
 | --- | --- | --- | --- |
 | specification / `grill-with-docs` | skipped unless policy or ambiguity requires it | conditional/recommended | required |
+| architecture decision | skipped unless repository policy requires it | skipped for local changes; required for durable/cross-cutting decisions | required; new ADR only when a new durable decision exists |
 | written plan | skipped unless policy requires it | required | required |
 | independent plan review | skipped unless policy requires it | conditional based on risk, plan novelty, or policy | required |
 | human plan approval | skipped unless policy requires it | conditional based on repository policy or material decisions | conditional when repository policy, user direction, or a material decision makes it appropriate/necessary |
@@ -65,26 +67,28 @@ Use only for an obvious isolated change such as a typo, copy change, tiny CSS ad
 - One meaningful PR is sufficient.
 - Repository rules do not require formal specification, plan, or approval.
 
-Route through `preflight/recover -> triage -> implementation -> relevant verification -> independent diff/code review -> submit -> minimal stabilization -> human-review-ready`. Keep a short conversation record of goal, acceptance criteria, non-goals, and verification. Unless policy requires them, skip persistent specification, formal plan, plan critique, plan approval, stack, explanation, and final audit. Still protect unrelated changes and perform an independent review of the actual diff.
+Route through `preflight/recover -> triage -> implementation -> relevant verification -> independent diff/code review -> submit -> minimal stabilization -> human-review-ready`. Keep a short conversation record of goal, acceptance criteria, non-goals, and verification. Unless policy requires them, skip persistent specification, Architecture Decision Gate, formal plan, plan critique, plan approval, stack, explanation, and final audit. Still protect unrelated changes and perform an independent review of the actual diff.
 
 ### Normal standard path
 
 Use for ordinary features, refactors, and multi-file changes that do not meet High-risk criteria. Route through:
 
 ```text
-preflight/recover -> triage -> conditional specification -> planning
+preflight/recover -> triage -> conditional specification -> [architecture decision] -> planning
   -> implementation -> verification -> independent implementation review
   -> bounded repair/reverification -> single PR -> bounded stabilization
   -> human-review-ready
 ```
 
-The `grill-with-docs` gate is conditional and recommended, not automatic. Skip it when requirements, acceptance criteria, edge cases, and responsibility boundaries are sufficiently clear. Use it when material ambiguity remains, or when specification interrogation is likely to prevent an implementation mistake. When enabled, use the `orchestrator/planner -> grill-with-docs -> planning` sequence and record the resulting specification evidence. Plan review, human plan approval, stack, a separate explanation phase, and final audit are conditional additions driven by repository policy, task characteristics, or review findings; do not run them by default.
+The `grill-with-docs` gate is conditional and recommended, not automatic. Skip it when requirements, acceptance criteria, edge cases, and responsibility boundaries are sufficiently clear. Use it when material ambiguity remains, or when specification interrogation is likely to prevent an implementation mistake. When enabled, use the `orchestrator/planner -> grill-with-docs -> specification result -> architecture decision -> planning` sequence and record the resulting specification evidence. Plan review, human plan approval, stack, a separate explanation phase, and final audit are conditional additions driven by repository policy, task characteristics, or review findings; do not run them by default.
 
 Normal implementation review must check acceptance criteria, correctness, tests, and relevant risks against the same specification/plan, actual diff, verification, and HEAD/base. When that evidence is unchanged and the reviewer passes, it is the acceptance gate and the separate final audit is skipped. Enable a final audit only when implementation review cannot cover acceptance/spec compliance, a material finding demands it, repository policy requires it, or the user explicitly asks for it.
 
+For Normal work, the Architecture Decision Gate is skipped for local changes. Select it when a durable or cross-cutting decision is actually being made. A sufficiently clear specification may still skip `grill-with-docs`; use that gate for material product/requirements ambiguity or when interrogation is likely to prevent an implementation mistake. Technical trade-offs belong to planner decision analysis, and an irreversible or business decision belongs to the human approval gate.
+
 ### Large / High-risk path
 
-Use for auth or authorization, payments, migrations, destructive changes, security, public APIs, concurrency, data integrity, or major architecture. Maintain specification, written plan, independent plan review, implementation, verification, independent implementation review, PR/stabilization, and an independent final acceptance audit. Select human plan approval when repository policy, user direction, or a material decision makes it appropriate/necessary. Select the explanation layer when non-obvious reasoning, reviewability, or risk makes it useful/needed; once selected, keep it current and required. Make rollback, migration ordering, compatibility, observability, abuse cases, data integrity, security, concurrency, and destructive behavior explicit review items. Prefer smaller reversible layers, but never split a transaction or invariant into an invalid intermediate state.
+Use for auth or authorization, payments, migrations, destructive changes, security, public APIs, concurrency, data integrity, or major architecture. Maintain specification, the required Architecture Decision Gate, written plan, independent plan review, implementation, verification, independent implementation review, PR/stabilization, and an independent final acceptance audit. The decision gate must produce `existing-covered`, `recorded`, or `no-new-decision` with evidence and reason; it must not manufacture an ADR when no new durable decision exists. Select human plan approval when repository policy, user direction, or a material decision makes it appropriate/necessary. Select the explanation layer when non-obvious reasoning, reviewability, or risk makes it useful/needed; once selected, keep it current and required. Make rollback, migration ordering, compatibility, observability, abuse cases, data integrity, security, concurrency, and destructive behavior explicit review items. Prefer smaller reversible layers, but never split a transaction or invariant into an invalid intermediate state.
 
 High-risk implementation review focuses on implementation quality and actual diff correctness. The final auditor separately checks each acceptance criterion, non-goal, specification/plan compliance, risk safeguard, and required evidence. Neither review may be represented as the other.
 
@@ -101,9 +105,40 @@ When the specification gate is enabled, invoke the installed `grill-with-docs` s
 
 Persist the result only when repository convention or task complexity warrants it. Follow repository naming and approval rules.
 
+## Phase 1.5: Architecture Decision Gate
+
+The gate confirms whether the current work is governed by an existing architecture decision or introduces a new durable decision. It is a gate about decision coverage, not a requirement to create an ADR file.
+
+```text
+search existing ADRs/repository decisions
+  -> covered by an existing decision: existing-covered
+  -> not covered and a durable decision is needed: recorded
+  -> not covered and no durable decision is needed: no-new-decision + reason
+```
+
+Record the outcome and direct evidence in state:
+
+```text
+Architecture decision:
+  Gate: complete | skipped <reason>
+  Outcome: existing-covered | recorded | no-new-decision  # complete only
+  Evidence: <ADR path @ blob SHA/content revision, or repository/spec evidence>
+  Reason: <required when Gate is skipped or Outcome is no-new-decision>
+  Approval: <current evidence | required | not-applicable>
+  Health: <doctor evidence | not-applicable>
+```
+
+The specification owns product goals, acceptance criteria, non-goals, edge cases, and responsibility boundaries. Planner decision analysis owns technical options, trade-offs, reversibility, and boundaries. Human approval owns irreversible or business decisions. An ADR records a new durable decision and its consequences; the plan turns the current specification and decision into implementation steps. Do not require another grill merely because a decision may need an ADR.
+
+Use `adrs` only when an existing ADR repository must be searched/checked or an ADR must be created, updated, linked, superseded, or status-managed. Read the current CLI and subcommand help and repository configuration before operating it; do not hard-code a path, format, status, or option. If no new artifact is needed, an absent CLI or uninitialized ADR repository alone is not a blocker. If recording a new decision requires an uninitialized repository, stop for repository direction instead of installing or initializing it automatically.
+
+`adrs doctor` is evidence that the ADR repository’s structure and configuration are healthy. It does not establish that the decision is correct or that the trade-off is acceptable; those properties are reviewed by plan review, human approval, implementation review, and final audit as applicable.
+
+When the Architecture Decision Gate is enabled, complete it after specification and before planning. Search existing decisions first, then select exactly one outcome. Preserve the decision evidence and approval identity consumed by the plan.
+
 ## Phase 2: Implementation plan
 
-Use the configured planner role or another planning-capable agent when necessary. Ground the plan in the approved specification and actual code. Define each proposed layer with responsibility, concrete behavior/data flow, main files, parent dependency, downstream consumers, verification at that HEAD, risks, and rollback implications. Aim for roughly 100–200 changed lines only as a soft reviewability signal; never split by line count when it creates a semantically broken layer.
+Use the configured planner role or another planning-capable agent when necessary. Ground the plan in the approved specification, Architecture Decision Gate outcome, and actual code. Define each proposed layer with responsibility, concrete behavior/data flow, main files, parent dependency, downstream consumers, verification at that HEAD, risks, and rollback implications. Aim for roughly 100–200 changed lines only as a soft reviewability signal; never split by line count when it creates a semantically broken layer.
 
 After writing a plan, do not implement until all required plan-review and user-approval gates pass. If plan review is selected, use a separate critic and one bounded cycle:
 
@@ -197,15 +232,19 @@ When a material gate input changes, invalidate dependent evidence. Track at leas
 | lower stack layer | every descendant implementation verification, review, applicable Reviewer Guide, explanation, and final audit |
 | stack ancestry or restack | affected descendant verification, review, explanation, and final audit |
 | verification input (HEAD/base/spec/material plan or required environment) | the verification and downstream review/audit that consumed that input |
+| specification or decision input | Architecture Decision Gate, planning, implementation, verification, review, explanation, and final audit when their consumed decision meaning changes |
+| Architecture Decision Gate outcome or material decision semantics (decision, chosen option, material consequence, governing relationship, or supersedes) | planning, implementation, verification, implementation review, applicable Reviewer Guide, explanation, and final audit |
+| ADR status-only transition with unchanged decision content | approval/readiness evidence only; do not make downstream work stale solely for this transition |
+| ADR related-link or presentation-only change with unchanged governing decision | artifact identity/health evidence as applicable; do not make downstream work stale solely for this change |
 | Reviewer Guide target head | the guide and any final audit that consumed it |
 | explanation comments | explanation gate and any final audit that consumed them |
 | final-audit input (HEAD/base/spec/material plan/verification) | the final audit and any readiness decision based on it |
 
-After lower-layer changes, identify every descendant, restack, rerun affected checks, and reconcile applicable guides/notes against the new diff. After final audit, any code, PR head/base, stack, specification, or material plan content change makes that audit stale; never reuse the same artifact as ready evidence.
+After lower-layer changes, identify every descendant, restack, rerun affected checks, and reconcile applicable guides/notes against the new diff. Re-evaluate ADR blob changes semantically: a changed blob is not by itself proof that downstream evidence is stale. After final audit, any code, PR head/base, stack, specification, material plan content, or material decision change makes that audit stale; never reuse the same artifact as ready evidence.
 
 ## Phase 7: Explanation and final audit
 
-For Normal and High-risk work, maintain a compact Reviewer Guide for the current PR: review order, key decisions, reviewer focus, and exact verification. For Small work, add it only when it materially improves reviewability or repository policy requires it; its absence alone is not a readiness blocker. Add `[ORCHESTRATE:NOTE]` only for non-obvious domain invariants, state transitions, authorization/security, data integrity, transactions/concurrency, cache/performance, or meaningful architecture decisions. Do not comment on trivial code.
+For Normal and High-risk work, maintain a compact Reviewer Guide for the current PR: review order, key decisions (including an applicable Architecture Decision Gate outcome), reviewer focus, and exact verification. Reference an applicable ADR once at its current revision; do not copy its body or create an empty ADR section for `no-new-decision`. For Small work, add a guide only when it materially improves reviewability or repository policy requires it; its absence alone is not a readiness blocker. Add `[ORCHESTRATE:NOTE]` only for non-obvious domain invariants, state transitions, authorization/security, data integrity, transactions/concurrency, cache/performance, or meaningful architecture decisions. Do not comment on trivial code.
 
 The explanation phase is skipped for Small unless reviewability requires it, conditional for Normal, and conditional for High-risk when non-obvious reasoning, reviewability, or risk makes it useful/needed; once selected, treat it as required. Verify comments target the current head SHA and valid diff lines. Reconcile them after every code or stack change.
 
@@ -222,6 +261,7 @@ The task is ready only when all applicable conditions hold:
 - Normal and High-risk PRs have a compact Reviewer Guide describing the current diff and synchronized with the current head, unless repository policy supplies an equivalent reviewability artifact. Small PRs may omit the guide when it is not useful; guide absence alone does not block readiness.
 - `[ORCHESTRATE:NOTE]` comments are optional; when they exist or the explanation gate explicitly selects them, synchronize them with the current head and valid diff lines.
 - Acceptance criteria and non-goals pass the required final audit, or the Normal final-audit skip is supported by the unchanged implementation-review evidence.
+- The selected Architecture Decision Gate is current; its outcome, applicable ADR identity, approval, and repository-health evidence are recorded. `adrs doctor` health is not substituted for decision review or approval.
 - Required dependency skills completed their bounded responsibilities.
 - Worker result and actual diff are reconciled with no unresolved scope drift.
 - Runtime role assignment and reviewer independence were verified to the extent the active Codex runtime permits; limitations are reported.

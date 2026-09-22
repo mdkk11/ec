@@ -40,8 +40,9 @@ After classifying the task and selecting gates, validate only the dependencies n
 | `babysit-pr` | stabilization is selected | Read its script paths, prerequisites, mutation policy, stop conditions, and one-shot mode; use its documented snapshot |
 | `gh-stack` | an existing or selected stack is in scope | Read it before stack navigation or mutation and reconcile with current `gh stack --help` |
 | final auditor role | High-risk or explicit final-audit gate | Confirm an independent agent can receive raw acceptance evidence after stabilization |
+| `adrs` CLI | an existing ADR repository is selected for search/health checks, or the Architecture Decision Gate selects `recorded`/another ADR mutation | Confirm the installed CLI and current subcommand help; use repository configuration and policy as the source of truth |
 
-If a selected direct dependency is unavailable, stop before that gate. Preserve any safe earlier checkpoint, state the exact missing capability, and ask for authorization or user direction as appropriate. Do not make missing `grill-with-docs`, `gh-stack`, or `babysit-pr` block a route that does not select them.
+If a selected direct dependency is unavailable, stop before that gate. Preserve any safe earlier checkpoint, state the exact missing capability, and ask for authorization or user direction as appropriate. Do not make missing `grill-with-docs`, `gh-stack`, `babysit-pr`, or `adrs` block a route that does not select them. A required Architecture Decision Gate with `no-new-decision` does not select `adrs` merely because the repository has no ADR CLI or initialization; an ADR operation that is actually needed does.
 
 ### Delegated transitive dependencies
 
@@ -70,7 +71,7 @@ codex debug models
 
 The current CLI does not accept `--strict-config` on the `features` subcommand; use a strict `doctor` or no-op `exec` invocation for configuration parsing, then use `features list` for the feature inventory.
 
-Confirm that the project config is trusted, role files parse, configured model/reasoning pairs are supported by the current catalog, and the implementation worker has the write capability required by its contract. For planner, reviewer, and auditor roles, confirm that the custom agent files declare `sandbox_mode = "read-only"` as the intended configuration, but do not treat that declaration as proof of runtime enforcement. If the active runtime exposes effective sandbox or agent metadata, record the reported value; otherwise record it as unavailable. Do not create a launcher, wrapper, or pseudo-routing mechanism to hide an unsupported setting.
+Confirm that the project config is trusted, role files parse, configured model/reasoning pairs are supported by the current catalog, and the implementation worker has the write capability required by its contract. For planner, reviewer, and auditor roles, confirm that the custom agent files declare `sandbox_mode = "read-only"` as the intended configuration, but do not treat that declaration as proof of runtime enforcement. If the active runtime exposes effective sandbox or agent metadata, record the reported value; otherwise record it as unavailable. Do not create a launcher, wrapper, or pseudo-routing mechanism to hide an unsupported setting. Keep the logical contract read-only even when effective enforcement is unavailable or write-capable: those roles must not edit files, mutate external state, or mutate PRs.
 
 Report sandbox state as separate fields:
 
@@ -92,6 +93,7 @@ If the active tool surface does not expose named roles, per-agent overrides, or 
 Inspect only enough documentation and files to determine:
 
 - Where specifications, plans, ADRs, and durable context belong.
+- Whether an ADR repository is configured, which decisions it covers, and whether its policy requires a doctor/approval check. Do not initialize one or infer its directory, format, status, or CLI syntax.
 - Whether plan creation or implementation requires explicit human approval.
 - Branch and commit naming conventions.
 - Pull-request templates and required body sections.
@@ -99,7 +101,7 @@ Inspect only enough documentation and files to determine:
 - Package manager and commands for lint, typecheck, tests, build, migrations, E2E, and VRT.
 - CI workflows, required checks, protected branches, and release constraints.
 
-Use actual files as the source of truth: package scripts, Makefiles, task runners, CI YAML, and repository docs. Do not invent a command from ecosystem defaults. Do not create an ADR for every feature or put temporary hypotheses into durable context.
+Use actual files as the source of truth: package scripts, Makefiles, task runners, CI YAML, and repository docs. For an ADR operation, also use the installed `adrs --help` and `adrs <subcommand> --help` output. Do not invent a command from ecosystem defaults. Do not create an ADR for every feature or put temporary hypotheses into durable context.
 
 ## 6. Inspect GitHub CLI and stacking support when selected
 
@@ -139,6 +141,7 @@ Give a short preflight result containing:
 - Stacking mechanism, if selected.
 - Dirty-worktree or permission blockers.
 - Proposed responsibility boundary and artifacts.
+- Architecture Decision Gate outcome, applicable ADR CLI/config dependency, and whether `adrs doctor` is only being recorded as repository-health evidence.
 - Recovered phase and evidence that makes earlier phases current or stale.
 - Requested milestone and phases that remain deferred at that checkpoint.
 
