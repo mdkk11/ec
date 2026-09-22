@@ -58,7 +58,7 @@ Delegate:
 Maintain a compact operational state record in the conversation. Persist it only when repository convention explicitly requires a dedicated workflow-state artifact; do not put it in specifications or implementation plans:
 
 ```text
-Phase: preflight/recover | triage | specification | planning | plan-review | approval
+Phase: preflight/recover | triage | specification | architecture-decision | planning | plan-review | approval
        | implementation | implementation-review | submit | stabilize | explain
        | final-audit | human-review-ready
 Task class: small | normal | large/high-risk
@@ -72,6 +72,8 @@ Architecture decision:
   Outcome: existing-covered | recorded | no-new-decision  # complete only
   Evidence: <ADR path @ blob SHA/content revision, or repository/spec evidence>
   Reason: <required when Gate is skipped or Outcome is no-new-decision>
+  Approval: <current evidence | required | not-applicable>
+  Health: <doctor evidence | not-applicable>
 Plan: <path @ blob SHA/content revision, or chat artifact identity>
 Implementation author: <role/agent and implementation HEAD SHA>
 Reviewer: <separate role/agent; reviewed HEAD/base/spec/plan identities>

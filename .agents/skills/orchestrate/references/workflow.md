@@ -136,6 +136,8 @@ Use `adrs` only when an existing ADR repository must be searched/checked or an A
 
 When the Architecture Decision Gate is enabled, complete it after specification and before planning. Search existing decisions first, then select exactly one outcome. Preserve the decision evidence and approval identity consumed by the plan.
 
+If the selected decision requires approval and that approval is unresolved, keep the Gate incomplete and stop before planning. Do not substitute the later human plan-approval gate for required decision approval. A proposed decision may be used as planning input only when repository policy explicitly permits it; even then, the required decision approval must be current before implementation.
+
 ## Phase 2: Implementation plan
 
 Use the configured planner role or another planning-capable agent when necessary. Ground the plan in the approved specification, Architecture Decision Gate outcome, and actual code. Define each proposed layer with responsibility, concrete behavior/data flow, main files, parent dependency, downstream consumers, verification at that HEAD, risks, and rollback implications. Aim for roughly 100–200 changed lines only as a soft reviewability signal; never split by line count when it creates a semantically broken layer.
@@ -225,14 +227,14 @@ When a material gate input changes, invalidate dependent evidence. Track at leas
 
 | Changed input | Stale evidence |
 | --- | --- |
-| original request, acceptance criteria, non-goals, or specification | planning, implementation, verification, review, explanation, final audit |
+| original request, acceptance criteria, non-goals, or material specification | Architecture Decision Gate plus the existing specification-dependent planning, implementation, verification, review, explanation, and final-audit evidence |
+| original decision input | Architecture Decision Gate immediately; after re-evaluation, decision-dependent planning, implementation, verification, review, explanation, and final-audit evidence only when decision semantics changed |
 | material plan content or material plan-review disposition | implementation, verification, review, explanation, final audit |
 | implementation diff or commit | verification, implementation review, explanation, final audit |
 | PR head/base or merge base | stabilization, implementation review, explanation, final audit |
 | lower stack layer | every descendant implementation verification, review, applicable Reviewer Guide, explanation, and final audit |
 | stack ancestry or restack | affected descendant verification, review, explanation, and final audit |
 | verification input (HEAD/base/spec/material plan or required environment) | the verification and downstream review/audit that consumed that input |
-| specification or decision input | Architecture Decision Gate, planning, implementation, verification, review, explanation, and final audit when their consumed decision meaning changes |
 | Architecture Decision Gate outcome or material decision semantics (decision, chosen option, material consequence, governing relationship, or supersedes) | planning, implementation, verification, implementation review, applicable Reviewer Guide, explanation, and final audit |
 | ADR status-only transition with unchanged decision content | approval/readiness evidence only; do not make downstream work stale solely for this transition |
 | ADR related-link or presentation-only change with unchanged governing decision | artifact identity/health evidence as applicable; do not make downstream work stale solely for this change |
@@ -240,7 +242,7 @@ When a material gate input changes, invalidate dependent evidence. Track at leas
 | explanation comments | explanation gate and any final audit that consumed them |
 | final-audit input (HEAD/base/spec/material plan/verification) | the final audit and any readiness decision based on it |
 
-After lower-layer changes, identify every descendant, restack, rerun affected checks, and reconcile applicable guides/notes against the new diff. Re-evaluate ADR blob changes semantically: a changed blob is not by itself proof that downstream evidence is stale. After final audit, any code, PR head/base, stack, specification, material plan content, or material decision change makes that audit stale; never reuse the same artifact as ready evidence.
+After lower-layer changes, identify every descendant, restack, rerun affected checks, and reconcile applicable guides/notes against the new diff. A material specification or original decision-input change always makes the Architecture Decision Gate stale and requires re-evaluation before planning can continue. Preserve the existing specification-dependent stale propagation; invalidate decision-dependent downstream evidence after re-evaluation only when decision semantics changed. Re-evaluate ADR blob changes semantically: a changed blob is not by itself proof that downstream decision-dependent evidence is stale. After final audit, any code, PR head/base, stack, specification, material plan content, or material decision change makes that audit stale; never reuse the same artifact as ready evidence.
 
 ## Phase 7: Explanation and final audit
 

@@ -31,7 +31,7 @@
     {
       "id": 3,
       "prompt": "$orchestrate 注文権限の変更とmigrationを含む機能を進めて。",
-      "expected_output": "Large/High-riskとしてspecification、required Architecture Decision Gate、plan、independent plan review、appropriate/necessaryな場合のhuman approval、実装、最低限の適切なテスト、独立implementation review、stabilization、useful/neededな場合のexplanation、独立final acceptance auditを有効化する。Gateはexisting-covered/recorded/no-new-decisionのいずれかをevidence付きで記録し、新しいdurable decisionがない限り新規ADRを強制しない。選択したapproval/explanationは維持し、rollback、migration ordering、compatibility、security、data integrity、concurrencyを明示的に確認する。",
+      "expected_output": "Large/High-riskとしてspecification、required Architecture Decision Gate、plan、independent plan review、appropriate/necessaryな場合のhuman approval、実装、最低限の適切なテスト、独立implementation review、stabilization、useful/neededな場合のexplanation、独立final acceptance auditを有効化する。Gateはexisting-covered/recorded/no-new-decisionのいずれかをevidence付きで記録し、新しいdurable decisionがない限り新規ADRを強制しない。Gateでrequired decision approvalが未解決ならGateをcompleteにせずplanning前で停止し、post-plan human plan approvalとは別に扱う。Proposed decisionをplanning inputにできるのはrepository policyが明示的に許す場合だけで、その場合もimplementation前にrequired approvalをcurrentにする。選択したapproval/explanationは維持し、rollback、migration ordering、compatibility、security、data integrity、concurrencyを明示的に確認する。",
       "files": [],
       "expectations": [
         "auth/authorizationとmigrationをHigh-riskとして扱う",
@@ -41,7 +41,8 @@
         "High-riskのReviewer Guideは現在のdiffをレビューするための必要最小限のreviewability情報を持つ",
         "High-riskではDecision Gateを必須にするが、新規ADR作成はnew durable decisionがある場合だけにし、既存coverageまたはno-new-decisionを許可する",
         "adrs doctor PASSはrepository structure/config healthだけのevidenceであり、decision qualityはplan review/human approval/final auditで確認する",
-        "既存decisionを上書きせず、関連付けはlink、置換時だけsupersedesを使う"
+        "既存decisionを上書きせず、関連付けはlink、置換時だけsupersedesを使う",
+        "required decision approvalが未解決ならArchitecture Decision Gateをcompleteにせず、planning前でblockする"
       ]
     },
     {
@@ -81,14 +82,15 @@
     {
       "id": 7,
       "prompt": "$orchestrate stackの下位PRを修正した。descendant PRも含めてレビュー可能な状態に戻して。",
-      "expected_output": "lower stack changeの影響を全descendantへ伝播し、descendantのimplementation verification、review、存在するReviewer Guide、explanation、必要なfinal auditをstaleにする。stack ancestryを確認してrestackし、影響する検証とレビューをcurrent headsで再実行する。stale判定はstack ancestryとactual HEAD/base、spec/material plan content identity、Architecture Decision Gateのdecision/chosen option/consequence/supersedesなどの実質的なdecision identityを直接使う。ADRのstatus-onlyまたはrelated-link-only変更はdecision meaningが変わらない限りdownstream staleにしない。",
+      "expected_output": "lower stack changeの影響を全descendantへ伝播し、descendantのimplementation verification、review、存在するReviewer Guide、explanation、必要なfinal auditをstaleにする。stack ancestryを確認してrestackし、影響する検証とレビューをcurrent headsで再実行する。material specificationまたはoriginal decision inputの変更ではArchitecture Decision Gateを必ずstaleにして再評価する。既存のspecification-dependent downstream staleは維持し、decision-dependent downstreamは再評価後にdecision semanticsが変わった場合だけstaleにする。stale判定はstack ancestryとactual HEAD/base、spec/material plan content identity、Architecture Decision Gateのdecision/chosen option/consequence/supersedesなどの実質的なdecision identityを直接使う。ADRのstatus-onlyまたはrelated-link-only変更はdecision meaningが変わらない限りdownstream staleにしない。",
       "files": [],
       "expectations": [
         "lower-layer changeで全descendantの依存evidenceをstaleにする",
         "restack後にaffected verificationとindependent reviewを再実行する",
         "staleな旧headのReviewer Guideやauditをready根拠に再利用しない",
         "独自のmonotonic evidence revisionやopaque fingerprintを必須にしない",
-        "ADRのmaterial decision semantics変更はdownstreamをstaleにするが、status-only/link-only変更は原則としてreadiness/health evidenceだけを更新する"
+        "ADRのmaterial decision semantics変更はdownstreamをstaleにするが、status-only/link-only変更は原則としてreadiness/health evidenceだけを更新する",
+        "material specificationまたはoriginal decision input変更ではArchitecture Decision Gateを先にstale化して再評価し、decision-dependent downstreamは意味変更時だけstaleにする"
       ]
     },
     {
