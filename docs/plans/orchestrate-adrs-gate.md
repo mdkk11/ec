@@ -120,9 +120,10 @@ ADR repositoryへ操作する場合は次を守る。
 ### Approvalとstatus
 
 - ADR statusを`accepted`へhard-codeせず、repositoryの`adrs`設定とapproval policyを使う。
-- repository policyまたはmaterial decisionがhuman approvalを要求する場合、planning前にdecision/ADRの承認を得る。
-- Proposed ADRをplanning inputとして許すrepositoryではそのpolicyを尊重するが、implementation前に必要なdecision approvalがcurrentであることを確認する。
-- Decision内容が同一の`proposed -> accepted`はapproval/readinessを更新し、plan以下を自動的にstaleにしない。
+- repository policyまたはmaterial decisionがhuman approvalを要求し、proposed decisionをplanning inputにできない場合は、Gateを`pending-approval`としてplanning前で停止する。
+- Proposed decisionをplanning inputとして許すrepositoryでは、Gateを`pending-approval`のままplanningだけ進められるが、implementation前に必要なdecision approvalをcurrentにしてGateを`complete`へ遷移させる。
+- Decision内容とapplicability/governing relationshipが同一の`proposed -> accepted`はapproval/readinessを更新し、plan以下を自動的にstaleにしない。
+- Status変更によりdecision applicabilityまたはgoverning relationshipが変わり得る場合はArchitecture Decision Gateを再評価し、decision semanticsまたはgoverning decisionが変わった場合だけdecision-dependent downstreamをstaleにする。
 
 ### State recoveryとstale propagation
 
@@ -130,18 +131,19 @@ Operational stateへ次を追加する。
 
 ```text
 Architecture decision:
-  Gate: complete | skipped <reason>
-  Outcome: existing-covered | recorded | no-new-decision  # completeの場合だけ
+  Gate: pending-approval | complete | skipped <reason>
+  Outcome: existing-covered | recorded | no-new-decision  # pending-approvalまたはcompleteの場合だけ
   ADR: <path @ blob SHA/content revision, status>  # applicableな場合だけ
   Reason: <no-new-decisionまたはskip理由>          # applicableな場合だけ
-  Approval: <current evidence or not-applicable>
+  Approval: <current evidence | unresolved | not-applicable>
   Health: <doctor evidence or not-applicable>
 ```
 
 - StateはGate通過とADR artifact作成を別に表現する。`no-new-decision`を架空のADR identityで表さない。
+- `pending-approval`はincompleteであり、repository policyがproposed inputを許す場合だけplanningと共存できる。Implementationとhuman-review readinessにはGate `complete`が必要。
 - Specificationまたはoriginal decision inputのmaterial changeはArchitecture Decision Gateをstaleにする。
 - Chosen option、decision、material consequences、governing relationship、supersedesなどdecision semanticsの変更はplanning、implementation、verification、implementation review、Reviewer Guide、final auditをstaleにする。
-- Decision本文が同一のstatus transition、表記修正、related link追加はartifact identityとapproval/readiness evidenceを更新するが、原則としてdownstreamをstaleにしない。
+- Status transitionはdecision applicability / governing relationshipへの影響を評価する。影響しないtransition、表記修正、related link追加はartifact identityとapproval/readiness evidenceだけを更新する。影響する場合はGateを再評価し、decision semanticsまたはgoverning decisionが変わった場合だけdownstreamをstaleにする。
 - Artifact revisionが変わった場合はsemantic impactを再評価する。Blob SHAの変化だけで一律invalidateしない。
 - Planとdownstream evidenceは、消費したspecification、decision outcome、applicableなADR path/revisionを直接記録する。
 - Resumeではcurrent artifact identity、decision outcome、approval、applicableなhealth evidenceを照合し、currentなら再生成しない。
@@ -178,7 +180,7 @@ Architecture decision:
 | `.agents/skills/orchestrate/references/pr-review-protocol.md` | ADR artifactがapplicableな場合だけcurrent decision recordを参照するminimal contractを追加する |
 | `.agents/skills/orchestrate/evals/evals.json` | 既存13ケースへGate outcome、conditional CLI、semantic staleの期待を統合する |
 | `docs/plans/orchestrate-adrs-gate.md` | 本計画 |
-| `~/.codex/skills/orchestrate/*` | repository版の検証・commit後にglobal Skillを同一内容へ同期する。Git管理対象外 |
+| `~/.agents/skills/orchestrate/*` | repository版の検証・commit後にcanonical global Skillを同一内容へ同期する。`~/.codex/skills/orchestrate`は互換symlink。Git管理対象外 |
 
 `agents/openai.yaml`、custom agent TOML、application code、package dependenciesは変更しない。
 
@@ -197,11 +199,11 @@ Architecture decision:
    - High-risk routine fixはGateを通すが、existing-coveredまたはno-new-decisionなら新規ADRを作らない。
    - High-riskの新しいsecurity/data-integrity modelはrequired approvalとADR記録を行う。
    - Missing CLI/configはADR repository操作が必要なrouteだけをblockし、自動install/initしない。
-   - Material decision changeはdownstreamをstaleにし、status-only/link-only changeは必要なevidenceだけを更新する。
+   - Material decision changeはdownstreamをstaleにする。すべてのstatus transitionでdecision applicability / governing relationshipへの影響を評価し、変わり得る場合はArchitecture Decision Gateをstaleにして再評価する。decision-dependent downstreamはdecision semanticsまたはgoverning decisionが変わった場合だけstaleにし、影響がないと確認できたtransitionだけをapproval/readiness更新に限定する。Related-link/presentation-only changeはgoverning decisionが不変なら軽量に扱う。
 9. Skillとreferenceを通読し、Gate/artifact、doctor/quality、grill/technical analysisの責務重複とSmall/Normalへの過剰ceremonyを修正する。
 10. Repository checks、CLI contract確認、workflow simulationを実行する。
 11. 変更ファイルだけを明示stageし、cached diffを確認して日本語commitを作成する。最新`origin/main`をbaseに新しいbranchをpushし、新規PRのtitle/body/testing/review pointsをcurrent headと一致させる。Merge済みPR #55は変更しない。
-12. Push済みrepository版とglobal `~/.codex/skills/orchestrate`を比較し、global版を同一内容へ更新する。旧`ship` aliasは復活させない。
+12. Push済みrepository版とcanonical global `~/.agents/skills/orchestrate`を比較し、global版を同一内容へ更新する。互換`~/.codex/skills/orchestrate` symlinkを確認し、旧`ship` aliasは復活させない。
 
 ## 8. テスト・検証方法
 
@@ -238,14 +240,14 @@ Architecture decision:
 - Missing dependency: ADR repository操作が必要なrouteだけblockし、install/initを行わない。No-artifact routeはblockしない。
 - Existing decision: related decisionを上書きせず、linkまたは必要な場合だけsupersedesを選ぶ。
 - Resume: current decision outcome、ADR identity、approval、applicableなhealth evidenceが有効なら次のincomplete gateから進む。
-- Semantic stale: chosen option/consequence/supersedes変更でplan以下をstaleにする。本文不変のstatus acceptanceやrelated linkだけではdownstreamをstaleにしない。
+- Semantic stale: chosen option/consequence/supersedes変更でplan以下をstaleにする。すべてのstatus transitionでdecision applicability / governing relationshipへの影響を評価し、変わり得る場合はGateをstaleにして再評価する。decision-dependent downstreamはdecision semanticsまたはgoverning decisionが変わった場合だけstaleにし、影響がないと確認できたtransitionだけをapproval/readiness更新にする。Governing decisionが不変のrelated link/presentation-only changeはdownstreamをstaleにしない。
 - Reviewability: applicableなADRだけをcurrent revisionで参照し、本文や空sectionを複製しない。
 - Doctor scope: health PASSとは別にplan review/human approval/final auditがdecision qualityを評価する。
 
 ### Global synchronization
 
-- Repository `.agents/skills/orchestrate`と`~/.codex/skills/orchestrate`の全ファイルを比較する。
-- Fresh Codex invocationから`$orchestrate`が検出されることを確認する。
+- Repository `.agents/skills/orchestrate`とcanonical global `~/.agents/skills/orchestrate`の全ファイルを比較し、`~/.codex/skills/orchestrate`の互換symlinkと旧`ship`不在を確認する。
+- `allow_implicit_invocation=false`ではimplicit context上の非表示をfailureにしない。Discovery自体が変更対象で追加確認が必要な場合だけ、static configから始めるbounded diagnosticを使う。
 
 ## 9. リスク
 
@@ -275,7 +277,7 @@ Architecture decision:
 - `adrs doctor`はstructure/config health evidenceに限定され、decision qualityはreview/approval/auditが担う。
 - ADRとspecification/planの責務が重複せず、具体的なdirectory/format/status/CLI optionをhard-codeしない。
 - Stateはcurrent decision outcome、reasonまたはADR path/revision、approval、applicableなhealth evidenceを直接記録する。
-- Material decision changeだけがplanとdownstream evidenceをstaleにし、status-only/link-only changeで一律invalidateしない。
+- Material decision changeと、applicability / governing relationshipが変わり得るstatus transitionはArchitecture Decision Gateをstaleにして再評価する。decision-dependent downstreamはdecision semanticsまたはgoverning decisionが変わった場合だけstaleにし、影響がないと確認できたstatus transitionだけをapproval/readiness更新にする。Governing decisionが不変のrelated-link/presentation-only changeは軽量に扱う。
 - 新しいsemantic parser、monotonic revision、wrapper、workflow engineを追加しない。
 - ApplicableなADRだけをPRから参照し、Small/skip/no-artifact routeへ空sectionを追加しない。
 - 既存13 evalへGate outcomes、conditional CLI、doctor scope、semantic staleケースが統合される。

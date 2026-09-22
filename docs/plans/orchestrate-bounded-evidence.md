@@ -24,6 +24,7 @@
 - 解決しなければ`unavailable`を正規結果として記録し、selected gateに必須の場合だけblockする。
 - implicit invocationが無効なSkillは、implicit contextにないことだけで失敗としない。
 - later phase自体では既存evidenceをstaleにせず、material inputが変わったaffected evidenceだけを再実行する。
+- Skill/config/CLI versionなどのstatic evidenceはmaterial input不変時に再利用し、effective sandbox、agent/MCP availability、active tool catalog、actual runtime routingなどのinvocation-scoped evidenceはselected gateが必要とするcurrent invocationで再確認する。
 
 ## 5. 採用しない方針
 
@@ -42,7 +43,7 @@
 ## 7. 実装手順
 
 1. `SKILL.md`のcontroller responsibilityへbounded diagnosticsとcurrent evidence reuseを1項目追加する。
-2. `runtime-preflight.md`へprobe順序、既定attempt上限、`unavailable`のblocking条件、explicit-only Skillの扱いを追加する。
+2. `runtime-preflight.md`へprobe順序、既定attempt上限、`unavailable`のblocking条件、explicit-only Skillの扱い、static evidenceとinvocation-scoped evidenceの有効範囲を追加する。
 3. `codex exec`を通常チェックからgate-criticalなfallbackへ下げる。
 4. `workflow.md`へlater phaseだけではstaleにならないこととaffected evidenceのみ再実行する原則を追加する。
 5. eval 4へruntime/discovery収束条件、eval 12へunchanged evidence reuseを統合する。
@@ -59,6 +60,7 @@
 
 - probe上限が厳しすぎると一時障害を恒久的な`unavailable`と誤認する可能性がある。transientと確認できる失敗は単一fallbackの選択理由にできるが上限を増やさず、追加attemptは依存Skill自身のdocumented bounded retryだけに従う。
 - evidence reuseが広すぎると環境変更を見落とす。HEAD/base/spec/planに加え、verificationが依存するtoolchain/environment変更もmaterial inputとして扱う。
+- 同じconfigでもruntime stateはinvocationごとに変わり得る。Invocation-scoped evidenceを別invocationへ持ち越さず、selected gateに必要なpropertyだけをboundedに再確認する。
 
 ## 10. 未確定事項
 
@@ -69,6 +71,7 @@
 - 同一runtime/discovery propertyの診断が既定でprimary 1回とfallback最大1回に収束する。
 - explicit-only Skillのimplicit非表示をfailure扱いしない。
 - unchanged material inputsのevidenceを再利用し、later phaseだけを理由に再実行しない。
+- Static/config evidenceとinvocation-scoped runtime evidenceの再利用範囲を区別する。
 - material change後はaffected evidenceだけをstale化する。
 - 新しいengine、wrapper、counter、opaque fingerprintを追加しない。
 - 既存13 evalと全検証が通り、独立reviewがPASSする。

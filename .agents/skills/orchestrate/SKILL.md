@@ -22,7 +22,7 @@ Own only orchestration:
 
 - Classify the task and select the risk path and gate matrix, including the Architecture Decision Gate when the route requires it.
 - Track phase, artifacts, gate status, stack dependencies, verification, direct artifact identities, and blockers.
-- Bound runtime and discovery diagnostics, and reuse current evidence while its material inputs remain unchanged.
+- Bound runtime and discovery diagnostics; reuse static/config evidence while its material inputs remain unchanged, and recheck invocation-scoped runtime evidence for the current invocation when a selected gate needs it.
 - Separate the Architecture Decision Gate from its optional ADR artifact: record `existing-covered`, `recorded`, or `no-new-decision` with the applicable decision evidence and approval state.
 - Choose and invoke available skills, role-configured agents, and CLIs in the required order.
 - Delegate implementation through the configured implementation-worker role by default. Pass the implementation contract, and use the controller as the author only when that role cannot be started and the user explicitly accepts the fallback; record the reason.
@@ -69,11 +69,11 @@ Gates: specification=<required|conditional|skipped>; architecture-decision=<...>
        explanation=<...>; final-audit=<...>
 Spec: <path @ blob SHA/content revision, or chat artifact identity>
 Architecture decision:
-  Gate: complete | skipped <reason>
-  Outcome: existing-covered | recorded | no-new-decision  # complete only
+  Gate: pending-approval | complete | skipped <reason>
+  Outcome: existing-covered | recorded | no-new-decision  # pending-approval or complete only
   Evidence: <ADR path @ blob SHA/content revision, or repository/spec evidence>
   Reason: <required when Gate is skipped or Outcome is no-new-decision>
-  Approval: <current evidence | required | not-applicable>
+  Approval: <current evidence | unresolved | not-applicable>
   Health: <doctor evidence | not-applicable>
 Plan: <path @ blob SHA/content revision, or chat artifact identity>
 Implementation author: <role/agent and implementation HEAD SHA>
@@ -86,13 +86,15 @@ Evidence:
   PR: head=<SHA> base=<SHA>
   Reviewer Guide: PR head SHA it describes, or skipped with reason
   Final audit: audited HEAD/base/spec/plan identities, or skipped with reason
-Runtime sandbox:
+Runtime sandbox (current invocation):
   Configured: <read-only | workspace-write | ...>
   Effective: <runtime-reported value | unavailable>
   Logical role policy: <read-only | implementation write>
   Enforcement: <confirmed | unavailable | mismatched>
 Blockers: <missing dependency, approval, scope drift, CI, review item, or routing limitation>
 ```
+
+`pending-approval` is incomplete. It may coexist with planning only when repository policy permits proposed decision input; it never permits implementation or human-review readiness.
 
 Update this record after every phase transition, gate selection, worker handoff, lower-stack change, evidence invalidation, or blocker. A skipped phase must include its reason. A completed phase becomes stale when a material input changes; rerun it instead of preserving a false green state.
 

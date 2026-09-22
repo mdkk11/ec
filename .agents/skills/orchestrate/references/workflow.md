@@ -20,7 +20,7 @@ After preflight, recover the workflow from durable repository and GitHub evidenc
 | Phase | Minimum current evidence |
 | --- | --- |
 | specification | Confirmed acceptance criteria, non-goals, assumptions, and required user decisions, or an explicit skip reason; identify the spec path and blob/content revision when durable |
-| architecture decision | Gate status (`complete` or `skipped` with reason) and, when complete, exactly one decision outcome with its evidence, applicable ADR path/revision, approval state, and repository-health evidence when used |
+| architecture decision | Gate status (`pending-approval`, `complete`, or `skipped` with reason) and, when pending or complete, exactly one decision outcome with its evidence, applicable ADR path/revision, approval state, and repository-health evidence when used |
 | planning | Final plan artifact grounded in the current specification and repository state; identify the plan path and blob/content revision |
 | plan-review | Independent critique and disposition for that exact plan/spec revision, or a recorded skip reason |
 | approval | Explicit approval of the reviewed plan when repository policy or the selected route requires it |
@@ -34,6 +34,8 @@ After preflight, recover the workflow from durable repository and GitHub evidenc
 | human-review-ready | Every applicable required gate passes and the current PRs are non-draft when authorized |
 
 Resume at the first incomplete or stale phase among the gates selected for the current route. Do not repeat specification, planning, implementation, submission, or audits merely to reconstruct a narrative. A skipped gate remains skipped with its reason; only required gates and enabled conditional gates are candidates for resumption. If evidence is missing for a required approval gate, ask for that approval rather than assuming it.
+
+Treat `pending-approval` as incomplete. If repository policy permits proposed decision input, recover or continue planning against that pending decision without regenerating a current plan, but stop before implementation until approval is current and the Gate is `complete`. If policy does not permit proposed planning input, stop at the Gate before planning.
 
 A later phase does not invalidate earlier evidence by itself. Reuse evidence while all material inputs it consumed remain unchanged, and after a material change rerun only the affected evidence identified by the stale-propagation rules. A reviewer discovering that a required check was never produced creates missing evidence; it does not make unrelated current evidence stale. Honor an explicit repository requirement for a fresh check even when the recorded inputs are otherwise unchanged.
 
@@ -122,11 +124,11 @@ Record the outcome and direct evidence in state:
 
 ```text
 Architecture decision:
-  Gate: complete | skipped <reason>
-  Outcome: existing-covered | recorded | no-new-decision  # complete only
+  Gate: pending-approval | complete | skipped <reason>
+  Outcome: existing-covered | recorded | no-new-decision  # pending-approval or complete only
   Evidence: <ADR path @ blob SHA/content revision, or repository/spec evidence>
   Reason: <required when Gate is skipped or Outcome is no-new-decision>
-  Approval: <current evidence | required | not-applicable>
+  Approval: <current evidence | unresolved | not-applicable>
   Health: <doctor evidence | not-applicable>
 ```
 
@@ -136,9 +138,7 @@ Use `adrs` only when an existing ADR repository must be searched/checked or an A
 
 `adrs doctor` is evidence that the ADR repository’s structure and configuration are healthy. It does not establish that the decision is correct or that the trade-off is acceptable; those properties are reviewed by plan review, human approval, implementation review, and final audit as applicable.
 
-When the Architecture Decision Gate is enabled, complete it after specification and before planning. Search existing decisions first, then select exactly one outcome. Preserve the decision evidence and approval identity consumed by the plan.
-
-If the selected decision requires approval and that approval is unresolved, keep the Gate incomplete and stop before planning. Do not substitute the later human plan-approval gate for required decision approval. A proposed decision may be used as planning input only when repository policy explicitly permits it; even then, the required decision approval must be current before implementation.
+When the Architecture Decision Gate is enabled, evaluate it after specification and before planning. Search existing decisions first, then select exactly one outcome and preserve the decision evidence consumed by the plan. If the selected decision requires approval and that approval is unresolved, set the Gate to `pending-approval`. When repository policy forbids proposed decisions as planning input, stop before planning; when policy explicitly permits proposed input, planning may proceed while the Gate remains pending, but implementation is blocked until the approval is current and the Gate is `complete`. Do not substitute the later human plan-approval gate for required decision approval.
 
 ## Phase 2: Implementation plan
 
@@ -238,13 +238,14 @@ When a material gate input changes, invalidate dependent evidence. Track at leas
 | stack ancestry or restack | affected descendant verification, review, explanation, and final audit |
 | verification input (HEAD/base/spec/material plan or required environment) | the verification and downstream review/audit that consumed that input |
 | Architecture Decision Gate outcome or material decision semantics (decision, chosen option, material consequence, governing relationship, or supersedes) | planning, implementation, verification, implementation review, applicable Reviewer Guide, explanation, and final audit |
-| ADR status-only transition with unchanged decision content | approval/readiness evidence only; do not make downstream work stale solely for this transition |
+| ADR status transition that may change decision applicability or governing relationship | Architecture Decision Gate stale; after re-evaluation, decision-dependent planning, implementation, verification, review, explanation, and final-audit evidence stale only if decision semantics or the governing decision changed |
+| ADR status transition confirmed not to change decision applicability or governing relationship | approval/readiness evidence only; do not make downstream work stale solely for this transition |
 | ADR related-link or presentation-only change with unchanged governing decision | artifact identity/health evidence as applicable; do not make downstream work stale solely for this change |
 | Reviewer Guide target head | the guide and any final audit that consumed it |
 | explanation comments | explanation gate and any final audit that consumed them |
 | final-audit input (HEAD/base/spec/material plan/verification) | the final audit and any readiness decision based on it |
 
-After lower-layer changes, identify every descendant, restack, rerun affected checks, and reconcile applicable guides/notes against the new diff. A material specification or original decision-input change always makes the Architecture Decision Gate stale and requires re-evaluation before planning can continue. Preserve the existing specification-dependent stale propagation; invalidate decision-dependent downstream evidence after re-evaluation only when decision semantics changed. Re-evaluate ADR blob changes semantically: a changed blob is not by itself proof that downstream decision-dependent evidence is stale. After final audit, any code, PR head/base, stack, specification, material plan content, or material decision change makes that audit stale; never reuse the same artifact as ready evidence.
+After lower-layer changes, identify every descendant, restack, rerun affected checks, and reconcile applicable guides/notes against the new diff. A material specification or original decision-input change always makes the Architecture Decision Gate stale and requires re-evaluation before planning can continue. Preserve the existing specification-dependent stale propagation; invalidate decision-dependent downstream evidence after re-evaluation only when decision semantics changed. ADR status changes are not categorically non-material: evaluate whether applicability or the governing relationship changed, stale the Gate when it may have changed, and invalidate decision-dependent downstream evidence only when decision semantics or the governing decision changed. Re-evaluate other ADR blob changes semantically: a changed blob is not by itself proof that downstream decision-dependent evidence is stale. After final audit, any code, PR head/base, stack, specification, material plan content, or material decision change makes that audit stale; never reuse the same artifact as ready evidence.
 
 ## Phase 7: Explanation and final audit
 
@@ -265,7 +266,7 @@ The task is ready only when all applicable conditions hold:
 - Normal and High-risk PRs have a compact Reviewer Guide describing the current diff and synchronized with the current head, unless repository policy supplies an equivalent reviewability artifact. Small PRs may omit the guide when it is not useful; guide absence alone does not block readiness.
 - `[ORCHESTRATE:NOTE]` comments are optional; when they exist or the explanation gate explicitly selects them, synchronize them with the current head and valid diff lines.
 - Acceptance criteria and non-goals pass the required final audit, or the Normal final-audit skip is supported by the unchanged implementation-review evidence.
-- The selected Architecture Decision Gate is current; its outcome, applicable ADR identity, approval, and repository-health evidence are recorded. `adrs doctor` health is not substituted for decision review or approval.
+- The selected Architecture Decision Gate is `complete`, or intentionally `skipped` by the selected route; `pending-approval` never qualifies for readiness. Its outcome, applicable ADR identity, approval, and repository-health evidence are recorded. `adrs doctor` health is not substituted for decision review or approval.
 - Required dependency skills completed their bounded responsibilities.
 - Worker result and actual diff are reconciled with no unresolved scope drift.
 - Runtime role assignment and reviewer independence were verified to the extent the active Codex runtime permits; limitations are reported.
